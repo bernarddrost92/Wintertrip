@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { CommandFrame } from '../../components/CommandFrame';
 import { MissionSerial } from '../../components/MissionSerial';
 import { TacticalGrid } from '../../components/TacticalGrid';
+import { useAutoScrollOnReady } from '../../hooks/useAutoScrollOnReady';
 import { ControlCheckPanel } from './ControlCheckPanel';
 import { MissionInputPanel } from './MissionInputPanel';
 import { MissionTypeToggle } from './MissionTypeToggle';
@@ -10,6 +12,8 @@ import { useMissionControlCalculator } from './useMissionControlCalculator';
 
 export function MissionControlCalculator() {
   const { form, update, setMissionType, output } = useMissionControlCalculator();
+  const resultRef = useRef<HTMLDivElement>(null);
+  useAutoScrollOnReady(resultRef, output.readiness);
 
   return (
     <CommandFrame>
@@ -32,7 +36,7 @@ export function MissionControlCalculator() {
           <div className="order-2 lg:order-1 lg:-mr-px">
             <MissionInputPanel form={form} update={update} output={output} />
           </div>
-          <div className="relative order-1 lg:order-2 lg:-mx-px">
+          <div ref={resultRef} className="relative order-1 scroll-mt-24 lg:order-2 lg:-mx-px">
             <MissionValuePanel output={output} />
           </div>
           <div className="order-3 lg:-ml-px">

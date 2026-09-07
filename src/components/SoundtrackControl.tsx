@@ -1,27 +1,5 @@
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-
-const AUDIO_SRC = '/audio/007-james-bond-theme.mp3';
-const TARGET_VOLUME = 0.22;
-const FADE_MS = 1400;
-const STORAGE_ACTIVE = 'ws27-soundtrack-active';
-const STORAGE_MUTED = 'ws27-soundtrack-muted';
-
-function readStoredBool(key: string): boolean {
-  try {
-    return sessionStorage.getItem(key) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeStoredBool(key: string, value: boolean) {
-  try {
-    sessionStorage.setItem(key, value ? '1' : '0');
-  } catch {
-    // sessionStorage unavailable (private browsing etc.) — session memory only, not fatal.
-  }
-}
+import { useSoundtrack } from '../features/soundtrack/soundtrackContext';
 
 /** Five gold bars that bounce while the soundtrack is actually audible, and
  * sit flat the moment it is paused or muted — a control-room meter, not a
@@ -41,98 +19,14 @@ function Equalizer({ active }: { active: boolean }) {
 }
 
 /** A premium, control-room-styled soundtrack toggle — not a native HTML
- * audio player. Never autoplays with sound: playback only starts from a
- * direct click, then fades in gently rather than snapping to volume. */
+ * audio player. The audio element itself lives in SoundtrackProvider (so the
+ * mission gate's ACCEPT MISSION button can start the exact same track); this
+ * component is purely the header UI for it. */
 export function SoundtrackControl() {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const fadeFrame = useRef<number | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(() => readStoredBool(STORAGE_MUTED));
-
-  // Restore an already-active session (e.g. after a same-tab reload). Browsers
-  // block autoplay-with-sound without a fresh user gesture, so this attempt is
-  // allowed to fail silently — the control simply stays OFF until clicked.
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = TARGET_VOLUME;
-    audio.muted = isMuted;
-    if (readStoredBool(STORAGE_ACTIVE)) {
-      audio.play().catch(() => {
-        // Autoplay blocked — leave it off until the user clicks.
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (fadeFrame.current) cancelAnimationFrame(fadeFrame.current);
-    },
-    [],
-  );
-
-  function fadeVolumeTo(target: number, onDone?: () => void) {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (fadeFrame.current) cancelAnimationFrame(fadeFrame.current);
-    const start = audio.volume;
-    const startTime = performance.now();
-    const step = (now: number) => {
-      const t = Math.min(1, (now - startTime) / FADE_MS);
-      audio.volume = start + (target - start) * t;
-      if (t < 1) {
-        fadeFrame.current = requestAnimationFrame(step);
-      } else {
-        fadeFrame.current = null;
-        onDone?.();
-      }
-    };
-    fadeFrame.current = requestAnimationFrame(step);
-  }
-
-  function togglePlay() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      audio.volume = 0;
-      audio
-        .play()
-        .then(() => fadeVolumeTo(TARGET_VOLUME))
-        .catch(() => {
-          // Playback blocked or failed — never let this affect the rest of the app.
-        });
-    } else {
-      fadeVolumeTo(0, () => audio.pause());
-    }
-  }
-
-  function toggleMute() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const next = !isMuted;
-    audio.muted = next;
-    setIsMuted(next);
-    writeStoredBool(STORAGE_MUTED, next);
-  }
+  const { isPlaying, isMuted, togglePlay, toggleMute } = useSoundtrack();
 
   return (
     <div className="flex items-center gap-2 border-l border-gold/10 pl-3">
-      <audio
-        ref={audioRef}
-        src={AUDIO_SRC}
-        loop
-        preload="none"
-        className="hidden"
-        onPlay={() => {
-          setIsPlaying(true);
-          writeStoredBool(STORAGE_ACTIVE, true);
-        }}
-        onPause={() => {
-          setIsPlaying(false);
-          writeStoredBool(STORAGE_ACTIVE, false);
-        }}
-      />
       <button
         type="button"
         onClick={togglePlay}

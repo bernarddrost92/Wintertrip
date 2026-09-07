@@ -1,9 +1,10 @@
-import { Calculator, LayoutDashboard, ShieldCheck, Target } from 'lucide-react';
+import { Calculator, Home, LayoutDashboard, ShieldCheck, Target } from 'lucide-react';
 import type { AppView } from '../types/navigation';
 import { StatusLed } from './MissionSerial';
 import { SoundtrackControl } from './SoundtrackControl';
 
 const NAV_ITEMS: { view: AppView; label: string; icon: typeof Calculator }[] = [
+  { view: 'home', label: 'Mission Home', icon: Home },
   { view: 'calculator', label: 'Calculator', icon: Calculator },
   { view: 'league-check', label: 'League Check', icon: ShieldCheck },
   { view: 'mission-control', label: 'Mission Control', icon: LayoutDashboard },
@@ -21,7 +22,7 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-gold/15 bg-mission-void/75 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1800px] items-stretch px-4 sm:px-6">
-        <button type="button" onClick={() => onNavigate('calculator')} className="flex min-w-0 items-center gap-2.5 py-2.5 pr-4 text-left">
+        <button type="button" onClick={() => onNavigate('home')} className="flex min-w-0 items-center gap-2.5 py-2.5 pr-4 text-left">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-gold/50 bg-mission-raised text-gold">
             <Target size={16} aria-hidden />
           </span>

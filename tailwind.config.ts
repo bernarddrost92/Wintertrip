@@ -79,6 +79,46 @@ export default {
           '0%, 100%': { height: '3px' },
           '50%': { height: '11px' },
         },
+        'intro-textfade': {
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
+          '18%': { opacity: '1', transform: 'translateY(0)' },
+          '80%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        'intro-textfade-hold': {
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'intro-barrel-life': {
+          '0%': { opacity: '0', transform: 'scale(0.5)' },
+          '18%': { opacity: '1', transform: 'scale(1)' },
+          '82%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '1', transform: 'scale(0)' },
+        },
+        'intro-rotate-partial': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(48deg)' },
+        },
+        'intro-crossfade-out': {
+          '0%, 60%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        'intro-crossfade-in': {
+          '0%, 60%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'intro-flash': {
+          '0%, 100%': { opacity: '0' },
+          '50%': { opacity: '1' },
+        },
+        'intro-approved': {
+          '0%': { opacity: '0', letterSpacing: '0.08em' },
+          '100%': { opacity: '1', letterSpacing: '0.32em' },
+        },
+        'intro-quickfade': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
       animation: {
         'radar-spin': 'radar-spin 18s linear infinite',
