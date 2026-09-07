@@ -45,7 +45,7 @@ export const FACTOR_APPLICATION_MODE: FactorApplicationMode = 'ALL_VCDB';
  */
 
 /** Deal categories collected on every mission type. Only DETACHERING scores. */
-export const WS_MESSAGE = 'W&S telt niet mee binnen Operation January.';
+export const WS_MESSAGE = 'W&S telt niet mee binnen Operatie Wintersport 2027.';
 
 export const DEAL_CATEGORY_OPTIONS: { value: 'DETACHERING' | 'WS'; label: string }[] = [
   { value: 'DETACHERING', label: 'Detachering' },

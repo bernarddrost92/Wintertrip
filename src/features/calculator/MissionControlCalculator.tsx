@@ -1,3 +1,4 @@
+import { CommandFrame } from '../../components/CommandFrame';
 import { MissionSerial } from '../../components/MissionSerial';
 import { TacticalGrid } from '../../components/TacticalGrid';
 import { ControlCheckPanel } from './ControlCheckPanel';
@@ -11,10 +12,11 @@ export function MissionControlCalculator() {
   const { form, update, setMissionType, output } = useMissionControlCalculator();
 
   return (
-    <div className="relative">
-      <div className="relative overflow-hidden border-b border-gold/10 px-4 py-5 sm:px-6">
+    <CommandFrame>
+      <div className="relative overflow-hidden border-b border-gold/15 px-4 py-5 sm:px-6">
         <TacticalGrid className="opacity-25" />
-        <div className="relative mx-auto max-w-[1800px]">
+        <div className="relative mx-auto flex max-w-[1800px] flex-col gap-2">
+          <p className="label-classified text-gold/70">Operatie Wintersport 2027 · Mission Calculator</p>
           <MissionSerial />
         </div>
       </div>
@@ -42,6 +44,6 @@ export function MissionControlCalculator() {
           <MonthlyIntelligence result={output.result} />
         </div>
       </div>
-    </div>
+    </CommandFrame>
   );
 }

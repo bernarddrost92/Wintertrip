@@ -64,7 +64,7 @@ export function MissionValuePanel({ output }: MissionValuePanelProps) {
         />
         <div className="pointer-events-none absolute inset-0 bg-panel-glow" aria-hidden />
         <p className="label-classified relative text-gold/80">Mission Value</p>
-        <p className="relative mt-3 font-display text-[76px] font-bold leading-none tabular-nums text-gold-gradient bg-[length:200%_auto] animate-gold-sweep-move drop-shadow-[0_0_46px_rgba(255,215,104,0.45)] sm:text-[112px] lg:text-[136px]">
+        <p className="relative mt-3 break-all font-display text-[56px] font-bold leading-none tabular-nums text-gold-gradient bg-[length:200%_auto] animate-gold-sweep-move drop-shadow-[0_0_46px_rgba(255,215,104,0.45)] sm:text-[88px] lg:text-[112px]">
           {formatScore(animatedValue)}
         </p>
         <p className="relative mt-3 text-xs font-semibold uppercase tracking-[0.35em] text-ink-muted">Points</p>

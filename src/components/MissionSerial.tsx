@@ -6,7 +6,7 @@ export function MissionSerial() {
     <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
       <span className="flex items-center gap-1.5">
         <Crosshair className="text-gold/60" />
-        MISSION ID <span className="text-gold/80">OJ-2609-ZWL</span>
+        MISSION ID <span className="text-gold/80">WS27-2609-ZWL</span>
       </span>
       <span className="hidden text-gold/20 sm:inline">|</span>
       <span className="hidden sm:inline">

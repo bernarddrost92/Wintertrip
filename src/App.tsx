@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { CommandFrame } from './components/CommandFrame';
+import { ControlRoomEnvironment } from './components/ControlRoomEnvironment';
 import { Footer } from './components/Footer';
 import { Navbar } from './components/Navbar';
 import { MissionControlCalculator } from './features/calculator/MissionControlCalculator';
@@ -17,14 +19,25 @@ export default function App() {
   const [view, setView] = useState<AppView>('calculator');
 
   return (
-    <div className="flex min-h-screen flex-col bg-mission-void">
-      <Navbar current={view} onNavigate={setView} />
-      <main className="flex-1">
-        {view === 'calculator' && <MissionControlCalculator />}
-        {view === 'league-check' && <LeagueCheckPage />}
-        {view === 'mission-control' && <MissionControlPage />}
-      </main>
-      <Footer />
+    <div className="relative z-0 min-h-screen">
+      <ControlRoomEnvironment />
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <Navbar current={view} onNavigate={setView} />
+        <main className="flex-1">
+          {view === 'calculator' && <MissionControlCalculator />}
+          {view === 'league-check' && (
+            <CommandFrame>
+              <LeagueCheckPage />
+            </CommandFrame>
+          )}
+          {view === 'mission-control' && (
+            <CommandFrame>
+              <MissionControlPage />
+            </CommandFrame>
+          )}
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }

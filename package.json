@@ -1,9 +1,9 @@
 {
-  "name": "operation-january",
+  "name": "operatie-wintersport-2027",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "007 — OPERATION JANUARY — TEAM ZWOLLE MISSION CONTROL",
+  "description": "007 — OPERATIE WINTERSPORT 2027 — TEAM ZWOLLE MISSION CONTROL",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

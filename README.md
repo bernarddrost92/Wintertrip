@@ -1,7 +1,7 @@
-# 007 — Operation January
+# 007 — Operatie Wintersport 2027
 ### Team Zwolle Mission Control
 
-Interne sales-webapp voor de Operation January league (**1 september 2026 – 31 januari 2027**). Het team gebruikt de app om direct te berekenen hoeveel punten een nieuwe plaatsing, verlenging of urenuitbreiding oplevert, om deals via het "2 paar ogen"-principe te controleren (League Check), en om de teamvoortgang te volgen (Mission Control).
+Interne sales-webapp voor de Operatie Wintersport 2027 league (**1 september 2026 – 31 januari 2027**). Het team gebruikt de app om direct te berekenen hoeveel punten een nieuwe plaatsing, verlenging of urenuitbreiding oplevert, om deals via het "2 paar ogen"-principe te controleren (League Check), en om de teamvoortgang te volgen (Mission Control).
 
 ## Projectomschrijving
 

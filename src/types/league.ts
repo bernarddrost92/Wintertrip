@@ -1,5 +1,5 @@
 /**
- * Core domain types for 007 — Operation January.
+ * Core domain types for 007 — Operatie Wintersport 2027.
  *
  * Dates are represented as ISO date-only strings ("YYYY-MM-DD"). Keeping dates
  * as plain strings (rather than Date objects) through the data layer avoids
@@ -128,6 +128,8 @@ export interface LeagueDataset {
 
 export interface LeagueCheckItem {
   id: string;
+  /** Short tactical mission code shown above the question, e.g. "01 START DATE". */
+  code: string;
   label: string;
 }
 

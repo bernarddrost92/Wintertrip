@@ -34,7 +34,7 @@ export function calculateFactorScenarios(baseScore: number, selectedFactor: numb
   }));
 }
 
-/** Only DETACHERING deals score within Operation January — W&S never does. */
+/** Only DETACHERING deals score within Operatie Wintersport 2027 — W&S never does. */
 export function isLeagueEligibleCategory(dealCategory: DealCategory): boolean {
   return dealCategory === 'DETACHERING';
 }

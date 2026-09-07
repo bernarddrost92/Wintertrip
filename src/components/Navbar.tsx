@@ -13,25 +13,38 @@ interface NavbarProps {
   onNavigate: (view: AppView) => void;
 }
 
+/** A control-room status bar, not a website nav: identity, league window and
+ * mission status read as one continuous instrument strip, with navigation
+ * folded in as its rightmost segment rather than the header's main act. */
 export function Navbar({ current, onNavigate }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-gold/15 bg-mission-void/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
-        <button type="button" onClick={() => onNavigate('calculator')} className="flex min-w-0 items-center gap-2.5 text-left">
+    <header className="sticky top-0 z-40 border-b border-gold/15 bg-mission-void/75 backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1800px] items-stretch px-4 sm:px-6">
+        <button type="button" onClick={() => onNavigate('calculator')} className="flex min-w-0 items-center gap-2.5 py-2.5 pr-4 text-left">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-gold/50 bg-mission-raised text-gold">
             <Target size={16} aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block truncate font-display text-xs font-bold leading-none tracking-[0.1em] text-ink sm:text-sm sm:tracking-[0.16em]">
-              007 — OPERATION JANUARY
+            <span className="block truncate font-display text-xs font-bold leading-none tracking-[0.1em] text-ink sm:text-sm sm:tracking-[0.14em]">
+              007 <span className="text-gold/40">/</span> OPERATIE WINTERSPORT 2027
             </span>
-            <span className="mt-0.5 hidden text-[10px] font-medium uppercase leading-none tracking-[0.25em] text-gold/80 sm:block">
-              Team Zwolle · 01 Sep – 31 Jan
+            <span className="mt-0.5 hidden text-[10px] font-semibold uppercase leading-none tracking-[0.3em] text-gold/80 sm:block">
+              Team Zwolle
             </span>
           </span>
         </button>
 
-        <nav aria-label="Hoofdnavigatie" className="flex items-center gap-1">
+        <div className="hidden items-center gap-6 border-l border-gold/10 px-5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted lg:flex">
+          <span>
+            League window <span className="text-gold/80">01 sep — 31 jan</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-gold/80">
+            <StatusLed tone="go" />
+            Mission status active
+          </span>
+        </div>
+
+        <nav aria-label="Hoofdnavigatie" className="ml-auto flex items-center gap-1 border-l border-gold/10 py-2 pl-3">
           {NAV_ITEMS.map(({ view, label, icon: Icon }) => {
             const active = current === view;
             return (
@@ -51,10 +64,6 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
               </button>
             );
           })}
-          <span className="ml-2 hidden items-center gap-1.5 border border-gold/25 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-gold/80 lg:flex">
-            <StatusLed tone="go" />
-            Live
-          </span>
         </nav>
       </div>
     </header>

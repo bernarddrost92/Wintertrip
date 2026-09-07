@@ -114,3 +114,58 @@ describe('calculateLeagueExposureBreakdown (TEST 6, TEST 15, TEST 16)', () => {
     expect(calculateTotalLeagueExposure('2025-01-01', '2026-08-31')).toBe(0);
   });
 });
+
+describe('Explicit day-value worked examples (VCDB is a monthly value, never a flat /30)', () => {
+  it('September: 15 t/m 30 sep = 16 active days of 30, dagwaarde 10/30, prorated 16 × 10/30', () => {
+    const segment = calculateCalendarMonthFraction('2026-09-15', '2026-09-30', 2026, 9);
+    expect(segment.daysInMonth).toBe(30);
+    expect(segment.overlapDays).toBe(16);
+    const dagwaarde = 10 / 30;
+    expect(calculateQualifyingTermValue('2026-09-15', '2026-09-30', 10)).toBeCloseTo(16 * dagwaarde, 10);
+  });
+
+  it('January: 27 t/m 31 januari = 5 active days of 31, dagwaarde 10/31, prorated 5 × 10/31', () => {
+    const segment = calculateCalendarMonthFraction('2027-01-27', '2027-01-31', 2027, 1);
+    expect(segment.daysInMonth).toBe(31);
+    expect(segment.overlapDays).toBe(5);
+    const dagwaarde = 10 / 31;
+    expect(calculateQualifyingTermValue('2027-01-27', '2027-01-31', 10)).toBeCloseTo(5 * dagwaarde, 10);
+  });
+
+  it('February 2027: 1 t/m 14 februari = 14 active days of 28, dagwaarde 10/28, prorated 14 × 10/28 = 5', () => {
+    const segment = calculateCalendarMonthFraction('2027-02-01', '2027-02-14', 2027, 2);
+    expect(segment.daysInMonth).toBe(28);
+    expect(segment.overlapDays).toBe(14);
+    expect(calculateQualifyingTermValue('2027-02-01', '2027-02-14', 10)).toBeCloseTo(5, 10);
+  });
+
+  it('April: a full April (30 days) prorates to the entire monthly VCDB, no rounding applied', () => {
+    const segment = calculateCalendarMonthFraction('2027-04-01', '2027-04-30', 2027, 4);
+    expect(segment.daysInMonth).toBe(30);
+    expect(segment.overlapDays).toBe(30);
+    expect(segment.fraction).toBe(1);
+    expect(calculateQualifyingTermValue('2027-04-01', '2027-04-30', 10)).toBe(10);
+  });
+
+  it('multi-month contract: each touched month uses its own real day count, never a uniform /30', () => {
+    // 15 Sep 2026 -> 14 Feb 2027: partial Sep (16/30), full Okt/Nov/Dec/Jan, partial Feb (14/28).
+    const breakdown = calculateQualifyingTermBreakdown('2026-09-15', '2027-02-14', 10);
+    const byMonth = Object.fromEntries(breakdown.segments.map((s) => [s.monthKey, s]));
+
+    expect(byMonth['2026-09'].daysInMonth).toBe(30);
+    expect(byMonth['2026-09'].overlapDays).toBe(16);
+    expect(byMonth['2026-10'].daysInMonth).toBe(31);
+    expect(byMonth['2026-10'].fraction).toBe(1);
+    expect(byMonth['2026-11'].daysInMonth).toBe(30);
+    expect(byMonth['2026-11'].fraction).toBe(1);
+    expect(byMonth['2026-12'].daysInMonth).toBe(31);
+    expect(byMonth['2026-12'].fraction).toBe(1);
+    expect(byMonth['2027-01'].daysInMonth).toBe(31);
+    expect(byMonth['2027-01'].fraction).toBe(1);
+    expect(byMonth['2027-02'].daysInMonth).toBe(28);
+    expect(byMonth['2027-02'].overlapDays).toBe(14);
+
+    const expectedTotal = (16 / 30) * 10 + 10 + 10 + 10 + 10 + (14 / 28) * 10;
+    expect(breakdown.totalValue).toBeCloseTo(expectedTotal, 10);
+  });
+});

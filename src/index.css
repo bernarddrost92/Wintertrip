@@ -104,6 +104,36 @@
   .hud-corner {
     @apply pointer-events-none absolute h-4 w-4 border-gold/70;
   }
+
+  /* The one large central "mission screen" the whole calculator lives
+     inside — dark glass floating in front of the room environment, not a
+     flat card. Backdrop-blur + its own semi-opaque fill keep the UI
+     readable regardless of what is happening behind it. */
+  .command-screen {
+    @apply relative border border-gold/25;
+    background: linear-gradient(180deg, rgba(13, 16, 20, 0.78) 0%, rgba(5, 6, 8, 0.87) 100%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow:
+      0 50px 100px -32px rgba(0, 0, 0, 0.85),
+      0 0 0 1px rgba(227, 178, 60, 0.07),
+      0 0 90px -20px rgba(227, 178, 60, 0.18),
+      inset 0 1px 0 0 rgba(255, 231, 138, 0.07);
+  }
+
+  /* Soft ambient bloom sitting just behind the command screen's own edges. */
+  .command-glow {
+    @apply pointer-events-none absolute -inset-x-6 -inset-y-6 -z-10 sm:-inset-x-16 sm:-inset-y-16;
+    background: radial-gradient(60% 60% at 50% 38%, rgba(255, 209, 110, 0.14), transparent 72%);
+    filter: blur(28px);
+  }
+
+  /* A faint diagonal sheen across the top of the glass, like light catching
+     a physical pane rather than a flat CSS panel. */
+  .command-reflection {
+    @apply pointer-events-none absolute inset-x-0 top-0 h-28;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
