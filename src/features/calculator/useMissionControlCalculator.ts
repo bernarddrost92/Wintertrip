@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react';
-import { DEFAULT_FACTOR, LEAGUE_PERIOD } from '../../config/leagueRules';
+import { DEFAULT_FACTOR, LEAGUE_PERIOD, WS_MESSAGE } from '../../config/leagueRules';
 import {
   calculateExtensionScore,
   calculateHoursIncreaseEligibility,
   calculateHoursIncreaseScore,
   calculateNewPlacementScore,
+  isLeagueEligibleCategory,
   validateExtensionWindow,
   validateMissionWindow,
   validateVcdb,
 } from '../../services/scoring';
-import type { MissionType, ScoreResult } from '../../types/scoring';
+import type { DealCategory, MissionType, ScoreResult } from '../../types/scoring';
 import { compareIsoDates, isValidIsoDate } from '../../utils/dates';
 
 export interface CalculatorForm {
   missionType: MissionType;
+  dealCategory: DealCategory;
   factor: number;
   // NEW_PLACEMENT
   startDate: string;
@@ -34,6 +36,7 @@ export interface CalculatorForm {
 
 const INITIAL_FORM: CalculatorForm = {
   missionType: 'NEW_PLACEMENT',
+  dealCategory: 'DETACHERING',
   factor: DEFAULT_FACTOR.value,
   startDate: '',
   endDate: '',
@@ -68,6 +71,11 @@ export interface OpportunitySignal {
 
 export type MissionReadiness = 'INPUT_REQUIRED' | 'INVALID' | 'NOT_ELIGIBLE' | 'READY';
 
+export interface NotEligible {
+  reason: 'HOURS' | 'WS';
+  message: string;
+}
+
 export interface CalculatorOutput {
   result: ScoreResult | null;
   completion: CompletionItem[];
@@ -75,7 +83,7 @@ export interface CalculatorOutput {
   totalCount: number;
   isInputComplete: boolean;
   errorMessage: string | null;
-  hoursEligible: boolean | null;
+  notEligible: NotEligible | null;
   opportunities: OpportunitySignal[];
   readiness: MissionReadiness;
 }
@@ -88,7 +96,7 @@ export function useMissionControlCalculator() {
   }
 
   function setMissionType(type: MissionType) {
-    setForm((prev) => ({ ...INITIAL_FORM, missionType: type, factor: prev.factor }));
+    setForm((prev) => ({ ...INITIAL_FORM, missionType: type, factor: prev.factor, dealCategory: prev.dealCategory }));
   }
 
   function reset() {
@@ -101,14 +109,16 @@ export function useMissionControlCalculator() {
 }
 
 function computeOutput(form: CalculatorForm): CalculatorOutput {
+  const wsIneligible = !isLeagueEligibleCategory(form.dealCategory);
+
   if (form.missionType === 'NEW_PLACEMENT') {
     const datesOk = isValidIsoDate(form.startDate) && isValidIsoDate(form.endDate) && compareIsoDates(form.endDate, form.startDate) >= 0;
     const vcdbOk = validateVcdb(toNumber(form.vcdbPerMonth)).valid;
     const completion: CompletionItem[] = [
       { key: 'type', label: 'Mission type', done: true },
-      { key: 'dates', label: 'Dates', done: datesOk },
-      { key: 'vcdb', label: 'VCDB', done: vcdbOk },
-      { key: 'factor', label: 'Factor', done: true },
+      { key: 'dates', label: 'Dates valid', done: datesOk },
+      { key: 'vcdb', label: 'VCDB entered', done: vcdbOk },
+      { key: 'factor', label: 'Factor selected', done: true },
     ];
     const isInputComplete = completion.every((c) => c.done);
     const windowCheck = validateMissionWindow(form.startDate, form.endDate);
@@ -117,19 +127,23 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
       return baseOutput(completion, null, windowCheck.valid ? null : windowCheck.message ?? null, null, [], 'INPUT_REQUIRED');
     }
 
-    const result = calculateNewPlacementScore(form.startDate, form.endDate, toNumber(form.vcdbPerMonth), form.factor);
+    if (wsIneligible) {
+      return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE');
+    }
+
+    const result = calculateNewPlacementScore(form.startDate, form.endDate, toNumber(form.vcdbPerMonth), form.factor, form.dealCategory);
     const opportunities = buildOpportunitySignals(result, form.endDate);
-    return baseOutput(completion, result, null, null, opportunities, opportunities.length > 0 ? 'READY' : 'READY');
+    return baseOutput(completion, result, null, null, opportunities, 'READY');
   }
 
   if (form.missionType === 'EXTENSION') {
-    const datesOk = validateExtensionWindow(form.oldEndDate, form.newEndDate).valid;
+    const datesOk = validateExtensionWindow(form.oldEndDate, form.newEndDate).valid && isValidIsoDate(form.awardDate);
     const vcdbOk = validateVcdb(toNumber(form.extensionVcdbPerMonth)).valid;
     const completion: CompletionItem[] = [
       { key: 'type', label: 'Mission type', done: true },
-      { key: 'dates', label: 'Dates', done: datesOk },
-      { key: 'vcdb', label: 'VCDB', done: vcdbOk },
-      { key: 'factor', label: 'Factor', done: true },
+      { key: 'dates', label: 'Dates valid', done: datesOk },
+      { key: 'vcdb', label: 'VCDB entered', done: vcdbOk },
+      { key: 'factor', label: 'Factor selected', done: true },
     ];
     const isInputComplete = completion.every((c) => c.done);
     const windowCheck = validateExtensionWindow(form.oldEndDate, form.newEndDate);
@@ -138,12 +152,17 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
       return baseOutput(completion, null, windowCheck.valid ? null : windowCheck.message ?? null, null, [], 'INPUT_REQUIRED');
     }
 
+    if (wsIneligible) {
+      return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE');
+    }
+
     const result = calculateExtensionScore(
       form.oldEndDate,
       form.newEndDate,
       toNumber(form.extensionVcdbPerMonth),
       form.factor,
-      form.awardDate || undefined,
+      form.awardDate,
+      form.dealCategory,
     );
     const opportunities = buildOpportunitySignals(result, form.newEndDate);
     return baseOutput(completion, result, null, null, opportunities, 'READY');
@@ -156,10 +175,10 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
   const vcdbOk = validateVcdb(toNumber(form.extraVcdbPerMonth)).valid;
   const completion: CompletionItem[] = [
     { key: 'type', label: 'Mission type', done: true },
-    { key: 'dates', label: 'Dates', done: datesOk },
+    { key: 'dates', label: 'Dates valid', done: datesOk },
     { key: 'hours', label: 'Hours', done: hoursOk },
-    { key: 'vcdb', label: 'VCDB', done: vcdbOk },
-    { key: 'factor', label: 'Factor', done: true },
+    { key: 'vcdb', label: 'VCDB entered', done: vcdbOk },
+    { key: 'factor', label: 'Factor selected', done: true },
   ];
   const isInputComplete = completion.every((c) => c.done);
 
@@ -167,9 +186,24 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
     return baseOutput(completion, null, null, null, [], 'INPUT_REQUIRED');
   }
 
+  if (wsIneligible) {
+    return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE');
+  }
+
   const eligibility = calculateHoursIncreaseEligibility(toNumber(form.oldHours), toNumber(form.newHours));
   if (!eligibility.eligible) {
-    return baseOutput(completion, null, null, false, [], 'NOT_ELIGIBLE');
+    const notEligible: NotEligible = {
+      reason: 'HOURS',
+      message: `Urenstijging van ${eligibility.increaseHours} u/w haalt de minimale 4 u/w niet.`,
+    };
+    return baseOutput(
+      completion,
+      null,
+      null,
+      notEligible,
+      [{ key: 'not-enough-hours', kind: 'warning', text: `NOT ENOUGH HOURS INCREASE — +${eligibility.increaseHours} u/w` }],
+      'NOT_ELIGIBLE',
+    );
   }
 
   const result = calculateHoursIncreaseScore(
@@ -179,16 +213,21 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
     form.increaseEndDate,
     toNumber(form.extraVcdbPerMonth),
     form.factor,
+    form.dealCategory,
   );
   const opportunities = buildOpportunitySignals(result, form.increaseEndDate);
-  return baseOutput(completion, result, null, true, opportunities, 'READY');
+  return baseOutput(completion, result, null, null, opportunities, 'READY');
+}
+
+function wsSignal(): OpportunitySignal {
+  return { key: 'ws-not-eligible', kind: 'warning', text: `${WS_MESSAGE}` };
 }
 
 function baseOutput(
   completion: CompletionItem[],
   result: ScoreResult | null,
   errorMessage: string | null,
-  hoursEligible: boolean | null,
+  notEligible: NotEligible | null,
   opportunities: OpportunitySignal[],
   readinessIfComplete: MissionReadiness,
 ): CalculatorOutput {
@@ -206,7 +245,7 @@ function baseOutput(
     totalCount: completion.length,
     isInputComplete,
     errorMessage,
-    hoursEligible,
+    notEligible,
     opportunities,
     readiness,
   };

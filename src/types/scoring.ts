@@ -2,6 +2,9 @@ import type { MissionType } from './league';
 
 export type { MissionType };
 
+/** Only DETACHERING scores within Operation January — W&S never does. */
+export type DealCategory = 'DETACHERING' | 'WS';
+
 /** One calendar month's overlap with a date range, used by both proration dimensions. */
 export interface MonthSegment {
   /** "YYYY-MM" */

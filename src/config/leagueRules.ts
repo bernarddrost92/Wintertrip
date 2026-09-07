@@ -30,27 +30,27 @@ export const MIN_HOURS_INCREASE_PER_WEEK = 4;
 export const FACTOR_APPLICATION_MODE: FactorApplicationMode = 'ALL_VCDB';
 
 /**
- * OPEN BUSINESS RULE — needs explicit confirmation.
- *
- * For an EXTENSION, the newly added contract term (old end date + 1 day
- * through the new end date) is unambiguous. What is still open is which
- * date the League Exposure calculation should start counting from:
- *
- * - 'FROM_TERM_START' (current default): exposure is computed over the
- *   added term itself, exactly like a new placement — the extension scores
- *   for every league month the *new contract period* actually covers,
- *   regardless of when the extension was administratively agreed.
- * - 'FROM_AWARD_DATE': exposure only starts counting from the date the
- *   extension was actually agreed/entered (the "award date" collected in
- *   the calculator), so league months that had already passed before the
- *   deal was struck are never credited — even though they fall inside the
- *   added contract term.
- *
- * Both are implemented in services/scoring.ts (see calculateExtensionScore).
- * Flip this single constant once the business decides; no component or
- * other file encodes this assumption anywhere else.
+ * EXTENSION rule (settled): the newly added contract term (old end date + 1
+ * day through the new end date) determines the Qualifying Term Value, same
+ * as any other deal. League Exposure, however, is deliberately NOT the
+ * calendar overlap of that added term with the league — it is anchored to
+ * the Award Date instead: exposure runs from the Award Date through
+ * min(newEndDate, LEAGUE_PERIOD.end). An extension agreed on 15 October for
+ * new months that only start the following February still earns exposure
+ * for Oct(partial)/Nov/Dec/Jan, because the *value* was already secured for
+ * the league on the day it was struck — it is not zeroed out just because
+ * the added months themselves fall outside the league window. See
+ * services/scoring.ts#calculateExtensionScore for the implementation; this
+ * is the one and only place that encodes the rule.
  */
-export const EXTENSION_EXPOSURE_MODE: 'FROM_TERM_START' | 'FROM_AWARD_DATE' = 'FROM_TERM_START';
+
+/** Deal categories collected on every mission type. Only DETACHERING scores. */
+export const WS_MESSAGE = 'W&S telt niet mee binnen Operation January.';
+
+export const DEAL_CATEGORY_OPTIONS: { value: 'DETACHERING' | 'WS'; label: string }[] = [
+  { value: 'DETACHERING', label: 'Detachering' },
+  { value: 'WS', label: 'W&S' },
+];
 
 /** Manual factor ladder — the Factor reflects the branch's contractant ranking. */
 export const FACTOR_OPTIONS: FactorOption[] = [

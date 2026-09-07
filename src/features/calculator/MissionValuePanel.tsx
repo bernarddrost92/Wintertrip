@@ -10,7 +10,7 @@ interface MissionValuePanelProps {
 }
 
 export function MissionValuePanel({ output }: MissionValuePanelProps) {
-  const { result, isInputComplete, errorMessage, hoursEligible } = output;
+  const { result, isInputComplete, errorMessage, notEligible } = output;
   const animatedValue = useCountUp(result?.finalScore ?? 0);
 
   if (!isInputComplete) {
@@ -23,15 +23,13 @@ export function MissionValuePanel({ output }: MissionValuePanelProps) {
     );
   }
 
-  if (hoursEligible === false) {
+  if (notEligible) {
     return (
       <div className="panel relative flex h-full min-h-[420px] flex-col items-center justify-center overflow-hidden text-center">
         <AlertTriangle className="text-gold" size={28} aria-hidden />
-        <p className="label-classified mt-4 text-gold">Hours Increase</p>
-        <p className="mt-2 font-display text-4xl font-bold uppercase text-gold">Not Eligible</p>
-        <p className="mt-3 max-w-xs text-xs text-ink-muted">
-          Een stijging onder 4 uur per week is niet scoorbaar binnen Operation January.
-        </p>
+        <p className="label-classified mt-4 text-gold">Mission Status</p>
+        <p className="mt-2 font-display text-4xl font-bold uppercase text-gold">Not League Eligible</p>
+        <p className="mt-3 max-w-xs text-xs text-ink-muted">{notEligible.message}</p>
       </div>
     );
   }

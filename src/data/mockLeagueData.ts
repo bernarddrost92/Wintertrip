@@ -16,6 +16,7 @@ import type {
   WeeklyMissionUpdate,
   WeeklyScorePoint,
 } from '../types/league';
+import type { DealCategory } from '../types/scoring';
 
 const ACCOUNT_MANAGERS = ['Agent Aurum', 'Agent Falcon', 'Agent Vega', 'Agent Orion'] as const;
 const TALENT_MANAGERS = ['Agent Solstice', 'Agent Meridian', 'Agent Cassini', 'Agent Nova'] as const;
@@ -42,12 +43,16 @@ interface MockPlacementInput {
 }
 
 function buildPlacement(input: MockPlacementInput): Placement {
+  // W&S is modelled as a domain in the mock dataset (pre-dating the calculator's
+  // own Deal Category field); map it onto the same league-eligibility gate.
+  const dealCategory: DealCategory = input.domain === 'W&S' ? 'WS' : 'DETACHERING';
+
   const result =
     input.type === 'EXTENSION' && input.previousEndDate
-      ? calculateExtensionScore(input.previousEndDate, input.endDate, input.vcdbPerMonth, input.factor)
+      ? calculateExtensionScore(input.previousEndDate, input.endDate, input.vcdbPerMonth, input.factor, input.createdAt, dealCategory)
       : input.type === 'HOURS_INCREASE'
-        ? calculateHoursIncreaseScore(input.oldHours ?? 0, input.newHours ?? 0, input.startDate, input.endDate, input.vcdbPerMonth, input.factor)
-        : calculateNewPlacementScore(input.startDate, input.endDate, input.vcdbPerMonth, input.factor);
+        ? calculateHoursIncreaseScore(input.oldHours ?? 0, input.newHours ?? 0, input.startDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory)
+        : calculateNewPlacementScore(input.startDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory);
 
   const { baseScore, finalScore, qualifyingTerm, leagueExposure } = result;
   // Legacy dashboard summary fields: effective whole-month equivalents,

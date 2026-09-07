@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { FormField, TextInput } from '../../components/FormField';
+import { DealCategoryToggle } from './DealCategoryToggle';
 import { FactorDial } from './FactorDial';
 import type { CalculatorForm, CalculatorOutput } from './useMissionControlCalculator';
 
@@ -24,6 +25,11 @@ export function MissionInputPanel({ form, update, output }: MissionInputPanelPro
       </header>
 
       <div className="flex-1 space-y-4 px-4 py-4">
+        <div>
+          <p className="label-classified mb-1.5">Deal Category</p>
+          <DealCategoryToggle value={form.dealCategory} onChange={(c) => update('dealCategory', c)} />
+        </div>
+
         {form.missionType === 'NEW_PLACEMENT' && (
           <>
             <FormField id="startDate" label="Startdatum">
@@ -49,7 +55,7 @@ export function MissionInputPanel({ form, update, output }: MissionInputPanelPro
 
         {form.missionType === 'EXTENSION' && (
           <>
-            <FormField id="awardDate" label="Verlengmoment" hint="Optioneel — datum waarop de verlenging is afgesproken.">
+            <FormField id="awardDate" label="Award date" hint="Datum waarop de verlenging binnen de league wordt afgesproken.">
               <TextInput id="awardDate" type="date" value={form.awardDate} onChange={(e) => update('awardDate', e.target.value)} />
             </FormField>
             <FormField id="oldEndDate" label="Huidige einddatum">

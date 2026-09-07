@@ -9,7 +9,7 @@ De **Mission Control Calculator** is het hart van de app en de standaard-ervarin
 
 Drie hoofdonderdelen (compacte navigatie, Calculator is actief/default):
 
-- **Calculator** — kiest Mission Type (Nieuwe plaatsing / Verlenging / Urenuitbreiding), vraagt alleen scorebepalende velden (geen accountmanager/talentmanager/klant), en herberekent live. Factor is een premium verticale ladder-control, geen dropdown.
+- **Calculator** — kiest Mission Type (Nieuwe plaatsing / Verlenging / Urenuitbreiding) en Deal Category (Detachering / W&S), vraagt alleen scorebepalende velden (geen accountmanager/talentmanager/klant), en herberekent live. Factor is een premium verticale ladder-control, geen dropdown. W&S scoort altijd 0 (**NOT LEAGUE ELIGIBLE**).
 - **League Check** — checklist volgens het 2-paar-ogen-principe; pas bij een volledig afgevinkte checklist én ingevulde velden verschijnt **MISSION APPROVED**.
 - **Mission Control** — dashboard met teamscore, AM- en TM-leaderboards en de Weekly Mission Update, gevoed door mockdata (of een live API wanneer geconfigureerd).
 
@@ -22,7 +22,7 @@ Alle scoreberekeningen staan centraal in `src/services/proration.ts` (kalenderda
 - Tailwind CSS
 - lucide-react
 - Recharts (Weekly Mission Update-grafiek)
-- Vitest (32 unit tests voor de scoring-/proratie-engine)
+- Vitest (40 unit tests voor de scoring-/proratie-engine)
 
 ## Projectstructuur
 
@@ -42,7 +42,7 @@ src/
     leagueCheckItems.ts Checklist-items + teamafspraken
     oneLiners.ts        Sales one-liners
   config/
-    leagueRules.ts      League-periode, Factor-ladder, drempels, factorApplicationMode, extension-exposure-mode
+    leagueRules.ts      League-periode, Factor-ladder, drempels, factorApplicationMode, Deal Category-opties
   types/
     league.ts            Domeinmodellen (Placement, AccountManagerStats, ...)
     scoring.ts            Score-resultaattypes (QualifyingTermBreakdown, LeagueExposureBreakdown, ScoreResult, ...)
@@ -72,15 +72,17 @@ npm run typecheck
 
 ## Tests
 
-32 tests in `src/services/proration.test.ts` en `src/services/scoring.test.ts`, onder meer:
+40 tests in `src/services/proration.test.ts` en `src/services/scoring.test.ts`, onder meer:
 
 - Officiële voorbeeld: 1 sep, 8 volledige maanden, VCDB 10 → Qualifying Term Value 80, League Exposure 5, Base 400, ×2,5 = **1.000**; ×1,3 = **520**
 - Gedeeltelijke september (start 15 sep): exposure exact **16/30**
 - Kalenderverschillen: september 30 dagen, januari 31, februari 2027 (niet-schrikkel) 28, februari 2028 (schrikkel) 29
 - Willekeurige plaatsing 15 sep – 5 mrt: volledige Qualifying Term- en League Exposure-uitsplitsing per maand
 - Eén-dag-overlap en maandgrens (30 sep → 1 okt) zonder off-by-one
-- Verlenging: alleen de nieuw toegevoegde termijn telt mee (bv. oude einddatum 31 jan → nieuwe 30 jun = alleen feb–jun)
+- Verlenging — Qualifying Term: alleen de nieuw toegevoegde termijn telt mee (bv. oude einddatum 31 jan → nieuwe 30 jun = alleen feb–jun)
+- Verlenging — Award Date: League Exposure loopt vanaf de Award Date t/m league-einde, ook als de toegevoegde maanden zelf na de league vallen (award 15 okt → okt(partial)/nov/dec/jan tellen mee); een Award Date ná league-einde geeft exposure 0
 - Urenuitbreiding: +2 u/w niet scoorbaar, +4 u/w wel
+- W&S: altijd 0, voor alle drie mission types, ongeacht verder geldige invoer
 - Validatie: einddatum vóór startdatum, VCDB ≤ 0, verlenging zonder nieuwe periode
 - Factor-precisie (1,7x / 1,3x) en plaatsingen volledig buiten de leagueperiode (exposure 0)
 
@@ -132,7 +134,7 @@ JSON API  (VITE_LEAGUE_API_URL)
 
 De Factor-toepassing op league-niveau is nog een openstaande interpretatievraag (alle VCDB van de vestiging vs. alleen contractant-gebonden VCDB). Dit is als `FACTOR_APPLICATION_MODE` (`ALL_VCDB` / `CONTRACTANT_ONLY`) centraal geconfigureerd in `src/config/leagueRules.ts`, zodat de uiteindelijke keuze zonder UI-wijzigingen doorgevoerd kan worden.
 
-Eveneens nog open: bij een **verlenging**, vanaf welk moment de League Exposure van de nieuw toegevoegde termijn telt — vanaf de termijn zelf (huidige default, `EXTENSION_EXPOSURE_MODE = 'FROM_TERM_START'`) of pas vanaf het moment waarop de verlenging daadwerkelijk is afgesproken (`'FROM_AWARD_DATE'`). Ook dit is één centrale constante in `src/config/leagueRules.ts`, met de afweging gedocumenteerd in de code-comment erboven.
+De verlengingsregel (was in V2 nog open) is vastgesteld: League Exposure van de nieuw toegevoegde termijn loopt vanaf de **Award Date** (verplicht veld) t/m `min(nieuwe einddatum, league-einde)` — niet vanaf de kalendermaanden van de toegevoegde termijn zelf. Een verlenging die op 15 oktober wordt afgesproken voor maanden die pas in februari beginnen, scoort dus alsnog voor okt(deels)/nov/dec/jan, omdat de waarde al binnen de league is "verkocht" op het moment van afspreken. Zie de toelichting boven `calculateExtensionScore` in `src/services/scoring.ts` en de comment in `src/config/leagueRules.ts`.
 
 ## Data privacy
 

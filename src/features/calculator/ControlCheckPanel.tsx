@@ -29,18 +29,24 @@ export function ControlCheckPanel({ output }: ControlCheckPanelProps) {
     }
   }
 
+  const datesDone = output.completion.find((c) => c.key === 'dates')?.done ?? false;
+  const vcdbDone = output.completion.find((c) => c.key === 'vcdb')?.done ?? false;
+
   const checks = [
-    { key: 'input', label: `Input`, done: isInputComplete, detail: `${completeCount}/${totalCount}` },
-    { key: 'calc', label: 'Calculation', done: Boolean(result) && !output.errorMessage, detail: result ? 'VALID' : '—' },
-    { key: 'factor', label: 'Factor', done: true, detail: 'SELECTED' },
-    { key: 'league', label: 'League', done: leagueEligible, detail: leagueEligible ? 'ELIGIBLE' : '—' },
+    { key: 'dates', label: 'Dates valid', done: datesDone, detail: datesDone ? 'OK' : '—' },
+    { key: 'league', label: 'League eligible', done: leagueEligible, detail: leagueEligible ? 'ELIGIBLE' : '—' },
+    { key: 'vcdb', label: 'VCDB entered', done: vcdbDone, detail: vcdbDone ? 'OK' : '—' },
+    { key: 'factor', label: 'Factor selected', done: true, detail: 'SELECTED' },
   ];
 
   return (
     <div className="panel relative flex h-full flex-col overflow-hidden">
       <div className="tactical-grid-bg opacity-[0.35]" />
-      <header className="relative border-b border-gold/15 bg-mission-panel px-4 py-3">
+      <header className="relative flex items-center justify-between border-b border-gold/15 bg-mission-panel px-4 py-3">
         <h2 className="label-classified text-ink">Control Check</h2>
+        <span className={`font-mono text-[11px] font-semibold tracking-wider ${isInputComplete ? 'text-gold' : 'text-ink-muted'}`}>
+          {completeCount} / {totalCount}
+        </span>
       </header>
 
       <ul className="relative space-y-0.5 bg-mission-panel px-4 py-3">
