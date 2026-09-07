@@ -1,0 +1,70 @@
+{
+  "team": {
+    "teamName": "TEAM ZWOLLE",
+    "currentPosition": 1,
+    "missionScore": 18420,
+    "currentFactor": 2.5,
+    "contractorPosition": 1,
+    "weeklyGrowth": 1840
+  },
+  "accountManagers": [
+    {
+      "name": "Agent Aurum",
+      "newPlacements": 5,
+      "extensions": 2,
+      "hoursIncreases": 1,
+      "baseScore": 3570,
+      "factorImpact": 5355,
+      "finalScore": 8925
+    }
+  ],
+  "talentManagers": [
+    {
+      "name": "Agent Solstice",
+      "newContractors": 4,
+      "placementsSupported": 6,
+      "baseScore": 2100,
+      "factorImpact": 3150,
+      "finalScore": 5250
+    }
+  ],
+  "weeklyUpdate": {
+    "weekLabel": "Week 37",
+    "pointsThisWeek": 1840,
+    "newPlacements": 4,
+    "extensions": 6,
+    "newContractors": 3,
+    "leagueChecks": 9,
+    "biggestDeal": 1000,
+    "topContributor": "Agent Aurum"
+  },
+  "weeklyScoreHistory": [
+    { "weekLabel": "Wk 36", "score": 9200 },
+    { "weekLabel": "Wk 37", "score": 11050 }
+  ],
+  "placements": [
+    {
+      "id": "placement-001",
+      "professional": "Voorbeeld Professional",
+      "client": "Voorbeeldschool",
+      "domain": "Onderwijs",
+      "accountManager": "Agent Aurum",
+      "talentManager": "Agent Solstice",
+      "type": "NEW_PLACEMENT",
+      "startDate": "2026-09-01",
+      "endDate": "2027-04-30",
+      "durationMonths": 8,
+      "vcdbPerMonth": 10,
+      "newContractor": true,
+      "oldHours": 0,
+      "newHours": 40,
+      "leagueMonths": 5,
+      "baseScore": 400,
+      "factor": 2.5,
+      "finalScore": 1000,
+      "leagueCheckApproved": true,
+      "createdAt": "2026-09-02T09:00:00.000Z",
+      "updatedAt": "2026-09-02T09:00:00.000Z"
+    }
+  ]
+}
