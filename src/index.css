@@ -11,42 +11,58 @@
     @apply bg-mission-void text-ink antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     background-image:
-      radial-gradient(circle at 15% -10%, rgba(232, 184, 62, 0.07), transparent 45%),
-      radial-gradient(circle at 100% 10%, rgba(232, 184, 62, 0.05), transparent 40%);
+      radial-gradient(circle at 12% -10%, rgba(227, 178, 60, 0.06), transparent 42%),
+      radial-gradient(circle at 100% 0%, rgba(227, 178, 60, 0.045), transparent 38%);
     background-attachment: fixed;
   }
 
   h1, h2, h3, h4 {
-    font-family: 'Oswald', system-ui, sans-serif;
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
     letter-spacing: 0.01em;
   }
 
   ::selection {
-    background: rgba(232, 184, 62, 0.35);
-    color: #050608;
+    background: rgba(227, 178, 60, 0.35);
+    color: #030405;
   }
 
   :focus-visible {
-    outline: 2px solid #f4c95d;
+    outline: 2px solid #f1c453;
     outline-offset: 2px;
   }
 }
 
 @layer components {
+  /* Uppercase, wide-tracked mono microcopy — the app's classified-briefing voice. */
   .label-classified {
-    @apply font-mono text-[10px] uppercase tracking-[0.25em] text-gold/70;
+    @apply font-mono text-[10px] uppercase tracking-[0.22em] text-gold/70;
   }
 
+  /* A structural panel: sharp corners, thin gold hairline, no card-soup shadow. */
   .panel {
-    @apply relative rounded-lg border border-gold/20 bg-mission-panel/80 backdrop-blur-sm;
+    @apply relative border border-gold/15 bg-mission-panel;
   }
 
-  .panel-inset {
-    @apply relative rounded-md border border-white/5 bg-mission-raised/70;
+  .panel-raised {
+    @apply relative border border-white/[0.06] bg-mission-raised;
+  }
+
+  /* Thin technical division line, used instead of card gaps/shadows to separate zones. */
+  .tech-divider {
+    @apply border-white/[0.07];
   }
 
   .text-gold-gradient {
     @apply bg-gold-sweep bg-[length:200%_auto] bg-clip-text text-transparent;
+  }
+
+  /* Very subtle CRT-style scan lines — decorative, never affects legibility. */
+  .scan-overlay {
+    @apply pointer-events-none absolute inset-0 bg-scan-lines opacity-40;
+  }
+
+  .tactical-grid-bg {
+    @apply pointer-events-none absolute inset-0 bg-tactical-grid bg-[length:48px_48px];
   }
 }
 

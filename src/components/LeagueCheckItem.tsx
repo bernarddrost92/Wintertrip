@@ -12,7 +12,7 @@ export function LeagueCheckItem({ id, label, checked, onToggle }: LeagueCheckIte
     <li>
       <label
         htmlFor={id}
-        className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors duration-200 ${
+        className={`flex cursor-pointer items-center gap-3 border px-4 py-3 transition-colors duration-200 ${
           checked ? 'border-gold/40 bg-gold/5' : 'border-white/10 bg-mission-raised/50 hover:border-white/20'
         }`}
       >
@@ -25,7 +25,7 @@ export function LeagueCheckItem({ id, label, checked, onToggle }: LeagueCheckIte
         />
         <span
           aria-hidden
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors duration-200 ${
+          className={`flex h-5 w-5 shrink-0 items-center justify-center border transition-colors duration-200 ${
             checked ? 'border-gold bg-gold text-mission-void' : 'border-white/30 text-transparent'
           }`}
         >

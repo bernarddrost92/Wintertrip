@@ -20,7 +20,7 @@ export function FormField({ id, label, children, hint }: FormFieldProps) {
 }
 
 const inputClasses =
-  'w-full rounded-md border border-white/15 bg-mission-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 transition-colors focus:border-gold focus:outline-none';
+  'w-full border border-white/15 bg-mission-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 transition-colors focus:border-gold focus:outline-none [color-scheme:dark]';
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputClasses} ${props.className ?? ''}`} />;

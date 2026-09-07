@@ -56,7 +56,7 @@ export function LeagueCheckPage() {
       </div>
 
       <div
-        className={`mt-8 flex flex-col items-center gap-3 rounded-lg border px-6 py-8 text-center transition-all duration-500 ${
+        className={`mt-8 flex flex-col items-center gap-3 border px-6 py-8 text-center transition-all duration-500 ${
           missionApproved ? 'border-gold bg-gold/5 shadow-gold-lg' : 'border-white/10 bg-mission-panel/50'
         }`}
       >

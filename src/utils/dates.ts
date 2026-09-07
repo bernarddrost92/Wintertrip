@@ -126,3 +126,13 @@ export function isoDateToday(): IsoDate {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
+
+/**
+ * Whole-day epoch index (days since the Unix epoch) computed from UTC
+ * calendar components. Never touches the local timezone or wall-clock time,
+ * so date-only arithmetic (day counts, overlaps) is always exact.
+ */
+export function toEpochDay(iso: IsoDate): number {
+  const { year, month, day } = parseIsoDate(iso);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}

@@ -29,7 +29,7 @@ export function MissionStatus({ kind, label }: MissionStatusProps) {
   const { text, classes, icon: Icon } = CONFIG[kind];
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] ${classes} ${
+      className={`inline-flex items-center gap-2 border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] ${classes} ${
         kind === 'approved' ? 'animate-rise-in' : ''
       }`}
     >

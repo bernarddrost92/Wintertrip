@@ -18,7 +18,7 @@ export function WeeklyBriefing() {
       <SectionHeader eyebrow="Weekritme" title="Weekly Briefing" subtitle="Iedere week bespreken we samen:" />
       <ul className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {AGENDA_ITEMS.map(({ icon: Icon, label }) => (
-          <li key={label} className="flex items-center gap-2.5 rounded-md border border-white/10 bg-mission-raised/50 px-3 py-2.5">
+          <li key={label} className="flex items-center gap-2.5 border border-white/10 bg-mission-raised/50 px-3 py-2.5">
             <Icon size={16} className="shrink-0 text-gold" aria-hidden />
             <span className="text-sm text-ink">{label}</span>
           </li>

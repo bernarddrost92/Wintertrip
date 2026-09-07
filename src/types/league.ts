@@ -24,7 +24,7 @@ export type Domain =
 /**
  * Two competing interpretations of how the ranking Factor is ultimately
  * applied at the league/dashboard level. Not yet decided internally — kept
- * as a single config switch (see config/scoringConfig.ts) so the rule can
+ * as a single config switch (see config/leagueRules.ts) so the rule can
  * change without touching UI or calculator code.
  */
 export type FactorApplicationMode = 'ALL_VCDB' | 'CONTRACTANT_ONLY';
@@ -70,32 +70,6 @@ export interface Placement {
 export interface DateRange {
   start: IsoDate;
   end: IsoDate;
-}
-
-/** Result of the core score calculation, shared by all mission types. */
-export interface ScoreBreakdown {
-  durationMonths: number;
-  leagueMonths: number;
-  scorePerLeagueMonth: number;
-  baseScore: number;
-  factor: number;
-  finalScore: number;
-  factorImpact: number;
-}
-
-/** One point in a timing-impact comparison ("what if this started in month X"). */
-export interface TimingScenario {
-  monthLabel: string;
-  monthIndex: number;
-  startDate: IsoDate;
-  leagueMonths: number;
-  baseScore: number;
-}
-
-/** One row in the "Compare Factors" panel. */
-export interface FactorComparisonRow extends FactorOption {
-  finalScore: number;
-  isSelected: boolean;
 }
 
 export interface AccountManagerStats {

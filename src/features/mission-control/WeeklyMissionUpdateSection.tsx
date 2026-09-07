@@ -23,7 +23,7 @@ export function WeeklyMissionUpdateSection({ update, history }: WeeklyMissionUpd
         <MissionMetric label="Grootste mission" value={formatSignedPoints(update.biggestDeal)} />
       </div>
 
-      <div className="mt-5 flex items-center justify-between rounded-md border border-gold/30 bg-gold/5 px-4 py-3">
+      <div className="mt-5 flex items-center justify-between border border-gold/30 bg-gold/5 px-4 py-3">
         <span className="label-classified">Top contributor</span>
         <span className="font-display text-lg font-semibold text-gold">{update.topContributor}</span>
       </div>
