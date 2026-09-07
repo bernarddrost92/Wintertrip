@@ -75,6 +75,10 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.35' },
         },
+        eq: {
+          '0%, 100%': { height: '3px' },
+          '50%': { height: '11px' },
+        },
       },
       animation: {
         'radar-spin': 'radar-spin 18s linear infinite',
@@ -84,6 +88,7 @@ export default {
         'rise-in': 'rise-in 0.45s ease-out both',
         'trace-line': 'trace-line 1.2s ease-out both',
         'led-blink': 'led-blink 2s ease-in-out infinite',
+        eq: 'eq 0.9s ease-in-out infinite',
       },
     },
   },
