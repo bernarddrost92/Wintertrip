@@ -1,17 +1,19 @@
-# 007 — Operation January
+# 007 — Operatie Wintersport 2027
 ### Team Zwolle Mission Control
 
-Interne sales-webapp voor de Operation January league (**1 september 2026 – 31 januari 2027**). Het team gebruikt de app om direct te berekenen hoeveel punten een nieuwe plaatsing, verlenging of urenuitbreiding oplevert, om deals via het "2 paar ogen"-principe te controleren (League Check), en om de teamvoortgang te volgen (Mission Control).
+Interne sales-webapp voor de Operatie Wintersport 2027 league (**1 september 2026 – 31 januari 2027**). Het team gebruikt de app om direct te berekenen hoeveel punten een nieuwe plaatsing, verlenging of urenuitbreiding oplevert, om deals via het "2 paar ogen"-principe te controleren (League Check), en om de teamvoortgang te volgen (Mission Control).
 
 ## Projectomschrijving
 
-Drie hoofdonderdelen:
+De **Mission Control Calculator** is het hart van de app en de standaard-ervaring bij het openen — een single-screen control room (Mission Input / Mission Value / Control Check + een Monthly Intelligence league-tijdlijn) die binnen seconden laat zien wat een deal oplevert, met exacte kalenderdag-proratie voor gedeeltelijke maanden en een volledig transparante "Show Calculation"-uitsplitsing.
 
-- **Mission Calculator** — 4-staps wizard (Mission Type → Mission Details → Select Factor → Mission Value) die live de league-score berekent, inclusief Factor Comparison en Timing Impact.
+Drie hoofdonderdelen (compacte navigatie, Calculator is actief/default):
+
+- **Calculator** — kiest Mission Type (Nieuwe plaatsing / Verlenging / Urenuitbreiding) en Deal Category (Detachering / W&S), vraagt alleen scorebepalende velden (geen accountmanager/talentmanager/klant), en herberekent live. Factor is een premium verticale ladder-control, geen dropdown. W&S scoort altijd 0 (**NOT LEAGUE ELIGIBLE**).
 - **League Check** — checklist volgens het 2-paar-ogen-principe; pas bij een volledig afgevinkte checklist én ingevulde velden verschijnt **MISSION APPROVED**.
 - **Mission Control** — dashboard met teamscore, AM- en TM-leaderboards en de Weekly Mission Update, gevoed door mockdata (of een live API wanneer geconfigureerd).
 
-Alle scoreberekeningen staan centraal in `src/services/scoring.ts` — nergens anders in de app wordt een punt berekend.
+Alle scoreberekeningen staan centraal in `src/services/proration.ts` (kalenderdag-proratie) en `src/services/scoring.ts` (business-orchestratie per mission type) — nergens anders in de app wordt een punt berekend.
 
 ## Tech stack
 
@@ -19,34 +21,34 @@ Alle scoreberekeningen staan centraal in `src/services/scoring.ts` — nergens a
 - Vite 6
 - Tailwind CSS
 - lucide-react
-- Recharts (Timing Impact & Weekly Mission Update grafieken)
-- Vitest (unit tests voor de scoring-engine)
+- Recharts (Weekly Mission Update-grafiek)
+- Vitest (40 unit tests voor de scoring-/proratie-engine)
 
 ## Projectstructuur
 
 ```
 src/
-  components/        Herbruikbare UI-componenten (MissionCard, FactorSelector, Leaderboard, ...)
+  components/        Herbruikbare UI-componenten (Leaderboard, TacticalGrid, MissionSerial, ...)
   features/
-    calculator/       Mission Calculator wizard + logica-hook
+    calculator/       Mission Control Calculator: input/value/control-check panelen + logica-hook
     league-check/      League Check checklist + logica-hook
     mission-control/   Dashboard secties + data-hook
   services/
-    scoring.ts         Alle scoreformules — single source of truth
-    api.ts              Databron-abstractie (mock ↔ live API)
+    proration.ts        Kalenderdag-proratie — Qualifying Term Value & League Exposure
+    scoring.ts           Business-orchestratie per mission type + validatie — single source of truth
+    api.ts                Databron-abstractie (mock ↔ live API)
   data/
     mockLeagueData.ts   Fictieve demo-data (geen echte namen/klanten)
     leagueCheckItems.ts Checklist-items + teamafspraken
     oneLiners.ts        Sales one-liners
   config/
-    scoringConfig.ts    League-periode, Factor-ladder, drempels, factorApplicationMode
+    leagueRules.ts      League-periode, Factor-ladder, drempels, factorApplicationMode, Deal Category-opties
   types/
-    league.ts            Domeinmodellen (Placement, ScoreBreakdown, ...)
+    league.ts            Domeinmodellen (Placement, AccountManagerStats, ...)
+    scoring.ts            Score-resultaattypes (QualifyingTermBreakdown, LeagueExposureBreakdown, ScoreResult, ...)
   utils/
-    dates.ts             Timezone-veilige date-only berekeningen
+    dates.ts             Timezone-veilige date-only berekeningen (incl. epoch-day utilities)
     format.ts             NL-getalnotatie
-pages/
-  HomePage.tsx
 ```
 
 ## Installatie
@@ -70,13 +72,19 @@ npm run typecheck
 
 ## Tests
 
-Dekt onder meer de officiële voorbeeldberekeningen uit de league-regels:
+40 tests in `src/services/proration.test.ts` en `src/services/scoring.test.ts`, onder meer:
 
-- September-start: 8 maanden × 10 VCDB × 5 league-maanden = **400**
-- November-start: 8 maanden × 10 VCDB × 3 league-maanden = **240**
-- 400 × 2,5 = **1.000**, 400 × 1,3 = **520**, 240 × 2,5 = **600**
-- Urenuitbreiding < 4 u/w = niet scoorbaar, ≥ 4 u/w = wel scoorbaar
-- W&S-domein scoort nooit
+- Officiële voorbeeld: 1 sep, 8 volledige maanden, VCDB 10 → Qualifying Term Value 80, League Exposure 5, Base 400, ×2,5 = **1.000**; ×1,3 = **520**
+- Gedeeltelijke september (start 15 sep): exposure exact **16/30**
+- Kalenderverschillen: september 30 dagen, januari 31, februari 2027 (niet-schrikkel) 28, februari 2028 (schrikkel) 29
+- Willekeurige plaatsing 15 sep – 5 mrt: volledige Qualifying Term- en League Exposure-uitsplitsing per maand
+- Eén-dag-overlap en maandgrens (30 sep → 1 okt) zonder off-by-one
+- Verlenging — Qualifying Term: alleen de nieuw toegevoegde termijn telt mee (bv. oude einddatum 31 jan → nieuwe 30 jun = alleen feb–jun)
+- Verlenging — Award Date: League Exposure loopt vanaf de Award Date t/m league-einde, ook als de toegevoegde maanden zelf na de league vallen (award 15 okt → okt(partial)/nov/dec/jan tellen mee); een Award Date ná league-einde geeft exposure 0
+- Urenuitbreiding: +2 u/w niet scoorbaar, +4 u/w wel
+- W&S: altijd 0, voor alle drie mission types, ongeacht verder geldige invoer
+- Validatie: einddatum vóór startdatum, VCDB ≤ 0, verlenging zonder nieuwe periode
+- Factor-precisie (1,7x / 1,3x) en plaatsingen volledig buiten de leagueperiode (exposure 0)
 
 ```bash
 npm run test
@@ -124,7 +132,9 @@ JSON API  (VITE_LEAGUE_API_URL)
 
 `src/services/api.ts` haalt data op via `VITE_LEAGUE_API_URL` zodra die geconfigureerd is, en valt automatisch terug op mockdata wanneer de variabele ontbreekt of de call faalt — de UI heeft dus nooit een harde afhankelijkheid van Excel/SharePoint. Het verwachte JSON-contract staat in `docs/api-contract-example.json` en `src/types/league.ts` (`LeagueDataset`, `Placement`).
 
-De Factor-toepassing op league-niveau is nog een openstaande interpretatievraag (alle VCDB van de vestiging vs. alleen contractant-gebonden VCDB). Dit is als `FACTOR_APPLICATION_MODE` (`ALL_VCDB` / `CONTRACTANT_ONLY`) centraal geconfigureerd in `src/config/scoringConfig.ts`, zodat de uiteindelijke keuze zonder UI-wijzigingen doorgevoerd kan worden.
+De Factor-toepassing op league-niveau is nog een openstaande interpretatievraag (alle VCDB van de vestiging vs. alleen contractant-gebonden VCDB). Dit is als `FACTOR_APPLICATION_MODE` (`ALL_VCDB` / `CONTRACTANT_ONLY`) centraal geconfigureerd in `src/config/leagueRules.ts`, zodat de uiteindelijke keuze zonder UI-wijzigingen doorgevoerd kan worden.
+
+De verlengingsregel (was in V2 nog open) is vastgesteld: League Exposure van de nieuw toegevoegde termijn loopt vanaf de **Award Date** (verplicht veld) t/m `min(nieuwe einddatum, league-einde)` — niet vanaf de kalendermaanden van de toegevoegde termijn zelf. Een verlenging die op 15 oktober wordt afgesproken voor maanden die pas in februari beginnen, scoort dus alsnog voor okt(deels)/nov/dec/jan, omdat de waarde al binnen de league is "verkocht" op het moment van afspreken. Zie de toelichting boven `calculateExtensionScore` in `src/services/scoring.ts` en de comment in `src/config/leagueRules.ts`.
 
 ## Data privacy
 

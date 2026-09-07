@@ -37,7 +37,7 @@ export async function getLeagueDataset(): Promise<LeagueDataset> {
   try {
     return await fetchLiveDataset(LEAGUE_API_URL);
   } catch (error) {
-    console.warn('[operation-january] League API unavailable, falling back to mock data.', error);
+    console.warn('[operatie-wintersport] League API unavailable, falling back to mock data.', error);
     return MOCK_LEAGUE_DATASET;
   }
 }

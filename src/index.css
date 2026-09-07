@@ -11,42 +11,128 @@
     @apply bg-mission-void text-ink antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     background-image:
-      radial-gradient(circle at 15% -10%, rgba(232, 184, 62, 0.07), transparent 45%),
-      radial-gradient(circle at 100% 10%, rgba(232, 184, 62, 0.05), transparent 40%);
+      radial-gradient(circle at 12% -10%, rgba(227, 178, 60, 0.07), transparent 42%),
+      radial-gradient(circle at 100% 0%, rgba(227, 178, 60, 0.05), transparent 38%),
+      radial-gradient(circle at 50% 30%, rgba(11, 14, 18, 0) 0%, rgba(3, 4, 5, 0.55) 78%, rgba(3, 4, 5, 0.92) 100%);
     background-attachment: fixed;
   }
 
   h1, h2, h3, h4 {
-    font-family: 'Oswald', system-ui, sans-serif;
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
     letter-spacing: 0.01em;
   }
 
   ::selection {
-    background: rgba(232, 184, 62, 0.35);
-    color: #050608;
+    background: rgba(227, 178, 60, 0.35);
+    color: #030405;
   }
 
   :focus-visible {
-    outline: 2px solid #f4c95d;
+    outline: 2px solid #f1c453;
     outline-offset: 2px;
+  }
+
+  /* Native control chrome is the biggest "web form" tell in the whole app —
+     retint it so date/number fields read as instrument readouts instead. */
+  input[type='date'],
+  input[type='number'] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+    filter: invert(76%) sepia(37%) saturate(716%) hue-rotate(357deg) brightness(96%) contrast(93%);
+    transition: opacity 150ms ease;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
   }
 }
 
 @layer components {
+  /* Uppercase, wide-tracked mono microcopy — the app's classified-briefing voice. */
   .label-classified {
-    @apply font-mono text-[10px] uppercase tracking-[0.25em] text-gold/70;
+    @apply font-mono text-[10px] uppercase tracking-[0.22em] text-gold/70;
   }
 
+  /* A structural panel: sharp corners, thin gold hairline, top-lit for depth,
+     grounded with a soft outer shadow instead of a flat single-tone fill. */
   .panel {
-    @apply relative rounded-lg border border-gold/20 bg-mission-panel/80 backdrop-blur-sm;
+    @apply relative border border-gold/15;
+    background-image: linear-gradient(180deg, rgba(255, 231, 138, 0.035) 0%, rgba(255, 231, 138, 0) 14%), linear-gradient(180deg, #0b0e12 0%, #06080a 100%);
+    box-shadow:
+      0 24px 48px -28px rgba(0, 0, 0, 0.75),
+      inset 0 1px 0 0 rgba(255, 231, 138, 0.05);
   }
 
-  .panel-inset {
-    @apply relative rounded-md border border-white/5 bg-mission-raised/70;
+  .panel-raised {
+    @apply relative border border-white/[0.06] bg-mission-raised;
+  }
+
+  /* Thin technical division line, used instead of card gaps/shadows to separate zones. */
+  .tech-divider {
+    @apply border-white/[0.07];
   }
 
   .text-gold-gradient {
     @apply bg-gold-sweep bg-[length:200%_auto] bg-clip-text text-transparent;
+  }
+
+  /* Very subtle CRT-style scan lines — decorative, never affects legibility. */
+  .scan-overlay {
+    @apply pointer-events-none absolute inset-0 bg-scan-lines opacity-40;
+  }
+
+  .tactical-grid-bg {
+    @apply pointer-events-none absolute inset-0 bg-tactical-grid bg-[length:48px_48px];
+  }
+
+  /* Small gold viewfinder/HUD corner brackets — marks a surface as the focal
+     target of the console rather than just another panel. */
+  .hud-corner {
+    @apply pointer-events-none absolute h-4 w-4 border-gold/70;
+  }
+
+  /* The one large central "mission screen" the whole calculator lives
+     inside — dark glass floating in front of the room environment, not a
+     flat card. Backdrop-blur + its own semi-opaque fill keep the UI
+     readable regardless of what is happening behind it. */
+  .command-screen {
+    @apply relative border border-gold/25;
+    background: linear-gradient(180deg, rgba(13, 16, 20, 0.78) 0%, rgba(5, 6, 8, 0.87) 100%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow:
+      0 50px 100px -32px rgba(0, 0, 0, 0.85),
+      0 0 0 1px rgba(227, 178, 60, 0.07),
+      0 0 90px -20px rgba(227, 178, 60, 0.18),
+      inset 0 1px 0 0 rgba(255, 231, 138, 0.07);
+  }
+
+  /* Soft ambient bloom sitting just behind the command screen's own edges. */
+  .command-glow {
+    @apply pointer-events-none absolute -inset-x-6 -inset-y-6 -z-10 sm:-inset-x-16 sm:-inset-y-16;
+    background: radial-gradient(60% 60% at 50% 38%, rgba(255, 209, 110, 0.14), transparent 72%);
+    filter: blur(28px);
+  }
+
+  /* A faint diagonal sheen across the top of the glass, like light catching
+     a physical pane rather than a flat CSS panel. */
+  .command-reflection {
+    @apply pointer-events-none absolute inset-x-0 top-0 h-28;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
   }
 }
 

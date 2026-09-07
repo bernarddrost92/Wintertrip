@@ -1,4 +1,4 @@
-import { RadarBackground } from '../../components/RadarBackground';
+import { TacticalGrid } from '../../components/TacticalGrid';
 import { MissionMetric } from '../../components/MissionMetric';
 import { SectionHeader } from '../../components/SectionHeader';
 import { WeeklyBriefing } from '../../components/WeeklyBriefing';
@@ -25,7 +25,7 @@ export function MissionControlPage() {
   return (
     <div className="relative">
       <section className="relative overflow-hidden border-b border-gold/10 px-4 py-14 sm:px-6">
-        <RadarBackground className="opacity-60" />
+        <TacticalGrid className="opacity-60" />
         <div className="relative mx-auto max-w-6xl">
           <SectionHeader eyebrow={team.teamName} title="Mission Control" subtitle="We maken de score zichtbaar." />
           {!isLiveApiConfigured() && (

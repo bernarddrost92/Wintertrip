@@ -6,7 +6,7 @@
  * SharePoint → Power Automate → JSON pipeline exists, services/api.ts swaps
  * this module out for a live fetch without any UI changes required.
  */
-import { calculateExtensionScore, calculateHoursIncreaseScore, calculateScoreBreakdown } from '../services/scoring';
+import { calculateExtensionScore, calculateHoursIncreaseScore, calculateNewPlacementScore } from '../services/scoring';
 import type {
   AccountManagerStats,
   LeagueDataset,
@@ -16,6 +16,7 @@ import type {
   WeeklyMissionUpdate,
   WeeklyScorePoint,
 } from '../types/league';
+import type { DealCategory } from '../types/scoring';
 
 const ACCOUNT_MANAGERS = ['Agent Aurum', 'Agent Falcon', 'Agent Vega', 'Agent Orion'] as const;
 const TALENT_MANAGERS = ['Agent Solstice', 'Agent Meridian', 'Agent Cassini', 'Agent Nova'] as const;
@@ -42,36 +43,22 @@ interface MockPlacementInput {
 }
 
 function buildPlacement(input: MockPlacementInput): Placement {
-  let durationMonths = 0;
-  let leagueMonths = 0;
-  let baseScore = 0;
-  let finalScore = 0;
+  // W&S is modelled as a domain in the mock dataset (pre-dating the calculator's
+  // own Deal Category field); map it onto the same league-eligibility gate.
+  const dealCategory: DealCategory = input.domain === 'W&S' ? 'WS' : 'DETACHERING';
 
-  if (input.type === 'EXTENSION' && input.previousEndDate) {
-    const breakdown = calculateExtensionScore(input.previousEndDate, input.endDate, input.vcdbPerMonth, input.factor);
-    if (breakdown) {
-      ({ durationMonths, leagueMonths, baseScore, finalScore } = breakdown);
-    }
-  } else if (input.type === 'HOURS_INCREASE') {
-    const result = calculateHoursIncreaseScore(
-      input.oldHours ?? 0,
-      input.newHours ?? 0,
-      input.startDate,
-      input.endDate,
-      input.vcdbPerMonth,
-      input.factor,
-    );
-    if (result.breakdown) {
-      ({ durationMonths, leagueMonths, baseScore, finalScore } = result.breakdown);
-    }
-  } else {
-    ({ durationMonths, leagueMonths, baseScore, finalScore } = calculateScoreBreakdown(
-      input.startDate,
-      input.endDate,
-      input.vcdbPerMonth,
-      input.factor,
-    ));
-  }
+  const result =
+    input.type === 'EXTENSION' && input.previousEndDate
+      ? calculateExtensionScore(input.previousEndDate, input.endDate, input.vcdbPerMonth, input.factor, input.createdAt, dealCategory)
+      : input.type === 'HOURS_INCREASE'
+        ? calculateHoursIncreaseScore(input.oldHours ?? 0, input.newHours ?? 0, input.startDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory)
+        : calculateNewPlacementScore(input.startDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory);
+
+  const { baseScore, finalScore, qualifyingTerm, leagueExposure } = result;
+  // Legacy dashboard summary fields: effective whole-month equivalents,
+  // derived from the exact proration result rather than re-approximated.
+  const durationMonths = input.vcdbPerMonth > 0 ? Math.round((qualifyingTerm.totalValue / input.vcdbPerMonth) * 10) / 10 : 0;
+  const leagueMonths = Math.round(leagueExposure.totalExposure * 100) / 100;
 
   return {
     id: input.id,

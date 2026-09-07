@@ -1,138 +1,32 @@
 /**
- * All Operation January scoring logic lives here — nowhere else. React
- * components read this module and render its output; they never compute
- * points themselves. This keeps the rule set (which is still subject to
- * change, see FACTOR_APPLICATION_MODE) in one auditable, testable place.
+ * Business scoring layer. Everything here is pure and UI-free — components
+ * read its output, they never compute a point themselves. Date/proration
+ * math lives one level down in services/proration.ts; this file only
+ * orchestrates it into the three mission types and applies the Factor.
  */
-import {
-  FACTOR_OPTIONS,
-  LEAGUE_PERIOD,
-  MIN_HOURS_INCREASE_PER_WEEK,
-  MONTH_LABELS_NL,
-  NON_SCORING_DOMAIN,
-} from '../config/scoringConfig';
+import { FACTOR_OPTIONS, LEAGUE_PERIOD, MIN_HOURS_INCREASE_PER_WEEK, WS_MESSAGE } from '../config/leagueRules';
+import { calculateBaseLeagueScore, calculateLeagueExposureBreakdown, calculateQualifyingTermBreakdown } from './proration';
 import type {
-  DateRange,
-  Domain,
-  FactorComparisonRow,
-  IsoDate,
-  ScoreBreakdown,
-  TimingScenario,
-} from '../types/league';
-import { calculateDurationMonths, calculateLeagueMonths, isValidIsoDate, parseIsoDate } from '../utils/dates';
+  DealCategory,
+  FactorScenario,
+  HoursIncreaseEligibility,
+  QualifyingTermBreakdown,
+  ScoreResult,
+  ValidationResult,
+} from '../types/scoring';
+import type { IsoDate } from '../types/league';
+import { compareIsoDates, isValidIsoDate, minIsoDate } from '../utils/dates';
 import { nextIsoDay } from '../utils/nextDay';
 
-/** True when a domain never earns league points (Werving & Selectie). */
-export function isNonScoringDomain(domain: Domain | string | undefined): boolean {
-  return domain === NON_SCORING_DOMAIN;
-}
-
-export interface HoursIncreaseValidation {
-  valid: boolean;
-  increaseHours: number;
-  message?: string;
-}
-
-/** An hours increase only scores once it reaches the minimum weekly threshold. */
-export function validateHoursIncrease(oldHours: number, newHours: number): HoursIncreaseValidation {
-  const increaseHours = Math.round((newHours - oldHours) * 100) / 100;
-  if (increaseHours < MIN_HOURS_INCREASE_PER_WEEK) {
-    return {
-      valid: false,
-      increaseHours,
-      message: `Urenstijging van ${increaseHours} u/w is kleiner dan de minimale ${MIN_HOURS_INCREASE_PER_WEEK} u/w — niet scoorbaar.`,
-    };
-  }
-  return { valid: true, increaseHours };
-}
-
-/**
- * Core score formula shared by every mission type:
- *   scorePerLeagueMonth = durationMonths × vcdbPerMonth
- *   baseScore           = scorePerLeagueMonth × leagueMonths
- *   finalScore          = baseScore × factor
- */
-export function calculateScoreBreakdown(
-  startDate: IsoDate,
-  endDate: IsoDate,
-  vcdbPerMonth: number,
-  factor: number,
-  leaguePeriod: DateRange = LEAGUE_PERIOD,
-): ScoreBreakdown {
-  const durationMonths = calculateDurationMonths(startDate, endDate);
-  const leagueMonths = calculateLeagueMonths(startDate, endDate, leaguePeriod.start, leaguePeriod.end);
-  const scorePerLeagueMonth = durationMonths * Math.max(0, vcdbPerMonth);
-  const baseScore = scorePerLeagueMonth * leagueMonths;
-  const finalScore = applyFactor(baseScore, factor);
-
-  return {
-    durationMonths,
-    leagueMonths,
-    scorePerLeagueMonth,
-    baseScore,
-    factor,
-    finalScore,
-    factorImpact: calculateFactorImpact(baseScore, factor),
-  };
-}
-
-/** V1 calculator rule: finalScore = baseScore × the manually selected factor. */
 export function applyFactor(baseScore: number, factor: number): number {
   return baseScore * factor;
 }
 
-/** Extra points contributed purely by the chosen factor, versus no factor at all. */
 export function calculateFactorImpact(baseScore: number, factor: number): number {
   return applyFactor(baseScore, factor) - baseScore;
 }
 
-/**
- * Score breakdown for an EXTENSION: only the newly added period (the day
- * after the current end date, through the new end date) counts.
- */
-export function calculateExtensionScore(
-  currentEndDate: IsoDate,
-  newEndDate: IsoDate,
-  vcdbPerMonth: number,
-  factor: number,
-  leaguePeriod: DateRange = LEAGUE_PERIOD,
-): ScoreBreakdown | null {
-  if (!isValidIsoDate(currentEndDate) || !isValidIsoDate(newEndDate)) return null;
-  if (newEndDate <= currentEndDate) return null;
-  const addedStart = nextIsoDay(currentEndDate);
-  return calculateScoreBreakdown(addedStart, newEndDate, vcdbPerMonth, factor, leaguePeriod);
-}
-
-export interface HoursIncreaseResult extends HoursIncreaseValidation {
-  breakdown: ScoreBreakdown | null;
-}
-
-/**
- * Score breakdown for an HOURS_INCREASE: only scores once the increase is
- * ≥ MIN_HOURS_INCREASE_PER_WEEK; the supplied vcdbPerMonth is assumed to
- * already represent the incremental (extra-hours-only) VCDB value.
- */
-export function calculateHoursIncreaseScore(
-  oldHours: number,
-  newHours: number,
-  startDate: IsoDate,
-  endDate: IsoDate,
-  vcdbPerMonth: number,
-  factor: number,
-  leaguePeriod: DateRange = LEAGUE_PERIOD,
-): HoursIncreaseResult {
-  const validation = validateHoursIncrease(oldHours, newHours);
-  if (!validation.valid) {
-    return { ...validation, breakdown: null };
-  }
-  return {
-    ...validation,
-    breakdown: calculateScoreBreakdown(startDate, endDate, vcdbPerMonth, factor, leaguePeriod),
-  };
-}
-
-/** "Compare Factors" panel rows: every ladder rung applied to the same base score. */
-export function calculateFactorComparison(baseScore: number, selectedFactor: number): FactorComparisonRow[] {
+export function calculateFactorScenarios(baseScore: number, selectedFactor: number): FactorScenario[] {
   return FACTOR_OPTIONS.map((option) => ({
     ...option,
     finalScore: applyFactor(baseScore, option.value),
@@ -140,53 +34,156 @@ export function calculateFactorComparison(baseScore: number, selectedFactor: num
   }));
 }
 
-/**
- * Timing-impact scenarios: replays the same deal (duration + VCDB) as if it
- * had started on the 1st of each month that still overlaps the league,
- * proving that an earlier start date is worth strictly more.
- */
-export function calculateTimingScenarios(
-  durationMonths: number,
-  vcdbPerMonth: number,
-  leaguePeriod: DateRange = LEAGUE_PERIOD,
-): TimingScenario[] {
-  if (durationMonths <= 0 || vcdbPerMonth <= 0) return [];
+/** Only DETACHERING deals score within Operatie Wintersport 2027 — W&S never does. */
+export function isLeagueEligibleCategory(dealCategory: DealCategory): boolean {
+  return dealCategory === 'DETACHERING';
+}
 
-  const { year: startYear, month: startMonth } = parseIsoDate(leaguePeriod.start);
-  const { year: endYear, month: endMonth } = parseIsoDate(leaguePeriod.end);
-  const firstIndex = startYear * 12 + (startMonth - 1);
-  const lastIndex = endYear * 12 + (endMonth - 1);
+function buildResult(qualifyingTerm: QualifyingTermBreakdown, exposureStart: IsoDate, exposureEnd: IsoDate, factor: number): ScoreResult {
+  const leagueExposure = calculateLeagueExposureBreakdown(exposureStart, exposureEnd);
+  const baseScore = calculateBaseLeagueScore(qualifyingTerm.totalValue, leagueExposure.totalExposure);
+  const finalScore = applyFactor(baseScore, factor);
+  return {
+    qualifyingTerm,
+    leagueExposure,
+    baseScore,
+    factor,
+    finalScore,
+    factorImpact: calculateFactorImpact(baseScore, factor),
+  };
+}
 
-  const scenarios: TimingScenario[] = [];
-  for (let idx = firstIndex; idx <= lastIndex; idx += 1) {
-    const year = Math.floor(idx / 12);
-    const month = (idx % 12) + 1;
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDateMonthsLater = addWholeMonthsToDayOne(startDate, durationMonths);
-    const leagueMonths = calculateLeagueMonths(startDate, endDateMonthsLater, leaguePeriod.start, leaguePeriod.end);
-    scenarios.push({
-      monthLabel: MONTH_LABELS_NL[month - 1],
-      monthIndex: idx,
-      startDate,
-      leagueMonths,
-      baseScore: durationMonths * vcdbPerMonth * leagueMonths,
-    });
+const EMPTY_TERM: QualifyingTermBreakdown = { segments: [], vcdbPerMonth: 0, totalValue: 0 };
+
+function emptyResult(factor: number): ScoreResult {
+  return buildResult(EMPTY_TERM, LEAGUE_PERIOD.start, LEAGUE_PERIOD.end, factor);
+}
+
+// ---------------------------------------------------------------------------
+// Validation — no silent invalid calculations. Every UI-facing edge case
+// gets a specific, named message rather than a mysteriously blank result.
+// ---------------------------------------------------------------------------
+
+export function validateMissionWindow(start: IsoDate, end: IsoDate): ValidationResult {
+  if (!isValidIsoDate(start) || !isValidIsoDate(end)) return { valid: false, message: 'INVALID MISSION WINDOW' };
+  if (compareIsoDates(end, start) < 0) return { valid: false, message: 'INVALID MISSION WINDOW' };
+  return { valid: true };
+}
+
+export function validateVcdb(vcdbPerMonth: number): ValidationResult {
+  if (!Number.isFinite(vcdbPerMonth) || vcdbPerMonth <= 0) return { valid: false, message: 'ENTER MONTHLY VCDB' };
+  return { valid: true };
+}
+
+export function validateExtensionWindow(oldEnd: IsoDate, newEnd: IsoDate): ValidationResult {
+  if (!isValidIsoDate(oldEnd) || !isValidIsoDate(newEnd)) return { valid: false, message: 'INVALID MISSION WINDOW' };
+  if (compareIsoDates(newEnd, oldEnd) <= 0) return { valid: false, message: 'NO NEW EXTENSION PERIOD' };
+  return { valid: true };
+}
+
+export function validateAwardDate(awardDate: IsoDate): ValidationResult {
+  if (!isValidIsoDate(awardDate)) return { valid: false, message: 'AWARD DATE REQUIRED' };
+  return { valid: true };
+}
+
+/** An hours increase only scores once it reaches the minimum weekly threshold. */
+export function calculateHoursIncreaseEligibility(oldHours: number, newHours: number): HoursIncreaseEligibility {
+  const increaseHours = Math.round((newHours - oldHours) * 100) / 100;
+  if (increaseHours < MIN_HOURS_INCREASE_PER_WEEK) {
+    return { valid: true, eligible: false, increaseHours, message: 'NOT LEAGUE ELIGIBLE' };
   }
-  return scenarios;
+  return { valid: true, eligible: true, increaseHours };
 }
 
-/** Adds N months to a day-01 ISO date and returns the last day of the resulting month. */
-function addWholeMonthsToDayOne(dayOneIso: IsoDate, months: number): IsoDate {
-  const { year, month } = parseIsoDate(dayOneIso);
-  const total = year * 12 + (month - 1) + months;
-  const targetYear = Math.floor(total / 12);
-  const targetMonth1based = (total % 12) + 1;
-  // Last day of the *previous* month = last day of the (months-1)-later month,
-  // i.e. an N-month duration starting on the 1st ends the day before the N-th
-  // month boundary.
-  const lastDayIndex = targetYear * 12 + (targetMonth1based - 1) - 1;
-  const lastDayYear = Math.floor(lastDayIndex / 12);
-  const lastDayMonth1based = (lastDayIndex % 12) + 1;
-  const daysInMonth = new Date(Date.UTC(lastDayYear, lastDayMonth1based, 0)).getUTCDate();
-  return `${String(lastDayYear).padStart(4, '0')}-${String(lastDayMonth1based).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+// ---------------------------------------------------------------------------
+// Mission-type score calculations
+// ---------------------------------------------------------------------------
+
+/**
+ * NEW_PLACEMENT: Qualifying Term Value covers the entire placement period
+ * (including any part that runs past the league end); League Exposure caps
+ * that same period to how much of each league month it actually touches.
+ * W&S deals (dealCategory) never score — see isLeagueEligibleCategory.
+ */
+export function calculateNewPlacementScore(
+  start: IsoDate,
+  end: IsoDate,
+  vcdbPerMonth: number,
+  factor: number,
+  dealCategory: DealCategory,
+): ScoreResult {
+  if (!isLeagueEligibleCategory(dealCategory)) return emptyResult(factor);
+
+  const window = validateMissionWindow(start, end);
+  const vcdb = validateVcdb(vcdbPerMonth);
+  if (!window.valid || !vcdb.valid) return emptyResult(factor);
+
+  const qualifyingTerm = calculateQualifyingTermBreakdown(start, end, vcdbPerMonth);
+  return buildResult(qualifyingTerm, start, end, factor);
 }
+
+/**
+ * EXTENSION: only the newly added term counts for the Qualifying Term Value
+ * — old end date + 1 day through the new end date, exactly like a fresh
+ * placement of just that added period.
+ *
+ * League Exposure, however, is anchored to the Award Date rather than to
+ * the added term's own calendar position: it runs from the Award Date
+ * through min(newEndDate, LEAGUE_PERIOD.end). A deal awarded on 15 October
+ * for months that only start the following February still earns exposure
+ * for Oct(partial)/Nov/Dec/Jan — the value was locked in for the league on
+ * the day the extension was struck, so it isn't zeroed out just because the
+ * added contract months themselves fall after the league window. An award
+ * date after the league has already closed correctly yields zero exposure.
+ */
+export function calculateExtensionScore(
+  oldEndDate: IsoDate,
+  newEndDate: IsoDate,
+  vcdbPerMonth: number,
+  factor: number,
+  awardDate: IsoDate,
+  dealCategory: DealCategory,
+): ScoreResult {
+  if (!isLeagueEligibleCategory(dealCategory)) return emptyResult(factor);
+
+  const window = validateExtensionWindow(oldEndDate, newEndDate);
+  const vcdb = validateVcdb(vcdbPerMonth);
+  const award = validateAwardDate(awardDate);
+  if (!window.valid || !vcdb.valid || !award.valid) return emptyResult(factor);
+
+  const termStart = nextIsoDay(oldEndDate);
+  const qualifyingTerm = calculateQualifyingTermBreakdown(termStart, newEndDate, vcdbPerMonth);
+
+  const exposureEnd = minIsoDate(newEndDate, LEAGUE_PERIOD.end);
+  return buildResult(qualifyingTerm, awardDate, exposureEnd, factor);
+}
+
+/**
+ * HOURS_INCREASE: only the extra hours (and their attributable extra VCDB)
+ * count. Below the weekly threshold, the deal scores 0 outright.
+ */
+export function calculateHoursIncreaseScore(
+  oldHours: number,
+  newHours: number,
+  start: IsoDate,
+  end: IsoDate,
+  extraVcdbPerMonth: number,
+  factor: number,
+  dealCategory: DealCategory,
+): ScoreResult & HoursIncreaseEligibility {
+  const eligibility = calculateHoursIncreaseEligibility(oldHours, newHours);
+  if (!isLeagueEligibleCategory(dealCategory) || !eligibility.eligible) {
+    return { ...emptyResult(factor), ...eligibility };
+  }
+
+  const window = validateMissionWindow(start, end);
+  const vcdb = validateVcdb(extraVcdbPerMonth);
+  if (!window.valid || !vcdb.valid) {
+    return { ...emptyResult(factor), ...eligibility };
+  }
+
+  const qualifyingTerm = calculateQualifyingTermBreakdown(start, end, extraVcdbPerMonth);
+  return { ...buildResult(qualifyingTerm, start, end, factor), ...eligibility };
+}
+
+export { WS_MESSAGE };
