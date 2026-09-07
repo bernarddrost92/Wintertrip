@@ -107,10 +107,6 @@ export default {
           '0%, 60%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        'intro-flash': {
-          '0%, 100%': { opacity: '0' },
-          '50%': { opacity: '1' },
-        },
         'intro-approved': {
           '0%': { opacity: '0', letterSpacing: '0.08em' },
           '100%': { opacity: '1', letterSpacing: '0.32em' },
@@ -118,6 +114,35 @@ export default {
         'intro-quickfade': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        'intro-pose-mid': {
+          '0%': { opacity: '0' },
+          '28%': { opacity: '1' },
+          '72%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        'intro-pushin': {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(1.12)' },
+        },
+        'intro-flash-burst': {
+          '0%': { opacity: '0', transform: 'scale(0.3)' },
+          '35%': { opacity: '1', transform: 'scale(1.2)' },
+          '100%': { opacity: '0', transform: 'scale(1.7)' },
+        },
+        'intro-flash-spikes': {
+          '0%': { opacity: '0', transform: 'scale(0.4) rotate(0deg)' },
+          '35%': { opacity: '0.9', transform: 'scale(1.3) rotate(12deg)' },
+          '100%': { opacity: '0', transform: 'scale(1.8) rotate(20deg)' },
+        },
+        'intro-screen-flash': {
+          '0%, 100%': { opacity: '0' },
+          '50%': { opacity: '0.4' },
+        },
+        'intro-gold-wipe': {
+          '0%': { transform: 'scale(0)', opacity: '1' },
+          '55%': { transform: 'scale(1)', opacity: '1' },
+          '100%': { transform: 'scale(1)', opacity: '0' },
         },
       },
       animation: {
