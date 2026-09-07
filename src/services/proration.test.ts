@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateCalendarMonthFraction,
-  calculateLeagueExposureBreakdown,
   calculateQualifyingTermBreakdown,
   calculateQualifyingTermValue,
-  calculateTotalLeagueExposure,
   getDaysInMonth,
   getInclusiveOverlapDays,
 } from './proration';
@@ -88,33 +86,6 @@ describe('calculateQualifyingTermBreakdown (TEST 1 — official example, TEST 5 
   });
 });
 
-describe('calculateLeagueExposureBreakdown (TEST 6, TEST 15, TEST 16)', () => {
-  it('gives partial Sep, full Oct-Jan, and excludes Feb/Mar entirely for the arbitrary placement', () => {
-    const breakdown = calculateLeagueExposureBreakdown('2026-09-15', '2027-03-05');
-    const byMonth = Object.fromEntries(breakdown.segments.map((s) => [s.monthKey, s]));
-
-    expect(byMonth['2026-09'].fraction).toBeCloseTo(16 / 30, 10);
-    expect(byMonth['2026-10'].fraction).toBe(1);
-    expect(byMonth['2026-11'].fraction).toBe(1);
-    expect(byMonth['2026-12'].fraction).toBe(1);
-    expect(byMonth['2027-01'].fraction).toBe(1);
-    // Only the 5 league months (Sep-Jan) exist in this breakdown at all — Feb/Mar are structurally excluded.
-    expect(breakdown.segments.map((s) => s.monthKey)).toEqual(['2026-09', '2026-10', '2026-11', '2026-12', '2027-01']);
-
-    const expectedExposure = 16 / 30 + 4;
-    expect(breakdown.totalExposure).toBeCloseTo(expectedExposure, 10);
-    expect(breakdown.totalExposure).toBeCloseTo(4.5333, 3);
-  });
-
-  it('TEST 15 — a placement starting after the league ends has zero exposure', () => {
-    expect(calculateTotalLeagueExposure('2027-03-01', '2027-06-30')).toBe(0);
-  });
-
-  it('TEST 16 — a placement ending before the league begins has zero exposure', () => {
-    expect(calculateTotalLeagueExposure('2025-01-01', '2026-08-31')).toBe(0);
-  });
-});
-
 describe('Explicit day-value worked examples (VCDB is a monthly value, never a flat /30)', () => {
   it('September: 15 t/m 30 sep = 16 active days of 30, dagwaarde 10/30, prorated 16 × 10/30', () => {
     const segment = calculateCalendarMonthFraction('2026-09-15', '2026-09-30', 2026, 9);
@@ -167,5 +138,27 @@ describe('Explicit day-value worked examples (VCDB is a monthly value, never a f
 
     const expectedTotal = (16 / 30) * 10 + 10 + 10 + 10 + 10 + (14 / 28) * 10;
     expect(breakdown.totalValue).toBeCloseTo(expectedTotal, 10);
+  });
+
+  it('TEST D — 29 t/m 31 januari (VCDB 10): januariwaarde = 3 × (10/31)', () => {
+    const segment = calculateCalendarMonthFraction('2027-01-29', '2027-08-01', 2027, 1);
+    expect(segment.daysInMonth).toBe(31);
+    expect(segment.overlapDays).toBe(3);
+    expect(calculateQualifyingTermValue('2027-01-29', '2027-01-31', 10)).toBeCloseTo(3 * (10 / 31), 10);
+  });
+
+  it('TEST E — een volledige februari 2027 (VCDB 10) telt voor het volle maandbedrag: 10', () => {
+    const breakdown = calculateQualifyingTermBreakdown('2027-01-29', '2027-08-01', 10);
+    const byMonth = Object.fromEntries(breakdown.segments.map((s) => [s.monthKey, s]));
+    expect(byMonth['2027-02'].fraction).toBe(1);
+    expect(byMonth['2027-02'].value).toBe(10);
+  });
+
+  it('TEST F — 1 augustus (VCDB 10): augustuswaarde = 1 × (10/31)', () => {
+    const breakdown = calculateQualifyingTermBreakdown('2027-01-29', '2027-08-01', 10);
+    const byMonth = Object.fromEntries(breakdown.segments.map((s) => [s.monthKey, s]));
+    expect(byMonth['2027-08'].daysInMonth).toBe(31);
+    expect(byMonth['2027-08'].overlapDays).toBe(1);
+    expect(byMonth['2027-08'].value).toBeCloseTo(1 * (10 / 31), 10);
   });
 });

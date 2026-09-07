@@ -7,93 +7,122 @@ import {
   calculateHoursIncreaseEligibility,
   calculateHoursIncreaseScore,
   calculateNewPlacementScore,
+  evaluateExtensionTiming,
   isLeagueEligibleCategory,
   validateExtensionWindow,
   validateMissionWindow,
   validateVcdb,
 } from './scoring';
 
-describe('official example (Sep start, 8 full months, VCDB 10, factor 2.5)', () => {
-  it('reproduces qualifying term 80, league exposure 5, base 400, mission value 1000', () => {
-    const result = calculateNewPlacementScore('2026-09-01', '2027-04-30', 10, 2.5, 'DETACHERING');
+describe('TEST A — new placement: Base Score = VCDB per month × full qualifying looptijd', () => {
+  it('01-09-2026 t/m 30-04-2027, VCDB 10 -> base score 80 (never 80x5=400)', () => {
+    const result = calculateNewPlacementScore('2026-09-01', '2027-04-30', 10, 1, 'DETACHERING');
+    expect(result.qualifyingTerm.segments).toHaveLength(8);
     expect(result.qualifyingTerm.totalValue).toBe(80);
-    expect(result.leagueExposure.totalExposure).toBe(5);
-    expect(result.baseScore).toBe(400);
-    expect(result.finalScore).toBe(1000);
-    expect(result.factorImpact).toBe(600);
+    expect(result.baseScore).toBe(80);
   });
 
-  it('factor 1.3 on the same base -> 520', () => {
+  it('applies the Factor on top of the base score: base 80, factor 2.5 -> mission value 200', () => {
+    const result = calculateNewPlacementScore('2026-09-01', '2027-04-30', 10, 2.5, 'DETACHERING');
+    expect(result.baseScore).toBe(80);
+    expect(result.finalScore).toBe(200);
+    expect(result.factorImpact).toBe(120);
+  });
+
+  it('factor 1.3 on the same base -> 104', () => {
     const result = calculateNewPlacementScore('2026-09-01', '2027-04-30', 10, 1.3, 'DETACHERING');
-    expect(result.baseScore).toBe(400);
-    expect(result.finalScore).toBeCloseTo(520, 6);
+    expect(result.baseScore).toBe(80);
+    expect(result.finalScore).toBeCloseTo(104, 6);
+  });
+
+  it('the full agreed term counts, with no cutoff at the league window (Feb/Mar/Apr all included)', () => {
+    const result = calculateNewPlacementScore('2026-09-01', '2027-04-30', 10, 1, 'DETACHERING');
+    expect(result.qualifyingTerm.segments.map((s) => s.monthKey)).toEqual([
+      '2026-09', '2026-10', '2026-11', '2026-12', '2027-01', '2027-02', '2027-03', '2027-04',
+    ]);
   });
 });
 
 describe('partial-month proration (regression from V2)', () => {
   it('a 15 September start prorates that month to exactly 16/30', () => {
     const result = calculateNewPlacementScore('2026-09-15', '2027-03-05', 10, 1, 'DETACHERING');
-    const sep = result.leagueExposure.segments.find((s) => s.monthKey === '2026-09');
+    const sep = result.qualifyingTerm.segments.find((s) => s.monthKey === '2026-09');
     expect(sep?.fraction).toBeCloseTo(16 / 30, 10);
   });
 
   it('an arbitrary mid-month placement (15 Sep - 5 Mar) matches the documented worked example', () => {
     const result = calculateNewPlacementScore('2026-09-15', '2027-03-05', 10, 2.5, 'DETACHERING');
     expect(result.qualifyingTerm.totalValue).toBeCloseTo(56.9462, 3);
-    expect(result.leagueExposure.totalExposure).toBeCloseTo(4.5333, 3);
+    expect(result.baseScore).toBeCloseTo(56.9462, 3);
   });
 });
 
-describe('extension scoring — Award Date drives League Exposure', () => {
-  it('worked example: award 15 Oct, old end 31 Jan, new end 30 Jun, VCDB 10', () => {
-    const result = calculateExtensionScore('2027-01-31', '2027-06-30', 10, 1, '2026-10-15', 'DETACHERING');
-
-    // Qualifying term = the added period itself (Feb-Jun), independent of the award date.
-    expect(result.qualifyingTerm.segments.map((s) => s.monthKey)).toEqual([
-      '2027-02', '2027-03', '2027-04', '2027-05', '2027-06',
-    ]);
-    expect(result.qualifyingTerm.totalValue).toBe(50);
-
-    // League exposure runs from the award date through league end: Oct(15-31) + Nov + Dec + Jan.
-    const byMonth = Object.fromEntries(result.leagueExposure.segments.map((s) => [s.monthKey, s]));
-    expect(byMonth['2026-09'].fraction).toBe(0);
-    expect(byMonth['2026-10'].overlapDays).toBe(17);
-    expect(byMonth['2026-10'].fraction).toBeCloseTo(17 / 31, 10);
-    expect(byMonth['2026-11'].fraction).toBe(1);
-    expect(byMonth['2026-12'].fraction).toBe(1);
-    expect(byMonth['2027-01'].fraction).toBe(1);
-
-    const expectedExposure = 17 / 31 + 3;
-    expect(result.leagueExposure.totalExposure).toBeCloseTo(expectedExposure, 10);
-
-    const expectedBase = 50 * expectedExposure;
-    expect(result.baseScore).toBeCloseTo(expectedBase, 6);
-    expect(result.baseScore).toBeCloseTo(177.419, 2);
+describe('evaluateExtensionTiming — 31 January qualification gate', () => {
+  it('new term start is always oldEndDate + 1 day', () => {
+    expect(evaluateExtensionTiming('2027-01-31').newTermStart).toBe('2027-02-01');
+    expect(evaluateExtensionTiming('2027-01-28').newTermStart).toBe('2027-01-29');
   });
 
-  it('an award date after the league has already closed yields zero exposure', () => {
-    const result = calculateExtensionScore('2027-01-31', '2027-06-30', 10, 2.5, '2027-02-15', 'DETACHERING');
-    expect(result.qualifyingTerm.totalValue).toBe(50); // term value is unaffected by the award date
-    expect(result.leagueExposure.totalExposure).toBe(0);
+  it('a new term starting on or before 31 January qualifies', () => {
+    expect(evaluateExtensionTiming('2027-01-28').qualifies).toBe(true);
+    expect(evaluateExtensionTiming('2027-01-30').qualifies).toBe(true); // starts exactly 31 Jan
+  });
+
+  it('a new term starting after 31 January does not qualify', () => {
+    expect(evaluateExtensionTiming('2027-01-31').qualifies).toBe(false); // starts 1 Feb
+    expect(evaluateExtensionTiming('2027-02-15').qualifies).toBe(false);
+  });
+});
+
+describe('TEST B — extension: old end 31 Jan means the new term starts too late, score 0', () => {
+  it('old end 31-01-2027, new end 01-08-2027 -> new term start 01-02-2027 -> score 0', () => {
+    const timing = evaluateExtensionTiming('2027-01-31');
+    expect(timing.newTermStart).toBe('2027-02-01');
+    expect(timing.qualifies).toBe(false);
+
+    const result = calculateExtensionScore('2027-01-31', '2027-08-01', 10, 2.5, 'DETACHERING');
     expect(result.baseScore).toBe(0);
     expect(result.finalScore).toBe(0);
   });
+});
 
-  it('an award date coinciding with the added term start behaves like a same-window new placement', () => {
-    const result = calculateExtensionScore('2026-09-30', '2026-11-30', 10, 1, '2026-10-01', 'DETACHERING');
-    expect(result.qualifyingTerm.totalValue).toBe(20); // Oct + Nov, full
-    expect(result.leagueExposure.totalExposure).toBe(2); // Oct + Nov, full
-    expect(result.baseScore).toBe(40);
+describe('TEST C — extension: old end 28 Jan qualifies, and the FULL new term counts through August', () => {
+  it('old end 28-01-2027, new end 01-08-2027 -> new term start 29-01-2027 -> qualifies, full period counts', () => {
+    const timing = evaluateExtensionTiming('2027-01-28');
+    expect(timing.newTermStart).toBe('2027-01-29');
+    expect(timing.qualifies).toBe(true);
+
+    const result = calculateExtensionScore('2027-01-28', '2027-08-01', 10, 1, 'DETACHERING');
+    expect(result.baseScore).toBeGreaterThan(0);
+
+    // The qualifying term runs the full newly-added period, all the way to 1 August —
+    // never truncated at 31 January.
+    expect(result.qualifyingTerm.segments.map((s) => s.monthKey)).toEqual([
+      '2027-01', '2027-02', '2027-03', '2027-04', '2027-05', '2027-06', '2027-07', '2027-08',
+    ]);
+
+    const jan = result.qualifyingTerm.segments.find((s) => s.monthKey === '2027-01');
+    expect(jan?.overlapDays).toBe(3); // 29, 30, 31 January
+    expect(jan?.value).toBeCloseTo(3 * (10 / 31), 10);
+
+    const feb = result.qualifyingTerm.segments.find((s) => s.monthKey === '2027-02');
+    expect(feb?.fraction).toBe(1);
+    expect(feb?.value).toBe(10);
+
+    const aug = result.qualifyingTerm.segments.find((s) => s.monthKey === '2027-08');
+    expect(aug?.overlapDays).toBe(1);
+    expect(aug?.value).toBeCloseTo(1 * (10 / 31), 10);
+
+    // Matches the worked example in the spec: total base score ~61.29, mission value (x2.5) ~153.23.
+    expect(result.baseScore).toBeCloseTo(61.29, 2);
+
+    const withFactor = calculateExtensionScore('2027-01-28', '2027-08-01', 10, 2.5, 'DETACHERING');
+    expect(withFactor.finalScore).toBeCloseTo(153.23, 2);
   });
 
   it('rejects an extension whose new end date does not exceed the old one', () => {
     expect(validateExtensionWindow('2027-01-31', '2027-01-31')).toEqual({ valid: false, message: 'NO NEW EXTENSION PERIOD' });
     expect(validateExtensionWindow('2027-01-31', '2026-12-01')).toEqual({ valid: false, message: 'NO NEW EXTENSION PERIOD' });
-  });
-
-  it('requires a valid award date', () => {
-    const result = calculateExtensionScore('2027-01-31', '2027-06-30', 10, 2.5, '', 'DETACHERING');
-    expect(result.finalScore).toBe(0);
   });
 });
 
@@ -112,12 +141,11 @@ describe('hours increase eligibility threshold', () => {
     expect(result.finalScore).toBe(0);
   });
 
-  it('an eligible hours increase scores using only the extra VCDB', () => {
+  it('an eligible hours increase scores using only the extra VCDB, over the full agreed period', () => {
     const result = calculateHoursIncreaseScore(20, 28, '2026-09-01', '2027-01-31', 4, 1, 'DETACHERING');
     expect(result.eligible).toBe(true);
     expect(result.qualifyingTerm.totalValue).toBe(20); // 5 full months x 4
-    expect(result.leagueExposure.totalExposure).toBe(5);
-    expect(result.baseScore).toBe(100);
+    expect(result.baseScore).toBe(20);
   });
 });
 
@@ -133,8 +161,8 @@ describe('W&S deal category never scores', () => {
     expect(result.finalScore).toBe(0);
   });
 
-  it('a W&S extension scores 0', () => {
-    const result = calculateExtensionScore('2027-01-31', '2027-06-30', 10, 2.5, '2026-10-15', 'WS');
+  it('a W&S extension scores 0 even when the timing would otherwise qualify', () => {
+    const result = calculateExtensionScore('2027-01-28', '2027-08-01', 10, 2.5, 'WS');
     expect(result.finalScore).toBe(0);
   });
 
@@ -159,30 +187,6 @@ describe('validation: invalid dates and windows', () => {
     expect(validateVcdb(0)).toEqual({ valid: false, message: 'ENTER MONTHLY VCDB' });
     expect(validateVcdb(-5)).toEqual({ valid: false, message: 'ENTER MONTHLY VCDB' });
     expect(validateVcdb(1)).toEqual({ valid: true });
-  });
-});
-
-describe('outside the league window scores zero', () => {
-  it('starts after the league ends', () => {
-    const result = calculateNewPlacementScore('2027-03-01', '2027-06-30', 10, 2.5, 'DETACHERING');
-    expect(result.leagueExposure.totalExposure).toBe(0);
-    expect(result.finalScore).toBe(0);
-  });
-
-  it('ends before the league begins', () => {
-    const result = calculateNewPlacementScore('2025-01-01', '2026-08-31', 10, 2.5, 'DETACHERING');
-    expect(result.leagueExposure.totalExposure).toBe(0);
-    expect(result.finalScore).toBe(0);
-  });
-});
-
-describe('November-start scenario (still holds under the engine)', () => {
-  it('8 full months from 1 Nov -> 3 league months -> base 240, x2.5 -> 600', () => {
-    const result = calculateNewPlacementScore('2026-11-01', '2027-06-30', 10, 2.5, 'DETACHERING');
-    expect(result.qualifyingTerm.totalValue).toBe(80);
-    expect(result.leagueExposure.totalExposure).toBe(3);
-    expect(result.baseScore).toBe(240);
-    expect(result.finalScore).toBe(600);
   });
 });
 

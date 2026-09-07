@@ -14,7 +14,7 @@ const STATUS_CONFIG: Record<CalculatorOutput['readiness'], { text: string; class
 
 export function ControlCheckPanel({ output }: ControlCheckPanelProps) {
   const { completeCount, totalCount, isInputComplete, result, opportunities, readiness } = output;
-  const leagueEligible = result ? result.leagueExposure.totalExposure > 0 : false;
+  const leagueEligible = result ? result.baseScore > 0 : false;
   const hasWarnings = opportunities.some((s) => s.kind === 'warning');
 
   let statusText = STATUS_CONFIG[readiness].text;

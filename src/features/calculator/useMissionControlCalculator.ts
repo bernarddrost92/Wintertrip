@@ -5,13 +5,14 @@ import {
   calculateHoursIncreaseEligibility,
   calculateHoursIncreaseScore,
   calculateNewPlacementScore,
+  evaluateExtensionTiming,
   isLeagueEligibleCategory,
   validateExtensionWindow,
   validateMissionWindow,
   validateVcdb,
 } from '../../services/scoring';
-import type { DealCategory, MissionType, ScoreResult } from '../../types/scoring';
-import { compareIsoDates, isValidIsoDate } from '../../utils/dates';
+import type { DealCategory, ExtensionTiming, MissionType, ScoreResult } from '../../types/scoring';
+import { compareIsoDates, formatIsoDateNl, isValidIsoDate } from '../../utils/dates';
 
 export interface CalculatorForm {
   missionType: MissionType;
@@ -22,7 +23,6 @@ export interface CalculatorForm {
   endDate: string;
   vcdbPerMonth: string;
   // EXTENSION
-  awardDate: string;
   oldEndDate: string;
   newEndDate: string;
   extensionVcdbPerMonth: string;
@@ -41,7 +41,6 @@ const INITIAL_FORM: CalculatorForm = {
   startDate: '',
   endDate: '',
   vcdbPerMonth: '',
-  awardDate: '',
   oldEndDate: '',
   newEndDate: '',
   extensionVcdbPerMonth: '',
@@ -72,7 +71,7 @@ export interface OpportunitySignal {
 export type MissionReadiness = 'INPUT_REQUIRED' | 'INVALID' | 'NOT_ELIGIBLE' | 'READY';
 
 export interface NotEligible {
-  reason: 'HOURS' | 'WS';
+  reason: 'HOURS' | 'WS' | 'TOO_LATE';
   message: string;
 }
 
@@ -86,6 +85,10 @@ export interface CalculatorOutput {
   notEligible: NotEligible | null;
   opportunities: OpportunitySignal[];
   readiness: MissionReadiness;
+  /** EXTENSION only: the automatically-derived new-term-start + whether it
+   * qualifies, shown as soon as a current end date is entered — independent
+   * of whether the rest of the form is complete yet. */
+  extensionTiming: ExtensionTiming | null;
 }
 
 export function useMissionControlCalculator() {
@@ -124,20 +127,20 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
     const windowCheck = validateMissionWindow(form.startDate, form.endDate);
 
     if (!isInputComplete) {
-      return baseOutput(completion, null, windowCheck.valid ? null : windowCheck.message ?? null, null, [], 'INPUT_REQUIRED');
+      return baseOutput(completion, null, windowCheck.valid ? null : windowCheck.message ?? null, null, [], 'INPUT_REQUIRED', null);
     }
 
     if (wsIneligible) {
-      return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE');
+      return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE', null);
     }
 
     const result = calculateNewPlacementScore(form.startDate, form.endDate, toNumber(form.vcdbPerMonth), form.factor, form.dealCategory);
-    const opportunities = buildOpportunitySignals(result, form.endDate);
-    return baseOutput(completion, result, null, null, opportunities, 'READY');
+    const opportunities = buildOpportunitySignals(result);
+    return baseOutput(completion, result, null, null, opportunities, 'READY', null);
   }
 
   if (form.missionType === 'EXTENSION') {
-    const datesOk = validateExtensionWindow(form.oldEndDate, form.newEndDate).valid && isValidIsoDate(form.awardDate);
+    const datesOk = validateExtensionWindow(form.oldEndDate, form.newEndDate).valid;
     const vcdbOk = validateVcdb(toNumber(form.extensionVcdbPerMonth)).valid;
     const completion: CompletionItem[] = [
       { key: 'type', label: 'Mission type', done: true },
@@ -147,25 +150,27 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
     ];
     const isInputComplete = completion.every((c) => c.done);
     const windowCheck = validateExtensionWindow(form.oldEndDate, form.newEndDate);
+    const extensionTiming = isValidIsoDate(form.oldEndDate) ? evaluateExtensionTiming(form.oldEndDate) : null;
 
     if (!isInputComplete) {
-      return baseOutput(completion, null, windowCheck.valid ? null : windowCheck.message ?? null, null, [], 'INPUT_REQUIRED');
+      return baseOutput(completion, null, windowCheck.valid ? null : windowCheck.message ?? null, null, [], 'INPUT_REQUIRED', extensionTiming);
     }
 
     if (wsIneligible) {
-      return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE');
+      return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE', extensionTiming);
     }
 
-    const result = calculateExtensionScore(
-      form.oldEndDate,
-      form.newEndDate,
-      toNumber(form.extensionVcdbPerMonth),
-      form.factor,
-      form.awardDate,
-      form.dealCategory,
-    );
-    const opportunities = buildOpportunitySignals(result, form.newEndDate);
-    return baseOutput(completion, result, null, null, opportunities, 'READY');
+    if (extensionTiming && !extensionTiming.qualifies) {
+      const notEligible = {
+        reason: 'TOO_LATE' as const,
+        message: `Nieuwe termijn start ${formatIsoDateNl(extensionTiming.newTermStart)} — na 31 januari ${LEAGUE_PERIOD.end.slice(0, 4)}. Verlenging telt niet mee.`,
+      };
+      return baseOutput(completion, null, null, notEligible, [tooLateSignal(extensionTiming)], 'NOT_ELIGIBLE', extensionTiming);
+    }
+
+    const result = calculateExtensionScore(form.oldEndDate, form.newEndDate, toNumber(form.extensionVcdbPerMonth), form.factor, form.dealCategory);
+    const opportunities = buildOpportunitySignals(result);
+    return baseOutput(completion, result, null, null, opportunities, 'READY', extensionTiming);
   }
 
   // HOURS_INCREASE
@@ -183,11 +188,11 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
   const isInputComplete = completion.every((c) => c.done);
 
   if (!isInputComplete) {
-    return baseOutput(completion, null, null, null, [], 'INPUT_REQUIRED');
+    return baseOutput(completion, null, null, null, [], 'INPUT_REQUIRED', null);
   }
 
   if (wsIneligible) {
-    return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE');
+    return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE', null);
   }
 
   const eligibility = calculateHoursIncreaseEligibility(toNumber(form.oldHours), toNumber(form.newHours));
@@ -203,6 +208,7 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
       notEligible,
       [{ key: 'not-enough-hours', kind: 'warning', text: `NOT ENOUGH HOURS INCREASE — +${eligibility.increaseHours} u/w` }],
       'NOT_ELIGIBLE',
+      null,
     );
   }
 
@@ -215,12 +221,20 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
     form.factor,
     form.dealCategory,
   );
-  const opportunities = buildOpportunitySignals(result, form.increaseEndDate);
-  return baseOutput(completion, result, null, null, opportunities, 'READY');
+  const opportunities = buildOpportunitySignals(result);
+  return baseOutput(completion, result, null, null, opportunities, 'READY', null);
 }
 
 function wsSignal(): OpportunitySignal {
   return { key: 'ws-not-eligible', kind: 'warning', text: `${WS_MESSAGE}` };
+}
+
+function tooLateSignal(timing: ExtensionTiming): OpportunitySignal {
+  return {
+    key: 'extension-too-late',
+    kind: 'warning',
+    text: `TOO LATE — nieuwe termijn start ${formatIsoDateNl(timing.newTermStart)}, na de meetdatum`,
+  };
 }
 
 function baseOutput(
@@ -230,6 +244,7 @@ function baseOutput(
   notEligible: NotEligible | null,
   opportunities: OpportunitySignal[],
   readinessIfComplete: MissionReadiness,
+  extensionTiming: ExtensionTiming | null,
 ): CalculatorOutput {
   const completeCount = completion.filter((c) => c.done).length;
   const isInputComplete = completeCount === completion.length;
@@ -248,36 +263,42 @@ function baseOutput(
     notEligible,
     opportunities,
     readiness,
+    extensionTiming,
   };
 }
 
 /**
  * Signals derived strictly from the computed result — never invented. Each
- * one reads directly off the qualifying-term / league-exposure breakdown.
+ * one reads directly off the qualifying-term breakdown.
  */
-function buildOpportunitySignals(result: ScoreResult, effectiveEndDate: string): OpportunitySignal[] {
+function buildOpportunitySignals(result: ScoreResult): OpportunitySignal[] {
   const signals: OpportunitySignal[] = [];
 
-  if (result.leagueExposure.totalExposure <= 0) {
-    signals.push({ key: 'no-exposure', kind: 'warning', text: 'OUTSIDE LEAGUE WINDOW — geen league-maanden geraakt' });
+  if (result.qualifyingTerm.segments.length === 0 || result.baseScore <= 0) {
+    signals.push({ key: 'no-value', kind: 'warning', text: 'NO QUALIFYING TERM — controleer de data' });
     return signals;
   }
 
-  const firstActive = result.leagueExposure.segments.find((s) => s.fraction > 0);
-  if (firstActive && firstActive.fraction < 1) {
+  const first = result.qualifyingTerm.segments[0];
+  if (first.fraction < 1) {
     signals.push({
       key: 'partial-start',
       kind: 'warning',
-      text: `PARTIAL START MONTH — ${firstActive.label} exposure ${(firstActive.fraction * 100).toFixed(0)}%`,
+      text: `PARTIAL START MONTH — ${first.label} ${first.overlapDays}/${first.daysInMonth} dagen`,
     });
   }
 
-  if (isValidIsoDate(effectiveEndDate) && compareIsoDates(effectiveEndDate, LEAGUE_PERIOD.end) < 0) {
-    signals.push({ key: 'early-end', kind: 'warning', text: 'EARLY END DATE — check verlengkans' });
+  const last = result.qualifyingTerm.segments[result.qualifyingTerm.segments.length - 1];
+  if (last.fraction < 1 && last.monthKey !== first.monthKey) {
+    signals.push({
+      key: 'partial-end',
+      kind: 'warning',
+      text: `PARTIAL END MONTH — ${last.label} ${last.overlapDays}/${last.daysInMonth} dagen`,
+    });
   }
 
   if (signals.length === 0) {
-    signals.push({ key: 'league-eligible', kind: 'ok', text: 'LEAGUE ELIGIBLE — volledige exposure' });
+    signals.push({ key: 'full-term', kind: 'ok', text: 'VOLLEDIGE KALENDERMAANDEN — geen punten laten liggen' });
   }
 
   return signals;

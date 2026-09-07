@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { FormField, TextInput } from '../../components/FormField';
+import { formatIsoDateNl } from '../../utils/dates';
 import { DealCategoryToggle } from './DealCategoryToggle';
 import { FactorDial } from './FactorDial';
 import type { CalculatorForm, CalculatorOutput } from './useMissionControlCalculator';
@@ -55,12 +56,31 @@ export function MissionInputPanel({ form, update, output }: MissionInputPanelPro
 
         {form.missionType === 'EXTENSION' && (
           <>
-            <FormField id="awardDate" label="Award date" hint="Datum waarop de verlenging binnen de league wordt afgesproken.">
-              <TextInput id="awardDate" type="date" value={form.awardDate} onChange={(e) => update('awardDate', e.target.value)} />
-            </FormField>
             <FormField id="oldEndDate" label="Huidige einddatum">
               <TextInput id="oldEndDate" type="date" value={form.oldEndDate} onChange={(e) => update('oldEndDate', e.target.value)} />
             </FormField>
+
+            {output.extensionTiming && (
+              <div className={`border px-3.5 py-3 ${output.extensionTiming.qualifies ? 'border-gold/35 bg-gold/[0.06]' : 'border-gold/60 bg-gold/10'}`}>
+                <div className="flex items-center justify-between">
+                  <span className="label-classified text-gold/80">New Term Start</span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
+                      output.extensionTiming.qualifies ? 'bg-gold/15 text-gold' : 'bg-gold/25 text-gold'
+                    }`}
+                  >
+                    {output.extensionTiming.qualifies ? 'Qualifies' : 'Too Late'}
+                  </span>
+                </div>
+                <p className="mt-1.5 font-display text-xl font-bold tabular-nums text-ink">{formatIsoDateNl(output.extensionTiming.newTermStart)}</p>
+                <p className="mt-1 text-[11px] text-ink-muted">
+                  {output.extensionTiming.qualifies
+                    ? 'Qualified before measurement date — volledige nieuwe termijn telt mee.'
+                    : 'Nieuwe termijn start na 31 januari — verlenging telt niet mee.'}
+                </p>
+              </div>
+            )}
+
             <FormField id="newEndDate" label="Nieuwe einddatum">
               <TextInput id="newEndDate" type="date" value={form.newEndDate} onChange={(e) => update('newEndDate', e.target.value)} />
             </FormField>

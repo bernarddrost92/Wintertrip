@@ -2,62 +2,50 @@ import type { LeagueCheckItem } from '../types/league';
 
 export const LEAGUE_CHECK_ITEMS: LeagueCheckItem[] = [
   {
-    id: 'start-date',
-    code: '01 START DATE',
-    label: 'Klopt de startdatum en kan de deal eerder starten?',
+    id: 'timing',
+    code: '01 TIMING',
+    label: 'Start de plaatsing / nieuwe termijn uiterlijk 31 januari?',
   },
   {
     id: 'end-date',
     code: '02 END DATE',
     label:
-      'Ligt de einddatum vlak na 31 januari? Check of 27 januari commercieel én contractueel echt mogelijk is. Belangrijk: nooit een fictieve einddatum gebruiken — alleen aanpassen wanneer dit daadwerkelijk met klant/professional overeengekomen kan worden.',
+      'Ligt de einddatum rond 31 januari? Kan de nieuwe termijn commercieel en contractueel echt vóór of op 31 januari starten? Geen fictieve datums gebruiken.',
   },
   {
-    id: 'max-duration',
+    id: 'max-term',
     code: '03 MAX TERM',
-    label: 'Is de maximale commerciële looptijd besproken?',
+    label: 'Is de maximale commerciële looptijd besproken en benut?',
   },
   {
-    id: 'all-hours',
-    code: '04 ALL HOURS',
-    label: 'Zijn alle mogelijke uren meegenomen?',
+    id: 'hours',
+    code: '04 HOURS',
+    label: 'Zijn alle uren meegenomen en is +4 uur of meer uitbreiding mogelijk?',
   },
   {
-    id: 'hours-increase-possible',
-    code: '05 HOURS +4',
-    label: 'Is +4 uur of meer urenuitbreiding mogelijk?',
+    id: 'value',
+    code: '05 VALUE',
+    label: 'Is de professional tegen het scherpst haalbare inkooptarief ingekocht en zijn VCDB + Factor gecontroleerd?',
   },
   {
-    id: 'extension-timing',
-    code: '06 TIMING 8W',
-    label: 'Staat de verlenging minimaal 8 weken voor einddatum op tafel?',
+    id: 'second-review',
+    code: '06 2ND REVIEW',
+    label: 'Heeft een tweede paar ogen de deal gecontroleerd?',
   },
-  {
-    id: 'purchase-rate',
-    code: '07 TARIEF',
-    label: 'Is de professional tegen het scherpst haalbare inkooptarief ingekocht?',
-  },
-  {
-    id: 'contractor-status',
-    code: '08 CONTRACTANT',
-    label: 'Is de contractantstatus correct gecontroleerd?',
-  },
-  {
-    id: 'vcdb-checked',
-    code: '09 VCDB / FACTOR',
-    label: 'Zijn VCDB, dagwaarde en factor-impact gecontroleerd?',
-  },
-  {
-    id: 'second-pair-of-eyes',
-    code: '10 2ND REVIEW',
-    label: 'Heeft een tweede paar ogen de deal gecheckt?',
-  },
+];
+
+/** Groups the six checks into the three "mission briefing" blocks — a
+ * compact scan pattern rather than one long uniform list. */
+export const LEAGUE_CHECK_GROUPS: { label: string; itemIds: string[] }[] = [
+  { label: 'Timing', itemIds: ['timing', 'end-date'] },
+  { label: 'Value', itemIds: ['max-term', 'hours', 'value'] },
+  { label: 'Verify', itemIds: ['second-review'] },
 ];
 
 export const TEAM_AGREEMENTS = [
   'Iedere plaatsing krijgt een check.',
   'Iedere verlenging krijgt een check.',
-  'Vanaf 8 weken voor einddatum start de verlengingsaanval.',
+  'Nieuwe termijn moet uiterlijk 31 januari starten.',
   'Geen administratieve punten laten liggen.',
   'We houden elkaar scherp op: kansen, uren, looptijd, timing.',
 ];

@@ -30,18 +30,14 @@ export const MIN_HOURS_INCREASE_PER_WEEK = 4;
 export const FACTOR_APPLICATION_MODE: FactorApplicationMode = 'ALL_VCDB';
 
 /**
- * EXTENSION rule (settled): the newly added contract term (old end date + 1
- * day through the new end date) determines the Qualifying Term Value, same
- * as any other deal. League Exposure, however, is deliberately NOT the
- * calendar overlap of that added term with the league — it is anchored to
- * the Award Date instead: exposure runs from the Award Date through
- * min(newEndDate, LEAGUE_PERIOD.end). An extension agreed on 15 October for
- * new months that only start the following February still earns exposure
- * for Oct(partial)/Nov/Dec/Jan, because the *value* was already secured for
- * the league on the day it was struck — it is not zeroed out just because
- * the added months themselves fall outside the league window. See
- * services/scoring.ts#calculateExtensionScore for the implementation; this
- * is the one and only place that encodes the rule.
+ * EXTENSION rule (settled): there is no Award Date. The new term always
+ * starts the calendar day after the current end date. Whether the
+ * extension scores AT ALL depends only on whether that new-term start
+ * falls on or before LEAGUE_PERIOD.end (31 January 2027) — see
+ * services/scoring.ts#evaluateExtensionTiming. Once it qualifies, its Base
+ * Score covers the newly added term in full through the new end date,
+ * however far past January that runs — 31 January is a qualification gate,
+ * never a cutoff on how much of the term counts.
  */
 
 /** Deal categories collected on every mission type. Only DETACHERING scores. */

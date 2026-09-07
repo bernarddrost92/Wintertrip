@@ -14,8 +14,7 @@
  * utils/dates.ts#toEpochDay), so nothing here is sensitive to timezone or
  * daylight-saving shifts — it is pure date-only calendar math.
  */
-import { LEAGUE_MONTHS } from '../config/leagueRules';
-import type { LeagueExposureBreakdown, MonthSegment, QualifyingTermBreakdown, QualifyingTermSegment } from '../types/scoring';
+import type { MonthSegment, QualifyingTermBreakdown, QualifyingTermSegment } from '../types/scoring';
 import type { IsoDate } from '../types/league';
 import { compareIsoDates, isValidIsoDate, parseIsoDate, toEpochDay } from '../utils/dates';
 
@@ -121,27 +120,4 @@ export function calculateQualifyingTermBreakdown(
 
 export function calculateQualifyingTermValue(start: IsoDate, end: IsoDate, vcdbPerMonth: number): number {
   return calculateQualifyingTermBreakdown(start, end, vcdbPerMonth).totalValue;
-}
-
-/**
- * League Exposure: how much of each of the five fixed league months
- * (Sep–Jan) a date range actually covers. A range entirely outside the
- * league period yields 0 exposure for every month.
- */
-export function calculateLeagueExposureBreakdown(start: IsoDate, end: IsoDate): LeagueExposureBreakdown {
-  const segments: MonthSegment[] = LEAGUE_MONTHS.map(({ year, month }) =>
-    calculateCalendarMonthFraction(start, end, year, month),
-  );
-  return {
-    segments,
-    totalExposure: segments.reduce((sum, s) => sum + s.fraction, 0),
-  };
-}
-
-export function calculateTotalLeagueExposure(start: IsoDate, end: IsoDate): number {
-  return calculateLeagueExposureBreakdown(start, end).totalExposure;
-}
-
-export function calculateBaseLeagueScore(qualifyingTermValue: number, totalLeagueExposure: number): number {
-  return qualifyingTermValue * totalLeagueExposure;
 }

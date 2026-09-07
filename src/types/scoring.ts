@@ -1,4 +1,4 @@
-import type { MissionType } from './league';
+import type { IsoDate, MissionType } from './league';
 
 export type { MissionType };
 
@@ -29,18 +29,20 @@ export interface QualifyingTermBreakdown {
   totalValue: number;
 }
 
-export interface LeagueExposureBreakdown {
-  segments: MonthSegment[];
-  totalExposure: number;
-}
-
 export interface ScoreResult {
   qualifyingTerm: QualifyingTermBreakdown;
-  leagueExposure: LeagueExposureBreakdown;
   baseScore: number;
   factor: number;
   finalScore: number;
   factorImpact: number;
+}
+
+/** EXTENSION-only: whether the newly added term starts on or before the
+ * 31 January measurement date — the sole gate on whether an extension
+ * scores at all. */
+export interface ExtensionTiming {
+  newTermStart: IsoDate;
+  qualifies: boolean;
 }
 
 export interface FactorScenario {

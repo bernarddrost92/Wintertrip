@@ -6,6 +6,8 @@
  * SharePoint → Power Automate → JSON pipeline exists, services/api.ts swaps
  * this module out for a live fetch without any UI changes required.
  */
+import { LEAGUE_MONTHS } from '../config/leagueRules';
+import { calculateCalendarMonthFraction } from '../services/proration';
 import { calculateExtensionScore, calculateHoursIncreaseScore, calculateNewPlacementScore } from '../services/scoring';
 import type {
   AccountManagerStats,
@@ -49,16 +51,20 @@ function buildPlacement(input: MockPlacementInput): Placement {
 
   const result =
     input.type === 'EXTENSION' && input.previousEndDate
-      ? calculateExtensionScore(input.previousEndDate, input.endDate, input.vcdbPerMonth, input.factor, input.createdAt, dealCategory)
+      ? calculateExtensionScore(input.previousEndDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory)
       : input.type === 'HOURS_INCREASE'
         ? calculateHoursIncreaseScore(input.oldHours ?? 0, input.newHours ?? 0, input.startDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory)
         : calculateNewPlacementScore(input.startDate, input.endDate, input.vcdbPerMonth, input.factor, dealCategory);
 
-  const { baseScore, finalScore, qualifyingTerm, leagueExposure } = result;
+  const { baseScore, finalScore, qualifyingTerm } = result;
   // Legacy dashboard summary fields: effective whole-month equivalents,
   // derived from the exact proration result rather than re-approximated.
   const durationMonths = input.vcdbPerMonth > 0 ? Math.round((qualifyingTerm.totalValue / input.vcdbPerMonth) * 10) / 10 : 0;
-  const leagueMonths = Math.round(leagueExposure.totalExposure * 100) / 100;
+  // Dashboard-only stat: how much of the five fixed Sep–Jan league months
+  // this deal's overall dates touch. Purely descriptive for the leaderboard
+  // — the scoring model itself no longer uses a league-window multiplier.
+  const leagueMonths =
+    Math.round(LEAGUE_MONTHS.reduce((sum, m) => sum + calculateCalendarMonthFraction(input.startDate, input.endDate, m.year, m.month).fraction, 0) * 100) / 100;
 
   return {
     id: input.id,

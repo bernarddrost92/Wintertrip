@@ -3,9 +3,12 @@ import { Sparkles } from 'lucide-react';
 import { FormField, TextInput } from '../../components/FormField';
 import { GoldButton } from '../../components/GoldButton';
 import { LeagueCheckItem } from '../../components/LeagueCheckItem';
+import { MissionCheckBlock } from '../../components/MissionCheckBlock';
 import { SectionHeader } from '../../components/SectionHeader';
-import { LEAGUE_CHECK_ITEMS, TEAM_AGREEMENTS } from '../../data/leagueCheckItems';
+import { LEAGUE_CHECK_GROUPS, LEAGUE_CHECK_ITEMS, TEAM_AGREEMENTS } from '../../data/leagueCheckItems';
 import { useLeagueCheck } from './useLeagueCheck';
+
+const ITEMS_BY_ID = Object.fromEntries(LEAGUE_CHECK_ITEMS.map((item) => [item.id, item]));
 
 export function LeagueCheckPage() {
   const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck();
@@ -34,7 +37,7 @@ export function LeagueCheckPage() {
         </FormField>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-10">
         <div className="mb-3 flex items-center justify-between">
           <p className="label-classified">Mission check</p>
           <span className={`font-mono text-xs font-semibold tracking-wider ${missionApproved ? 'text-gold' : 'text-ink-muted'}`}>
@@ -42,27 +45,31 @@ export function LeagueCheckPage() {
           </span>
         </div>
 
-        {/* Compact progress rail — ten waypoints, lit as each item clears. */}
-        <div className="mb-4 flex items-center border border-gold/10 bg-mission-panel px-4 py-2.5">
+        {/* Compact progress rail — one waypoint per check, lit as each clears. */}
+        <div className="mb-6 flex items-center border border-gold/10 bg-mission-panel px-4 py-2.5">
           {LEAGUE_CHECK_ITEMS.map((item, i) => {
             const done = Boolean(state.checkedItems[item.id]);
             return (
               <Fragment key={item.id}>
                 {i > 0 && <div className={`h-px flex-1 ${done && state.checkedItems[LEAGUE_CHECK_ITEMS[i - 1].id] ? 'bg-gold/60' : 'bg-white/10'}`} />}
-                <span
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${done ? 'bg-gold shadow-gold' : 'bg-white/15'}`}
-                  aria-hidden
-                />
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${done ? 'bg-gold shadow-gold' : 'bg-white/15'}`} aria-hidden />
               </Fragment>
             );
           })}
         </div>
 
-        <ul className="border border-gold/10 bg-mission-panel">
-          {LEAGUE_CHECK_ITEMS.map((item) => (
-            <LeagueCheckItem key={item.id} id={item.id} code={item.code} label={item.label} checked={Boolean(state.checkedItems[item.id])} onToggle={toggleItem} />
+        <div className="space-y-4">
+          {LEAGUE_CHECK_GROUPS.map((group) => (
+            <MissionCheckBlock key={group.label} label={group.label}>
+              {group.itemIds.map((id) => {
+                const item = ITEMS_BY_ID[id];
+                return (
+                  <LeagueCheckItem key={id} id={item.id} code={item.code} label={item.label} checked={Boolean(state.checkedItems[id])} onToggle={toggleItem} />
+                );
+              })}
+            </MissionCheckBlock>
           ))}
-        </ul>
+        </div>
       </div>
 
       <div
