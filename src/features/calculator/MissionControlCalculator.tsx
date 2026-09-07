@@ -19,22 +19,28 @@ export function MissionControlCalculator() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1800px] space-y-4 px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-[1800px] px-4 py-5 sm:px-6 sm:py-6">
         <MissionTypeToggle value={form.missionType} onChange={setMissionType} />
 
-        <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)_320px]">
-          <div className="order-2 lg:order-1">
+        {/* Zero-gap grid with hairline-overlapping negative margins: adjacent
+            panel borders collapse onto the same pixel, reading as one fused
+            console frame instead of separate floating cards with dark gaps
+            between them. */}
+        <div className="-mt-px grid lg:grid-cols-[320px_minmax(0,1fr)_320px]">
+          <div className="order-2 lg:order-1 lg:-mr-px">
             <MissionInputPanel form={form} update={update} output={output} />
           </div>
-          <div className="order-1 lg:order-2">
+          <div className="relative order-1 lg:order-2 lg:-mx-px">
             <MissionValuePanel output={output} />
           </div>
-          <div className="order-3">
+          <div className="order-3 lg:-ml-px">
             <ControlCheckPanel output={output} />
           </div>
         </div>
 
-        <MonthlyIntelligence result={output.result} />
+        <div className="-mt-px">
+          <MonthlyIntelligence result={output.result} />
+        </div>
       </div>
     </div>
   );

@@ -41,7 +41,12 @@ export function ControlCheckPanel({ output }: ControlCheckPanelProps) {
 
   return (
     <div className="panel relative flex h-full flex-col overflow-hidden">
-      <div className="tactical-grid-bg opacity-[0.35]" />
+      <div className="tactical-grid-bg opacity-70" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{ background: 'radial-gradient(circle at 50% 62%, rgba(227,178,60,0.08), transparent 55%)' }}
+        aria-hidden
+      />
       <header className="relative flex items-center justify-between border-b border-gold/15 bg-mission-panel px-4 py-3">
         <h2 className="label-classified text-ink">Control Check</h2>
         <span className={`font-mono text-[11px] font-semibold tracking-wider ${isInputComplete ? 'text-gold' : 'text-ink-muted'}`}>

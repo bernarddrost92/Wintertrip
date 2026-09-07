@@ -36,7 +36,7 @@ export default {
         'gold-sweep': 'linear-gradient(115deg, #B8862A 0%, #F1C453 45%, #FFD768 65%, #B8862A 100%)',
         'panel-glow': 'radial-gradient(circle at 50% 0%, rgba(227,178,60,0.09), transparent 60%)',
         'tactical-grid':
-          'linear-gradient(rgba(227,178,60,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(227,178,60,0.05) 1px, transparent 1px)',
+          'linear-gradient(rgba(227,178,60,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(227,178,60,0.09) 1px, transparent 1px)',
         'radar-lines':
           'repeating-radial-gradient(circle at center, rgba(227,178,60,0.06) 0, rgba(227,178,60,0.06) 1px, transparent 1px, transparent 64px)',
         'scan-lines': 'repeating-linear-gradient(180deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px)',
