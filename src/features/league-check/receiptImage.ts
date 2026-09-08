@@ -1,6 +1,7 @@
 import { toBlob } from 'html-to-image';
 import { formatIsoDateReceipt } from '../../utils/dates';
 import { formatFactor, formatFoundPoints, formatVcdbValue } from '../../utils/format';
+import { getDubbelcheckState } from './dubbelcheckStatus';
 import type { IsoDate, MissionType } from '../../types/league';
 import type { AgentIdentity } from '../missionFlow/missionFlowContext';
 
@@ -117,6 +118,26 @@ export function buildWhatsAppSummary(input: ReceiptSummaryInput): string {
     lines.push('', 'OPEN CHECKS:', ...input.openCodes.map((code) => `- ${code}`));
   }
 
+  // Hero #1 — Final Mission Value — comes first, before any deal detail,
+  // so it's the first thing read here too, matching the on-screen/PNG
+  // receipt's hierarchy.
+  if (input.after) {
+    lines.push('', 'FINAL MISSION VALUE:', `${formatVcdbValue(input.after.finalScore)} punten`);
+  } else {
+    lines.push('', 'FINAL MISSION VALUE:', 'PENDING CALCULATION');
+  }
+
+  // Hero #2 — Winst door Dubbelcheck — never a fabricated "+0,00".
+  const dubbelcheck = getDubbelcheckState(input.found ? input.found.foundLeaguePoints : null);
+  lines.push('', 'WINST DOOR DUBBELCHECK:');
+  if (dubbelcheck.kind === 'found') {
+    lines.push(`${formatFoundPoints(dubbelcheck.points)} punten`);
+  } else if (dubbelcheck.kind === 'none-recorded') {
+    lines.push('GEEN EXTRA WINST VASTGELEGD');
+  } else {
+    lines.push('NIET BEREKEND');
+  }
+
   if (input.missionType) {
     lines.push('', `MISSION TYPE: ${MISSION_TYPE_LABEL[input.missionType]}`);
     if (input.term) {
@@ -125,7 +146,7 @@ export function buildWhatsAppSummary(input: ReceiptSummaryInput): string {
     lines.push(`VCDB/MONTH: ${formatVcdbValue(input.vcdbPerMonth ?? 0)}`, `FACTOR: ${formatFactor(input.factor ?? 0)}`);
   }
 
-  if (input.before && input.after && input.found) {
+  if (input.before && input.after) {
     lines.push(
       '',
       'BEFORE LEAGUE CHECK:',
@@ -133,15 +154,7 @@ export function buildWhatsAppSummary(input: ReceiptSummaryInput): string {
       '',
       'AFTER LEAGUE CHECK:',
       `${formatVcdbValue(input.after.finalScore)} punten`,
-      '',
-      'PUNTEN GEVONDEN:',
-      formatFoundPoints(input.found.foundLeaguePoints),
-      '',
-      'FINAL MISSION VALUE:',
-      `${formatVcdbValue(input.after.finalScore)} punten`,
     );
-  } else {
-    lines.push('', 'MISSION VALUE:', 'PENDING CALCULATION');
   }
 
   lines.push('', missionApproved ? '2 PAAR OGEN = 0 PUNTEN LATEN LIGGEN' : 'MOGELIJKE WINST NOG NIET VOLLEDIG GECONTROLEERD');

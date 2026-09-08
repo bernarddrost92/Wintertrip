@@ -84,4 +84,11 @@ describe('MissionReceiptFlow — receipt is never gated on 6/6', () => {
     render(<MissionReceiptFlow beforeCheck={buildBeforeCheck()} agent={AGENT} checkedItems={ALL_CHECKED} checkedCount={6} total={6} />);
     expect(screen.getByRole('button', { name: /mission approved.*view receipt/i })).toBeInTheDocument();
   });
+
+  it('J. the generated receipt (the same node the PNG is rendered from) carries both hero labels', () => {
+    render(<MissionReceiptFlow beforeCheck={buildBeforeCheck()} agent={AGENT} checkedItems={ALL_CHECKED} checkedCount={6} total={6} />);
+    clickGenerate();
+    expect(screen.getByText('Final Mission Value')).toBeInTheDocument();
+    expect(screen.getByText('Winst door Dubbelcheck')).toBeInTheDocument();
+  });
 });

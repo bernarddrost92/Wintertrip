@@ -49,8 +49,19 @@ describe('buildWhatsAppSummary — complete (6/6) with a Calculator session', ()
   it('includes the mission/league result figures', () => {
     const text = buildWhatsAppSummary(base);
     expect(text).toContain('6/6');
-    expect(text).toContain('+50,00');
     expect(text).toContain('2,5x');
+  });
+
+  it('leads with FINAL MISSION VALUE, then WINST DOOR DUBBELCHECK, in that order', () => {
+    const text = buildWhatsAppSummary(base);
+    expect(text).toContain('FINAL MISSION VALUE:\n150,00 punten');
+    expect(text).toContain('WINST DOOR DUBBELCHECK:\n+50,00 punten');
+    expect(text.indexOf('FINAL MISSION VALUE')).toBeLessThan(text.indexOf('WINST DOOR DUBBELCHECK'));
+  });
+
+  it('no longer uses the old "PUNTEN GEVONDEN" terminology', () => {
+    const text = buildWhatsAppSummary(base);
+    expect(text).not.toContain('PUNTEN GEVONDEN');
   });
 
   it('reads MISSION APPROVED at 6/6', () => {
@@ -99,9 +110,10 @@ describe('buildWhatsAppSummary — incomplete (relaxed gating)', () => {
     expect(text).toContain('- VALUE');
   });
 
-  it('still shows Mission Value and Points Found when a Calculator session exists', () => {
+  it('E. still shows Final Mission Value and Winst door Dubbelcheck when a Calculator session exists', () => {
     const text = buildWhatsAppSummary(incomplete);
-    expect(text).toContain('+44,47');
+    expect(text).toContain('FINAL MISSION VALUE:\n61,33 punten');
+    expect(text).toContain('WINST DOOR DUBBELCHECK:\n+44,47 punten');
   });
 
   it('shows the not-yet-verified disclaimer instead of the approved line', () => {
@@ -110,7 +122,13 @@ describe('buildWhatsAppSummary — incomplete (relaxed gating)', () => {
     expect(text).not.toContain('2 PAAR OGEN = 0 PUNTEN LATEN LIGGEN');
   });
 
-  it('F/G. without a Calculator session, shows Mission Value as Pending Calculation, never 0', () => {
+  it('G. a zero found-points delta shows "GEEN EXTRA WINST VASTGELEGD", never +0,00', () => {
+    const text = buildWhatsAppSummary({ ...incomplete, found: { foundBasePoints: 0, foundLeaguePoints: 0 } });
+    expect(text).toContain('WINST DOOR DUBBELCHECK:\nGEEN EXTRA WINST VASTGELEGD');
+    expect(text).not.toContain('+0,00');
+  });
+
+  it('H. no Calculator session shows FINAL MISSION VALUE: PENDING CALCULATION and WINST DOOR DUBBELCHECK: NIET BEREKEND', () => {
     const text = buildWhatsAppSummary({
       agent,
       checkedCount: 3,
@@ -124,8 +142,9 @@ describe('buildWhatsAppSummary — incomplete (relaxed gating)', () => {
       after: null,
       found: null,
     });
-    expect(text).toContain('PENDING CALCULATION');
+    expect(text).toContain('FINAL MISSION VALUE:\nPENDING CALCULATION');
+    expect(text).toContain('WINST DOOR DUBBELCHECK:\nNIET BEREKEND');
     expect(text).not.toContain('MISSION TYPE');
-    expect(text).not.toMatch(/0,00 punten/);
+    expect(text).not.toContain('+0,00');
   });
 });

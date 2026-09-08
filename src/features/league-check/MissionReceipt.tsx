@@ -3,6 +3,7 @@ import { LEAGUE_CHECK_ITEMS } from '../../data/leagueCheckItems';
 import { getQualifyingTermRange } from '../calculator/computeResult';
 import { formatIsoDateReceipt } from '../../utils/dates';
 import { formatFactor, formatFoundPoints, formatVcdbValue } from '../../utils/format';
+import { getDubbelcheckState } from './dubbelcheckStatus';
 import type { AfterCheckOutput } from './useAfterCheck';
 import type { AgentIdentity, BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
 import type { CalculatorForm } from '../calculator/useMissionControlCalculator';
@@ -66,6 +67,53 @@ function ReceiptRow({ label, value, valueClassName = 'text-ink' }: { label: stri
   );
 }
 
+/** Hero #1 — Final Mission Value. The single biggest number on the
+ * receipt, on purpose: readable within a second, before anything else. */
+function FinalMissionValueHero({ afterCheck }: { afterCheck: AfterCheckOutput | null }) {
+  return (
+    <div className="space-y-1.5 py-2 text-center">
+      <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Final Mission Value</p>
+      {afterCheck ? (
+        <>
+          <p className="font-display text-5xl font-bold tabular-nums text-gold drop-shadow-[0_0_24px_rgba(255,215,104,0.45)]">
+            {formatVcdbValue(afterCheck.result.finalScore)}
+          </p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">League Points</p>
+        </>
+      ) : (
+        <p className="font-display text-2xl font-bold uppercase tracking-wide text-ink-muted">Pending Calculation</p>
+      )}
+    </div>
+  );
+}
+
+/** Hero #2 — Winst door Dubbelcheck, sized ~75% of Hero #1. Never a
+ * fabricated "+0,00": a real zero reads as "no change recorded", a missing
+ * Calculator session reads as "not calculated" — only an actual non-zero
+ * delta ever prints a number. */
+function DubbelcheckHero({ afterCheck }: { afterCheck: AfterCheckOutput | null }) {
+  const state = getDubbelcheckState(afterCheck ? afterCheck.found.foundLeaguePoints : null);
+  return (
+    <div className="space-y-1.5 py-1 text-center">
+      <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Winst door Dubbelcheck</p>
+      {state.kind === 'found' && (
+        <>
+          <p className="font-display text-4xl font-bold tabular-nums text-gold drop-shadow-[0_0_18px_rgba(255,215,104,0.35)]">
+            {formatFoundPoints(state.points)}
+          </p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Extra League Points</p>
+        </>
+      )}
+      {state.kind === 'none-recorded' && (
+        <p className="font-display text-lg font-bold uppercase tracking-wide text-ink-muted">Geen Extra Winst Vastgelegd</p>
+      )}
+      {state.kind === 'not-calculated' && (
+        <p className="font-display text-lg font-bold uppercase tracking-wide text-ink-muted">Niet Berekend</p>
+      )}
+    </div>
+  );
+}
+
 /**
  * The receipt card itself — a premium intelligence-report panel, not a
  * physical kassabon replica: a flat black/graphite fill with a single thin
@@ -76,10 +124,12 @@ function ReceiptRow({ label, value, valueClassName = 'text-ink' }: { label: stri
  *
  * A Mission Receipt is available at any checked count and with or without
  * a Calculator session behind it — 6/6 only changes the status it shows,
- * it is never required to print. When the check is incomplete, the open
- * items are printed plainly (never as a fabricated "potential points"
- * figure); when there is no Calculator snapshot, Mission Value reads
- * PENDING CALCULATION rather than a fake 0.
+ * it is never required to print. Reading order, top to bottom: identity/
+ * status, then the two heroes (Final Mission Value — the total deal value,
+ * always the single biggest number on the card — then Winst door
+ * Dubbelcheck, deliberately smaller and never a bare "+0,00": a real zero
+ * reads as a plain status line, not a numeric hero), then deal detail,
+ * the before/after breakdown, and only then the open/completed checks.
  */
 export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function ReceiptCard(
   { beforeCheck, afterCheck, agent, checkedItems, checkedCount, total },
@@ -131,19 +181,16 @@ export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function
           </div>
         </div>
 
-        {!missionApproved && (
-          <>
-            <ReceiptDivider />
-            <div className="space-y-1.5">
-              <p className="text-[10px] uppercase tracking-wider text-ink-muted">Open Checks</p>
-              {openItems.map((item) => (
-                <p key={item.id} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink">
-                  <span className="text-ink-muted">○</span> {bareCode(item.code)}
-                </p>
-              ))}
-            </div>
-          </>
-        )}
+        <ReceiptDivider />
+
+        {/* Hero #1 + Hero #2 — read within a second, before anything else:
+            the total deal value, then any extra the check surfaced. Open
+            checks and the completed/open checklist come later, after the
+            before/after breakdown — see the block right before the grid
+            below. */}
+        <FinalMissionValueHero afterCheck={afterCheck} />
+        <ReceiptDivider />
+        <DubbelcheckHero afterCheck={afterCheck} />
 
         {afterCheck && (
           <>
@@ -168,7 +215,7 @@ export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function
           </>
         )}
 
-        {beforeCheck && afterCheck ? (
+        {beforeCheck && afterCheck && (
           <>
             <ReceiptDivider />
 
@@ -188,45 +235,24 @@ export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function
 
             <ReceiptDivider />
 
-            {/* Hero #1 — the whole point of the receipt: what did the check find.
-                Always the real Base Score delta × Factor, never a guess at what
-                an unchecked item might be worth. */}
-            <div className="space-y-1 py-1 text-center">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Punten Gevonden</p>
-              <p className="font-display text-4xl font-bold tabular-nums text-gold drop-shadow-[0_0_20px_rgba(255,215,104,0.4)]">
-                {formatFoundPoints(afterCheck.found.foundLeaguePoints)}
-              </p>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">League Points</p>
-              <p className="mt-2 flex items-center justify-center gap-2 text-xs tabular-nums text-ink-muted">
-                <span>{formatVcdbValue(beforeCheck.result.finalScore)}</span>
-                <span className="text-gold/60">→</span>
-                <span className="font-semibold text-ink">{formatVcdbValue(afterCheck.result.finalScore)}</span>
-              </p>
-            </div>
-
-            <ReceiptDivider />
-
-            {/* Hero #2 — the resulting end value, secondary to Punten Gevonden but still a clear standalone result. */}
-            <div className="space-y-1 py-1 text-center">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Final Mission Value</p>
-              <p className="font-display text-2xl font-semibold tabular-nums text-ink">
-                {formatVcdbValue(afterCheck.result.finalScore)} <span className="text-sm font-normal text-ink-muted">points</span>
-              </p>
-            </div>
-
-            <ReceiptDivider />
-
             <div className="space-y-1.5">
               <ReceiptRow label="Base Points Found" value={formatFoundPoints(afterCheck.found.foundBasePoints)} />
               <ReceiptRow label="Factor Boost" value={`× ${afterCheck.form.factor.toLocaleString('nl-NL')}`} />
             </div>
           </>
-        ) : (
+        )}
+
+        {!missionApproved && (
           <>
             <ReceiptDivider />
-            <div className="space-y-1 py-1 text-center">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Mission Value</p>
-              <p className="font-display text-xl font-bold uppercase tracking-wide text-ink-muted">Pending Calculation</p>
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-ink-muted">Open Checks</p>
+              {openItems.map((item) => (
+                <p key={item.id} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink">
+                  <span className="text-ink-muted">○</span> {bareCode(item.code)}
+                </p>
+              ))}
+              <p className="pt-0.5 text-[10px] uppercase tracking-wider text-ink-muted">Mogelijke extra winst nog niet gecontroleerd</p>
             </div>
           </>
         )}
