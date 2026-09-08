@@ -4,6 +4,8 @@ const NL_DECIMAL = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 1, mi
 const NL_SCORE = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
 /** Always exactly 2 decimals — used for the transparent per-month VCDB math. */
 const NL_FIXED2 = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+/** Always exactly 1 decimal — the production dashboard's DB figures ("144,0 DB"). */
+const NL_FIXED1 = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 
 export function formatPoints(value: number): string {
   return NL_INTEGER.format(Math.round(value));
@@ -53,4 +55,10 @@ export function formatVcdbValue(value: number): string {
 
 export function formatPercent(fraction: number, decimals = 1): string {
   return `${(fraction * 100).toFixed(decimals)}%`;
+}
+
+/** Fixed 1-decimal DB value ("144,0", "44,5") — the production dashboard's
+ * own unit, kept visually distinct from the 2-decimal League/VCDB figures. */
+export function formatDb(value: number): string {
+  return NL_FIXED1.format(value);
 }

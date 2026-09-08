@@ -5,6 +5,7 @@ import { WeeklyBriefing } from '../../components/WeeklyBriefing';
 import { isLiveApiConfigured } from '../../services/api';
 import { formatFactor, formatPoints, formatSignedPoints } from '../../utils/format';
 import { AmLeaderboardSection } from './AmLeaderboardSection';
+import { ProductionSection } from './ProductionSection';
 import { TmLeaderboardSection } from './TmLeaderboardSection';
 import { WeeklyMissionUpdateSection } from './WeeklyMissionUpdateSection';
 import { useLeagueDataset } from './useLeagueDataset';
@@ -24,10 +25,14 @@ export function MissionControlPage() {
 
   return (
     <div className="relative">
-      <section className="relative overflow-hidden border-b border-gold/10 px-4 py-14 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
+        <ProductionSection />
+      </section>
+
+      <section className="relative mt-10 overflow-hidden border-y border-gold/10 px-4 py-14 sm:px-6">
         <TacticalGrid className="opacity-60" />
         <div className="relative mx-auto max-w-6xl">
-          <SectionHeader eyebrow={team.teamName} title="Mission Control" subtitle="We maken de score zichtbaar." />
+          <SectionHeader eyebrow={team.teamName} title="Team Zwolle League" subtitle="We maken de score zichtbaar." />
           {!isLiveApiConfigured() && (
             <p className="label-classified mt-3 text-ink-muted">Databron: mockdata (geen VITE_LEAGUE_API_URL geconfigureerd)</p>
           )}
