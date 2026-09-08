@@ -1,10 +1,9 @@
 import { SectionHeader } from '../../components/SectionHeader';
-import { formatDb } from '../../utils/format';
+import { formatVcdbValue } from '../../utils/format';
 import type { AgentRole } from '../../types/league';
-import type { AgentProductionStats, UnassignedProductionStats } from '../../types/production';
+import type { AgentContribution } from '../../services/productionAggregate';
 
-function AgentRow({ stats, position }: { stats: AgentProductionStats; position: number }) {
-  const hasKnownDb = stats.knownDb > 0;
+function AgentRow({ stats, position, role }: { stats: AgentContribution; position: number; role: AgentRole }) {
   return (
     <li className="panel-inset flex items-center gap-4 px-4 py-3 sm:px-5">
       <span
@@ -19,60 +18,47 @@ function AgentRow({ stats, position }: { stats: AgentProductionStats; position: 
         <span className="flex items-baseline gap-1.5">
           <span className="truncate text-sm font-medium text-ink sm:text-base">{stats.code}</span>
           <span className="shrink-0 border border-gold/30 px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-gold/80">
-            {stats.role}
+            {role}
           </span>
         </span>
       </div>
       <div className="shrink-0 text-right">
-        <p className={`font-display text-lg font-semibold tabular-nums sm:text-xl ${hasKnownDb ? 'text-gold' : 'text-ink-muted'}`}>
-          {hasKnownDb ? `${formatDb(stats.knownDb)} DB` : 'DB Pending'}
-        </p>
+        <p className="font-display text-lg font-semibold tabular-nums text-gold sm:text-xl">{formatVcdbValue(stats.score)} points</p>
         <p className="text-[11px] uppercase tracking-wider text-ink-muted">
-          {stats.placementCount} {stats.placementCount === 1 ? 'placement' : 'placements'}
-          {stats.missingDbCount > 0 && hasKnownDb && (
-            <span className="text-gold/70"> · {stats.missingDbCount} DB pending</span>
-          )}
+          {stats.deals} {stats.deals === 1 ? 'deal' : 'deals'}
         </p>
       </div>
     </li>
   );
 }
 
-function UnassignedNotice({ unassigned }: { unassigned: UnassignedProductionStats }) {
-  if (unassigned.placementCount === 0) return null;
-  return (
-    <div className="mt-3 border border-gold/30 bg-gold/5 px-4 py-3 sm:px-5">
-      <p className="label-classified text-gold">TM Unassigned</p>
-      <p className="mt-1 flex items-baseline gap-3 font-mono text-sm text-ink">
-        <span className="font-semibold">{unassigned.placementCount} placements</span>
-        <span className="text-ink-muted">·</span>
-        <span className="font-semibold">{formatDb(unassigned.knownDb)} DB</span>
-      </p>
-      <p className="mt-1 text-xs text-ink-muted">Nog geen Talentmanager ingevuld in Marre's snapshot.</p>
-    </div>
-  );
-}
-
 interface ContributionSectionProps {
   role: AgentRole;
-  agents: AgentProductionStats[];
-  unassigned?: UnassignedProductionStats;
+  agents: AgentContribution[];
 }
 
-/** AM CONTRIBUTION and TM CONTRIBUTION — production-based rankings (DB and
- * placement counts from Marre's snapshot), kept visually and structurally
- * separate from the League-score AM/TM leaderboards further down the page. */
-export function ProductionContributionSection({ role, agents, unassigned }: ContributionSectionProps) {
+/**
+ * AM CONTRIBUTION / TM CONTRIBUTION — attribution views over the same
+ * unique deal set the Team Zwolle total is computed from (see
+ * services/productionAggregate.ts), never additional deals. TM is
+ * deliberately just the ranked list of AMs/TMs who actually have a
+ * Talentmanager filled in — an empty TM never shows here as "Unknown"/
+ * "Unassigned"/"Missing", it simply contributes no row.
+ */
+export function ProductionContributionSection({ role, agents }: ContributionSectionProps) {
   const title = role === 'AM' ? 'AM Contribution' : 'TM Contribution';
   return (
     <div className="panel p-5 sm:p-6">
-      <SectionHeader eyebrow="Productie · huidige snapshot" title={title} />
-      <ul className="mt-5 space-y-2">
-        {agents.map((stats, i) => (
-          <AgentRow key={stats.code} stats={stats} position={i + 1} />
-        ))}
-      </ul>
-      {unassigned && <UnassignedNotice unassigned={unassigned} />}
+      <SectionHeader eyebrow="Marre Production Feed" title={title} />
+      {agents.length === 0 ? (
+        <p className="mt-5 text-sm text-ink-muted">Nog geen scorende deals in de huidige feed.</p>
+      ) : (
+        <ul className="mt-5 space-y-2">
+          {agents.map((stats, i) => (
+            <AgentRow key={stats.code} stats={stats} position={i + 1} role={role} />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
