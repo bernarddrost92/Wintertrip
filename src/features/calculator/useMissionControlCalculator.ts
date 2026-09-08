@@ -1,10 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DEFAULT_FACTOR, LEAGUE_PERIOD, WS_MESSAGE } from '../../config/leagueRules';
 import {
-  calculateExtensionScore,
   calculateHoursIncreaseEligibility,
-  calculateHoursIncreaseScore,
-  calculateNewPlacementScore,
   evaluateExtensionTiming,
   isLeagueEligibleCategory,
   validateExtensionWindow,
@@ -13,6 +10,7 @@ import {
 } from '../../services/scoring';
 import type { DealCategory, ExtensionTiming, MissionType, ScoreResult } from '../../types/scoring';
 import { compareIsoDates, formatIsoDateNl, isValidIsoDate } from '../../utils/dates';
+import { computeResultForForm } from './computeResult';
 
 export interface CalculatorForm {
   missionType: MissionType;
@@ -51,7 +49,7 @@ const INITIAL_FORM: CalculatorForm = {
   extraVcdbPerMonth: '',
 };
 
-function toNumber(raw: string): number {
+export function toNumber(raw: string): number {
   const n = Number(raw.replace(',', '.'));
   return Number.isFinite(n) ? n : 0;
 }
@@ -134,7 +132,7 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
       return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE', null);
     }
 
-    const result = calculateNewPlacementScore(form.startDate, form.endDate, toNumber(form.vcdbPerMonth), form.factor, form.dealCategory);
+    const result = computeResultForForm(form);
     const opportunities = buildOpportunitySignals(result);
     return baseOutput(completion, result, null, null, opportunities, 'READY', null);
   }
@@ -168,7 +166,7 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
       return baseOutput(completion, null, null, notEligible, [tooLateSignal(extensionTiming)], 'NOT_ELIGIBLE', extensionTiming);
     }
 
-    const result = calculateExtensionScore(form.oldEndDate, form.newEndDate, toNumber(form.extensionVcdbPerMonth), form.factor, form.dealCategory);
+    const result = computeResultForForm(form);
     const opportunities = buildOpportunitySignals(result);
     return baseOutput(completion, result, null, null, opportunities, 'READY', extensionTiming);
   }
@@ -212,15 +210,7 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
     );
   }
 
-  const result = calculateHoursIncreaseScore(
-    toNumber(form.oldHours),
-    toNumber(form.newHours),
-    form.increaseStartDate,
-    form.increaseEndDate,
-    toNumber(form.extraVcdbPerMonth),
-    form.factor,
-    form.dealCategory,
-  );
+  const result = computeResultForForm(form);
   const opportunities = buildOpportunitySignals(result);
   return baseOutput(completion, result, null, null, opportunities, 'READY', null);
 }

@@ -1,7 +1,9 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { GoldButton } from '../../components/GoldButton';
 import { HudCorners } from '../../components/HudCorners';
 import { TacticalGrid } from '../../components/TacticalGrid';
 import { useCountUp } from '../../hooks/useCountUp';
+import { useFactorPulse } from '../../hooks/useFactorPulse';
 import { formatScore, formatSignedScore } from '../../utils/format';
 import { FactorIntelligence } from './FactorIntelligence';
 import { ShowCalculationPanel } from './ShowCalculationPanel';
@@ -9,11 +11,13 @@ import type { CalculatorOutput } from './useMissionControlCalculator';
 
 interface MissionValuePanelProps {
   output: CalculatorOutput;
+  onRunLeagueCheck: () => void;
 }
 
-export function MissionValuePanel({ output }: MissionValuePanelProps) {
+export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePanelProps) {
   const { result, isInputComplete, errorMessage, notEligible } = output;
   const animatedValue = useCountUp(result?.finalScore ?? 0);
+  const pulseKey = useFactorPulse(result?.factor);
 
   if (!isInputComplete) {
     return (
@@ -54,7 +58,7 @@ export function MissionValuePanel({ output }: MissionValuePanelProps) {
   return (
     <div className="panel relative flex h-full flex-col overflow-hidden shadow-gold-lg">
       <HudCorners />
-      <div className="relative overflow-hidden border-b border-gold/15 px-6 py-12 text-center sm:py-16">
+      <div key={pulseKey} className="relative overflow-hidden border-b border-gold/15 px-6 py-12 text-center animate-[factor-pulse_0.6s_ease-out] sm:py-16">
         {/* The glow deliberately bleeds past this block's own edges — Mission
             Value is the one element allowed to spill outside its container. */}
         <div
@@ -88,11 +92,17 @@ export function MissionValuePanel({ output }: MissionValuePanelProps) {
       <FactorIntelligence baseScore={result.baseScore} selectedFactor={result.factor} />
       <ShowCalculationPanel result={result} />
 
-      {/* Fills the remaining flex space below the fold with the same
-          tactical texture as the rest of the console, so the panel never
-          trails off into a flat dead void when its neighbours run taller. */}
-      <div className="relative min-h-[80px] flex-1 border-t border-gold/10">
+      {/* The natural next step once a Mission Value exists — continues the
+          same mission into League Check rather than leaving the calculator
+          as a dead end. Fills the remaining flex space so the panel never
+          trails off into a flat void when its neighbours run taller. */}
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-3 border-t border-gold/10 px-6 py-8 text-center">
         <TacticalGrid className="opacity-20" />
+        <p className="label-classified relative text-ink-muted">Volgende stap</p>
+        <GoldButton className="relative" onClick={onRunLeagueCheck} icon={<ShieldCheck size={16} />}>
+          Run League Check
+          <ArrowRight size={15} aria-hidden />
+        </GoldButton>
       </div>
     </div>
   );

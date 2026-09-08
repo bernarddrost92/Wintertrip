@@ -48,15 +48,21 @@ export const DEAL_CATEGORY_OPTIONS: { value: 'DETACHERING' | 'WS'; label: string
   { value: 'WS', label: 'W&S' },
 ];
 
-/** Manual factor ladder — the Factor reflects the branch's contractant ranking. */
+/**
+ * Manual factor ladder — the Factor reflects the branch's contractant
+ * ranking. Ordered low-to-high (BASE first) so the calculator always opens
+ * on the pure, un-boosted score and the Accountmanager deliberately "opvoert"
+ * the Mission Value by picking a higher rung, rather than starting there.
+ */
 export const FACTOR_OPTIONS: FactorOption[] = [
-  { position: '#1', label: '1e positie', value: 2.5 },
-  { position: '#2', label: '2e positie', value: 2.0 },
-  { position: '#3', label: '3e positie', value: 1.7 },
-  { position: '#4', label: '4e positie', value: 1.5 },
-  { position: '#5', label: '5e positie', value: 1.4 },
+  { position: 'BASE', label: 'Zonder factor', value: 1.0 },
   { position: '#6 – #10', label: '6e t/m 10e positie', value: 1.3 },
-  { position: '—', label: 'Zonder factor', value: 1.0 },
+  { position: '#5', label: '5e positie', value: 1.4 },
+  { position: '#4', label: '4e positie', value: 1.5 },
+  { position: '#3', label: '3e positie', value: 1.7 },
+  { position: '#2', label: '2e positie', value: 2.0 },
+  { position: '#1', label: '1e positie', value: 2.5 },
 ];
 
+/** The calculator always opens on the pure base score — 1.0x, never a ranking factor. */
 export const DEFAULT_FACTOR = FACTOR_OPTIONS[0];

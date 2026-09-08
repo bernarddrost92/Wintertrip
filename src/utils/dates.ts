@@ -37,6 +37,15 @@ const MONTH_NAMES_NL = [
   'juli', 'augustus', 'september', 'oktober', 'november', 'december',
 ];
 
+const MONTH_ABBR_NL = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
+
+/** Compact receipt-style date: "29 JAN 2027" — used by the Mission Receipt. */
+export function formatIsoDateReceipt(iso: IsoDate): string {
+  if (!isValidIsoDate(iso)) return '—';
+  const { year, month, day } = parseIsoDate(iso);
+  return `${String(day).padStart(2, '0')} ${MONTH_ABBR_NL[month - 1]} ${year}`;
+}
+
 export function formatIsoDateNl(iso: IsoDate): string {
   if (!isValidIsoDate(iso)) return '—';
   const { year, month, day } = parseIsoDate(iso);

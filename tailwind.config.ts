@@ -119,6 +119,11 @@ export default {
           '0%': { opacity: '1' },
           '100%': { opacity: '0' },
         },
+        'factor-pulse': {
+          '0%': { boxShadow: '0 0 0 0 rgba(255,215,104,0.45)' },
+          '60%': { boxShadow: '0 0 0 14px rgba(255,215,104,0)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(255,215,104,0)' },
+        },
       },
       animation: {
         'radar-spin': 'radar-spin 18s linear infinite',

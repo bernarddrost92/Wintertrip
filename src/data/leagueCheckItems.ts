@@ -9,24 +9,22 @@ export const LEAGUE_CHECK_ITEMS: LeagueCheckItem[] = [
   {
     id: 'end-date',
     code: '02 END DATE',
-    label:
-      'Ligt de einddatum rond 31 januari? Kan de plaatsing of verlenging commercieel en contractueel echt vóór of op 31 januari starten? Geen fictieve datums gebruiken.',
+    label: 'Kan timing/einddatum commercieel en contractueel slimmer?',
   },
   {
     id: 'max-term',
     code: '03 MAX TERM',
-    label: 'Is de maximale commerciële looptijd met de klant besproken én is met de professional besproken of hij/zij meer uren wil of kan draaien?',
+    label: 'Is maximale looptijd besproken én is met professional besproken of meer uren mogelijk zijn?',
   },
   {
     id: 'hours',
     code: '04 HOURS',
-    label: 'Zijn alle mogelijke uren meegenomen en is +4 uur of meer urenuitbreiding mogelijk?',
+    label: 'Zijn alle uren meegenomen en is +4 uur uitbreiding mogelijk?',
   },
   {
     id: 'value',
     code: '05 VALUE',
-    label:
-      'Is de professional tegen het scherpst haalbare inkooptarief ingekocht, is bij de klant het maximaal haalbare tarief afgesproken en zijn VCDB + Factor gecontroleerd?',
+    label: 'Zijn: scherpst haalbare inkooptarief professional, maximaal haalbare klanttarief, VCDB, Factor gecontroleerd?',
   },
   {
     id: 'second-review',

@@ -6,16 +6,32 @@ import { LeagueCheckItem } from '../../components/LeagueCheckItem';
 import { MissionCheckBlock } from '../../components/MissionCheckBlock';
 import { SectionHeader } from '../../components/SectionHeader';
 import { LEAGUE_CHECK_GROUPS, LEAGUE_CHECK_ITEMS, TEAM_AGREEMENTS } from '../../data/leagueCheckItems';
+import { useMissionFlow } from '../missionFlow/missionFlowContext';
+import { AfterCheckFlow } from './AfterCheckFlow';
 import { useLeagueCheck } from './useLeagueCheck';
 
 const ITEMS_BY_ID = Object.fromEntries(LEAGUE_CHECK_ITEMS.map((item) => [item.id, item]));
 
+const MISSION_TYPE_LABEL_NL = { NEW_PLACEMENT: 'Nieuwe plaatsing', EXTENSION: 'Verlenging', HOURS_INCREASE: 'Urenuitbreiding' } as const;
+
 export function LeagueCheckPage() {
   const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck();
+  const { beforeCheck } = useMissionFlow();
+  const showAfterCheckFlow = missionApproved && beforeCheck !== null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
       <SectionHeader eyebrow="2 paar ogen principe" title="League Check" subtitle="2 paar ogen. 0 punten laten liggen." />
+
+      {beforeCheck && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 border border-gold/15 bg-mission-panel px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-ink-muted">
+          <span className="text-gold/80">Vanuit Calculator</span>
+          <span>{MISSION_TYPE_LABEL_NL[beforeCheck.form.missionType]}</span>
+          <span>Base <span className="text-ink">{beforeCheck.result.baseScore.toLocaleString('nl-NL', { maximumFractionDigits: 2 })}</span></span>
+          <span>Factor <span className="text-ink">{beforeCheck.form.factor.toLocaleString('nl-NL')}x</span></span>
+          <span>Mission Value <span className="text-gold">{beforeCheck.result.finalScore.toLocaleString('nl-NL', { maximumFractionDigits: 2 })}</span></span>
+        </div>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <FormField id="professional" label="Professional / dealnaam">
@@ -72,30 +88,34 @@ export function LeagueCheckPage() {
         </div>
       </div>
 
-      <div
-        className={`relative mt-8 flex flex-col items-center gap-3 overflow-hidden border px-6 py-8 text-center transition-all duration-500 ${
-          missionApproved ? 'animate-rise-in border-gold bg-gold/5 shadow-gold-lg' : 'border-white/10 bg-mission-panel/50'
-        }`}
-      >
-        {missionApproved && (
-          <>
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gold-sweep bg-[length:200%_auto] animate-gold-sweep-move" aria-hidden />
-            <Sparkles className="animate-pulse-glow text-gold" size={28} aria-hidden />
-          </>
-        )}
-        <p className={`font-display text-2xl font-bold uppercase tracking-[0.08em] ${missionApproved ? 'text-gold' : 'text-ink-dim'}`}>
-          {missionApproved ? 'Mission Approved' : 'Review Required'}
-        </p>
-        {missionApproved ? (
-          <div className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.22em] text-gold/80">
-            <span>2 Paar Ogen</span>
-            <span className="text-gold/30">|</span>
-            <span>0 Punten Laten Liggen</span>
-          </div>
-        ) : (
-          <p className="max-w-sm text-sm text-ink-muted">Vink alle punten af en vul de velden in om deze deal vrij te geven.</p>
-        )}
-      </div>
+      {showAfterCheckFlow && beforeCheck ? (
+        <AfterCheckFlow beforeCheck={beforeCheck} professional={state.professional} checkedCount={checkedCount} total={total} />
+      ) : (
+        <div
+          className={`relative mt-8 flex flex-col items-center gap-3 overflow-hidden border px-6 py-8 text-center transition-all duration-500 ${
+            missionApproved ? 'animate-rise-in border-gold bg-gold/5 shadow-gold-lg' : 'border-white/10 bg-mission-panel/50'
+          }`}
+        >
+          {missionApproved && (
+            <>
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gold-sweep bg-[length:200%_auto] animate-gold-sweep-move" aria-hidden />
+              <Sparkles className="animate-pulse-glow text-gold" size={28} aria-hidden />
+            </>
+          )}
+          <p className={`font-display text-2xl font-bold uppercase tracking-[0.08em] ${missionApproved ? 'text-gold' : 'text-ink-dim'}`}>
+            {missionApproved ? 'Mission Approved' : 'Review Required'}
+          </p>
+          {missionApproved ? (
+            <div className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.22em] text-gold/80">
+              <span>2 Paar Ogen</span>
+              <span className="text-gold/30">|</span>
+              <span>0 Punten Laten Liggen</span>
+            </div>
+          ) : (
+            <p className="max-w-sm text-sm text-ink-muted">Vink alle punten af en vul de velden in om deze deal vrij te geven.</p>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 flex justify-end">
         <GoldButton variant="ghost" onClick={reset}>

@@ -9,8 +9,11 @@ interface FactorIntelligenceProps {
 /** Compact "what would each ranking scenario be worth" comparison strip. */
 export function FactorIntelligence({ baseScore, selectedFactor }: FactorIntelligenceProps) {
   const scenarios = calculateFactorScenarios(baseScore, selectedFactor);
-  const top = scenarios[0];
-  const bottom = scenarios[scenarios.length - 2] ?? scenarios[scenarios.length - 1]; // #6–10, excluding "no factor"
+  // Looked up by position rather than array index — the ladder is ordered
+  // low-to-high (BASE first) so a fixed index would silently pick the wrong
+  // rungs if the ladder's order ever changes again.
+  const top = scenarios.find((s) => s.position === '#1') ?? scenarios[scenarios.length - 1];
+  const bottom = scenarios.find((s) => s.position === '#6 – #10') ?? scenarios[0];
   const spread = top.finalScore - bottom.finalScore;
 
   return (

@@ -34,6 +34,18 @@ export function formatSignedScore(value: number): string {
   return `${sign}${NL_SCORE.format(Math.abs(rounded))}`;
 }
 
+/**
+ * League Check "found points" — a NO CHANGE deal (found points exactly 0)
+ * is a fully valid, expected outcome, not an ambiguous "±" result, so zero
+ * is shown as "+0,00" here rather than formatSignedScore's "±0". Always
+ * exactly 2 decimals, matching the Mission Receipt's consistent formatting.
+ */
+export function formatFoundPoints(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  const sign = rounded < 0 ? '−' : '+';
+  return `${sign}${formatVcdbValue(Math.abs(rounded))}`;
+}
+
 /** Fixed 2-decimal VCDB value, as used throughout the Show Calculation breakdown. */
 export function formatVcdbValue(value: number): string {
   return NL_FIXED2.format(value);

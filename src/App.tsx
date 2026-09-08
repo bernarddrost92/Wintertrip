@@ -11,6 +11,7 @@ import { MissionGate } from './features/intro/MissionGate';
 import { MissionIntroSequence } from './features/intro/MissionIntroSequence';
 import { LeagueCheckPage } from './features/league-check/LeagueCheckPage';
 import { MissionControlPage } from './features/mission-control/MissionControlPage';
+import { MissionFlowProvider } from './features/missionFlow/MissionFlowProvider';
 import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
 import type { AppView } from './types/navigation';
 
@@ -57,11 +58,12 @@ export default function App() {
     setGatePhase('intro');
   }
 
-  /** Used only for the mission-briefing choice cards: a short "ACCESSING…"
-   * beat before landing in the section. Header navigation switches views
-   * instantly — that transition is for the one "entering the operation"
-   * moment from the briefing, not every click thereafter. */
-  function handleSelectFromHome(target: AppView) {
+  /** A short "ACCESSING…" beat before landing in a section — used both for
+   * the mission-briefing choice cards and for RUN LEAGUE CHECK continuing
+   * the mission from the calculator. Header navigation switches views
+   * instantly — that transition is for the "entering the operation" moment,
+   * not every click thereafter. */
+  function handleNavigate(target: AppView) {
     setTransition(target);
     window.setTimeout(() => {
       setView(target);
@@ -71,35 +73,37 @@ export default function App() {
 
   return (
     <SoundtrackProvider>
-      <div className="relative min-h-screen overflow-x-hidden bg-mission-void">
-        <ControlRoomEnvironment />
+      <MissionFlowProvider>
+        <div className="relative min-h-screen overflow-x-hidden bg-mission-void">
+          <ControlRoomEnvironment />
 
-        {gatePhase === 'gate' && <MissionGate onAccept={handleGateAccept} />}
-        {gatePhase === 'intro' && <MissionIntroSequence onComplete={handleIntroComplete} />}
+          {gatePhase === 'gate' && <MissionGate onAccept={handleGateAccept} />}
+          {gatePhase === 'intro' && <MissionIntroSequence onComplete={handleIntroComplete} />}
 
-        {gatePhase === 'ready' && (
-          <div className="relative z-10 flex min-h-screen flex-col">
-            <Navbar current={view} onNavigate={setView} />
-            <main className="flex-1">
-              {view === 'home' && <MissionHomepage onSelect={handleSelectFromHome} />}
-              {view === 'calculator' && <MissionControlCalculator />}
-              {view === 'league-check' && (
-                <CommandFrame>
-                  <LeagueCheckPage />
-                </CommandFrame>
-              )}
-              {view === 'mission-control' && (
-                <CommandFrame>
-                  <MissionControlPage />
-                </CommandFrame>
-              )}
-            </main>
-            <Footer onReplayIntro={handleReplayIntro} />
-          </div>
-        )}
+          {gatePhase === 'ready' && (
+            <div className="relative z-10 flex min-h-screen flex-col">
+              <Navbar current={view} onNavigate={setView} />
+              <main className="flex-1">
+                {view === 'home' && <MissionHomepage onSelect={handleNavigate} />}
+                {view === 'calculator' && <MissionControlCalculator onRunLeagueCheck={() => handleNavigate('league-check')} />}
+                {view === 'league-check' && (
+                  <CommandFrame>
+                    <LeagueCheckPage />
+                  </CommandFrame>
+                )}
+                {view === 'mission-control' && (
+                  <CommandFrame>
+                    <MissionControlPage />
+                  </CommandFrame>
+                )}
+              </main>
+              <Footer onReplayIntro={handleReplayIntro} />
+            </div>
+          )}
 
-        {transition && <AccessTransition label={ACCESS_LABEL[transition]} />}
-      </div>
+          {transition && <AccessTransition label={ACCESS_LABEL[transition]} />}
+        </div>
+      </MissionFlowProvider>
     </SoundtrackProvider>
   );
 }

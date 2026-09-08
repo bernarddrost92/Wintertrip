@@ -3,6 +3,7 @@ import { CommandFrame } from '../../components/CommandFrame';
 import { MissionSerial } from '../../components/MissionSerial';
 import { TacticalGrid } from '../../components/TacticalGrid';
 import { useAutoScrollOnReady } from '../../hooks/useAutoScrollOnReady';
+import { useMissionFlow } from '../missionFlow/missionFlowContext';
 import { ControlCheckPanel } from './ControlCheckPanel';
 import { MissionInputPanel } from './MissionInputPanel';
 import { MissionTypeToggle } from './MissionTypeToggle';
@@ -10,10 +11,23 @@ import { MissionValuePanel } from './MissionValuePanel';
 import { MonthlyIntelligence } from './MonthlyIntelligence';
 import { useMissionControlCalculator } from './useMissionControlCalculator';
 
-export function MissionControlCalculator() {
+interface MissionControlCalculatorProps {
+  /** Continues the same mission into League Check — called after the
+   * BEFORE CHECK snapshot (this form + its result) has been captured. */
+  onRunLeagueCheck: () => void;
+}
+
+export function MissionControlCalculator({ onRunLeagueCheck }: MissionControlCalculatorProps) {
   const { form, update, setMissionType, output } = useMissionControlCalculator();
+  const { setBeforeCheck } = useMissionFlow();
   const resultRef = useRef<HTMLDivElement>(null);
   useAutoScrollOnReady(resultRef, output.readiness);
+
+  function handleRunLeagueCheck() {
+    if (!output.result) return;
+    setBeforeCheck({ form, result: output.result });
+    onRunLeagueCheck();
+  }
 
   return (
     <CommandFrame>
@@ -37,7 +51,7 @@ export function MissionControlCalculator() {
             <MissionInputPanel form={form} update={update} output={output} />
           </div>
           <div ref={resultRef} className="relative order-1 scroll-mt-24 lg:order-2 lg:-mx-px">
-            <MissionValuePanel output={output} />
+            <MissionValuePanel output={output} onRunLeagueCheck={handleRunLeagueCheck} />
           </div>
           <div className="order-3 lg:-ml-px">
             <ControlCheckPanel output={output} />
