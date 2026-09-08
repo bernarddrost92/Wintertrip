@@ -45,8 +45,8 @@ export function LeagueCheckPage() {
         <FormField id="checkDate" label="Datum check">
           <TextInput id="checkDate" type="date" value={state.checkDate} onChange={(e) => update('checkDate', e.target.value)} />
         </FormField>
-        <FormField id="lc-am" label="Accountmanager">
-          <TextInput id="lc-am" value={state.accountManager} onChange={(e) => update('accountManager', e.target.value)} placeholder="Naam accountmanager" />
+        <FormField id="lc-am" label="AM of TM">
+          <TextInput id="lc-am" value={state.accountManager} onChange={(e) => update('accountManager', e.target.value)} placeholder="Naam AM of TM" />
         </FormField>
         <FormField id="reviewer" label="Reviewer / tweede paar ogen">
           <TextInput id="reviewer" value={state.reviewer} onChange={(e) => update('reviewer', e.target.value)} placeholder="Naam reviewer" />

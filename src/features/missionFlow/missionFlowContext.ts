@@ -4,7 +4,7 @@ import type { ScoreResult } from '../../types/scoring';
 
 /**
  * The frozen "BEFORE CHECK" state of a deal, captured the moment the
- * Accountmanager hits RUN LEAGUE CHECK — the exact form inputs and the
+ * AM or TM hits RUN LEAGUE CHECK — the exact form inputs and the
  * Base Score / Mission Value they produced, kept untouched so the League
  * Check's AFTER CHECK editor can compare like-for-like once the deal has
  * possibly been improved.

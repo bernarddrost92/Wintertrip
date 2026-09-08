@@ -29,7 +29,7 @@ export const LEAGUE_CHECK_ITEMS: LeagueCheckItem[] = [
   {
     id: 'second-review',
     code: '06 2ND REVIEW',
-    label: 'Heeft een tweede Accountmanager de deal gecontroleerd?',
+    label: 'Heeft een tweede AM of TM de deal gecontroleerd?',
   },
 ];
 
