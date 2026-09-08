@@ -79,70 +79,45 @@ export default {
           '0%, 100%': { height: '3px' },
           '50%': { height: '11px' },
         },
-        'intro-textfade': {
-          '0%': { opacity: '0', transform: 'translateY(6px)' },
-          '18%': { opacity: '1', transform: 'translateY(0)' },
-          '80%': { opacity: '1' },
-          '100%': { opacity: '0' },
-        },
-        'intro-textfade-hold': {
-          '0%': { opacity: '0', transform: 'translateY(6px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'intro-barrel-life': {
-          '0%': { opacity: '0', transform: 'scale(0.5)' },
-          '18%': { opacity: '1', transform: 'scale(1)' },
-          '82%': { opacity: '1', transform: 'scale(1)' },
-          '100%': { opacity: '1', transform: 'scale(0)' },
-        },
-        'intro-rotate-partial': {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(48deg)' },
-        },
-        'intro-crossfade-out': {
-          '0%, 60%': { opacity: '1' },
-          '100%': { opacity: '0' },
-        },
-        'intro-crossfade-in': {
-          '0%, 60%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        'intro-approved': {
-          '0%': { opacity: '0', letterSpacing: '0.08em' },
-          '100%': { opacity: '1', letterSpacing: '0.32em' },
-        },
         'intro-quickfade': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        'intro-pose-mid': {
-          '0%': { opacity: '0' },
-          '28%': { opacity: '1' },
-          '72%': { opacity: '1' },
-          '100%': { opacity: '0' },
+        'photo-shot-one': {
+          '0%': { opacity: '0', transform: 'scale(1)' },
+          '15%': { opacity: '1', transform: 'scale(1.02)' },
+          '77%': { opacity: '1', transform: 'scale(1.07)' },
+          '100%': { opacity: '0', transform: 'scale(1.09)' },
         },
-        'intro-pushin': {
-          '0%': { transform: 'scale(1)' },
-          '100%': { transform: 'scale(1.12)' },
+        'photo-shot-two': {
+          '0%': { opacity: '0', transform: 'scale(1.02)' },
+          '23%': { opacity: '1', transform: 'scale(1.04)' },
+          '77%': { opacity: '1', transform: 'scale(1.09)' },
+          '100%': { opacity: '0', transform: 'scale(1.11)' },
         },
-        'intro-flash-burst': {
-          '0%': { opacity: '0', transform: 'scale(0.3)' },
-          '35%': { opacity: '1', transform: 'scale(1.2)' },
-          '100%': { opacity: '0', transform: 'scale(1.7)' },
+        'photo-shot-three': {
+          '0%': { opacity: '0', transform: 'scale(1)', filter: 'brightness(1)' },
+          '15%': { opacity: '1', transform: 'scale(1.02)', filter: 'brightness(1.35)' },
+          '30%': { filter: 'brightness(1)' },
+          '100%': { opacity: '1', transform: 'scale(1.05)', filter: 'brightness(1)' },
         },
-        'intro-flash-spikes': {
-          '0%': { opacity: '0', transform: 'scale(0.4) rotate(0deg)' },
-          '35%': { opacity: '0.9', transform: 'scale(1.3) rotate(12deg)' },
-          '100%': { opacity: '0', transform: 'scale(1.8) rotate(20deg)' },
+        'photo-camera-shake': {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '25%': { transform: 'translate(-3px, 2px)' },
+          '50%': { transform: 'translate(2px, -2px)' },
+          '75%': { transform: 'translate(-2px, -1px)' },
         },
-        'intro-screen-flash': {
+        'photo-flash-pulse': {
           '0%, 100%': { opacity: '0' },
-          '50%': { opacity: '0.4' },
+          '50%': { opacity: '0.35' },
         },
-        'intro-gold-wipe': {
-          '0%': { transform: 'scale(0)', opacity: '1' },
-          '55%': { transform: 'scale(1)', opacity: '1' },
-          '100%': { transform: 'scale(1)', opacity: '0' },
+        'photo-gold-flood': {
+          '0%': { transform: 'translate(-50%, -50%) scale(0)', opacity: '1' },
+          '100%': { transform: 'translate(-50%, -50%) scale(1)', opacity: '1' },
+        },
+        'photo-reduced-fade': {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
         },
       },
       animation: {
