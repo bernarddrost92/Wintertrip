@@ -3,15 +3,19 @@ import { MissionMetric } from '../../components/MissionMetric';
 import { SectionHeader } from '../../components/SectionHeader';
 import { WeeklyBriefing } from '../../components/WeeklyBriefing';
 import { isLiveApiConfigured } from '../../services/api';
+import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { formatFactor, formatPoints, formatSignedPoints } from '../../utils/format';
 import { AmLeaderboardSection } from './AmLeaderboardSection';
 import { ProductionSection } from './ProductionSection';
+import { RoadToJan31Card } from './RoadToJan31Card';
 import { TmLeaderboardSection } from './TmLeaderboardSection';
+import { VirtualPositionCard } from './VirtualPositionCard';
 import { WeeklyMissionUpdateSection } from './WeeklyMissionUpdateSection';
 import { useLeagueDataset } from './useLeagueDataset';
 
 export function MissionControlPage() {
   const { dataset, loading } = useLeagueDataset();
+  const { ranking, fte } = getMissionSnapshot();
 
   if (loading || !dataset) {
     return (
@@ -25,7 +29,9 @@ export function MissionControlPage() {
 
   return (
     <div className="relative">
-      <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
+      <section className="mx-auto max-w-6xl space-y-6 px-4 pt-10 sm:px-6">
+        <VirtualPositionCard ranking={ranking} />
+        <RoadToJan31Card fte={fte} />
         <ProductionSection />
       </section>
 

@@ -18,6 +18,16 @@ export default {
           light: '#FFD768',
           highlight: '#FFE38A',
         },
+        silver: {
+          deep: '#8B929C',
+          DEFAULT: '#C0C6CE',
+          bright: '#E8ECF0',
+        },
+        bronze: {
+          deep: '#8C5A2B',
+          DEFAULT: '#CD7F32',
+          bright: '#E0A868',
+        },
         ink: {
           DEFAULT: '#F1EFE8',
           muted: '#8F949D',
@@ -45,6 +55,9 @@ export default {
         gold: '0 0 0 1px rgba(227,178,60,0.35), 0 0 32px -8px rgba(227,178,60,0.35)',
         'gold-lg': '0 0 0 1px rgba(227,178,60,0.45), 0 0 56px -6px rgba(227,178,60,0.5)',
         'gold-inset': 'inset 0 1px 0 0 rgba(255,231,138,0.12), 0 0 0 1px rgba(227,178,60,0.3)',
+        'podium-gold': '0 0 0 1px rgba(241,196,83,0.55), 0 0 48px -10px rgba(241,196,83,0.55)',
+        'podium-silver': '0 0 0 1px rgba(192,198,206,0.4), 0 0 28px -12px rgba(192,198,206,0.4)',
+        'podium-bronze': '0 0 0 1px rgba(205,127,50,0.4), 0 0 24px -14px rgba(205,127,50,0.35)',
       },
       keyframes: {
         'radar-spin': {
@@ -124,6 +137,23 @@ export default {
           '60%': { boxShadow: '0 0 0 14px rgba(255,215,104,0)' },
           '100%': { boxShadow: '0 0 0 0 rgba(255,215,104,0)' },
         },
+        'podium-pulse-gold': {
+          '0%, 100%': { opacity: '0.55' },
+          '50%': { opacity: '1' },
+        },
+        'podium-pulse-bronze': {
+          '0%, 100%': { opacity: '0.6' },
+          '50%': { opacity: '0.8' },
+        },
+        'podium-flare': {
+          '0%, 92%, 100%': { transform: 'translateX(-120%)', opacity: '0' },
+          '95%': { opacity: '0.9' },
+          '98%': { transform: 'translateX(120%)', opacity: '0' },
+        },
+        'podium-shimmer-silver': {
+          '0%, 100%': { opacity: '0.35' },
+          '50%': { opacity: '0.7' },
+        },
       },
       animation: {
         'radar-spin': 'radar-spin 18s linear infinite',
@@ -134,6 +164,10 @@ export default {
         'trace-line': 'trace-line 1.2s ease-out both',
         'led-blink': 'led-blink 2s ease-in-out infinite',
         eq: 'eq 0.9s ease-in-out infinite',
+        'podium-pulse-gold': 'podium-pulse-gold 4s ease-in-out infinite',
+        'podium-pulse-bronze': 'podium-pulse-bronze 5s ease-in-out infinite',
+        'podium-flare': 'podium-flare 8s ease-in-out infinite',
+        'podium-shimmer-silver': 'podium-shimmer-silver 6s ease-in-out infinite',
       },
     },
   },
