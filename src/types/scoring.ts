@@ -2,7 +2,7 @@ import type { IsoDate, MissionType } from './league';
 
 export type { MissionType };
 
-/** Only DETACHERING scores within Operatie Wintersport 2027 — W&S never does. */
+/** Only DETACHERING scores within Operatie Wintertrip 2027 — W&S never does. */
 export type DealCategory = 'DETACHERING' | 'WS';
 
 /** One calendar month's overlap with a date range, used by both proration dimensions. */

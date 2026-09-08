@@ -24,7 +24,7 @@ export function TmLeaderboardSection({ talentManagers }: { talentManagers: Talen
         subtitle="Wat heeft iedere talentmanager bijgedragen aan Team Zwolle?"
       />
       <div className="mt-5">
-        <Leaderboard rows={rows} />
+        <Leaderboard rows={rows} role="TM" />
       </div>
     </div>
   );

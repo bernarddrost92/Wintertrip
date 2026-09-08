@@ -82,7 +82,7 @@ export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function
       <div className="space-y-4 px-6 py-7 font-mono">
         <div className="space-y-1 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ink-muted">Team Zwolle</p>
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ink-muted">Operatie Wintersport 2027</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ink-muted">Operatie Wintertrip 2027</p>
           <p className="mt-2 font-display text-xl font-bold uppercase tracking-[0.14em] text-gold drop-shadow-[0_0_18px_rgba(255,215,104,0.4)]">
             Mission Receipt
           </p>

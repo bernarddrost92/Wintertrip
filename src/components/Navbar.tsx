@@ -28,7 +28,7 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
           </span>
           <span className="min-w-0">
             <span className="block truncate font-display text-xs font-bold leading-none tracking-[0.1em] text-ink sm:text-sm sm:tracking-[0.14em]">
-              007 <span className="text-gold/40">/</span> OPERATIE WINTERSPORT 2027
+              007 <span className="text-gold/40">/</span> OPERATIE WINTERTRIP 2027
             </span>
             <span className="mt-0.5 hidden text-[10px] font-semibold uppercase leading-none tracking-[0.3em] text-gold/80 sm:block">
               Team Zwolle

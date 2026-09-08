@@ -25,7 +25,13 @@ export function WeeklyMissionUpdateSection({ update, history }: WeeklyMissionUpd
 
       <div className="mt-5 flex items-center justify-between border border-gold/30 bg-gold/5 px-4 py-3">
         <span className="label-classified">Top contributor</span>
-        <span className="font-display text-lg font-semibold text-gold">{update.topContributor}</span>
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold/60">Agent</span>
+          <span className="font-display text-lg font-semibold text-gold">{update.topContributor}</span>
+          <span className="border border-gold/30 px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-gold/80">
+            {update.topContributorRole}
+          </span>
+        </span>
       </div>
 
       <div className="mt-6 h-40">

@@ -160,6 +160,7 @@ export const MOCK_WEEKLY_UPDATE: WeeklyMissionUpdate = {
   leagueChecks: 9,
   biggestDeal: 1000,
   topContributor: 'Agent Aurum',
+  topContributorRole: 'AM',
 };
 
 export const MOCK_WEEKLY_SCORE_HISTORY: WeeklyScorePoint[] = [

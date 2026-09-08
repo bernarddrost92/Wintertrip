@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { formatPoints } from '../utils/format';
+import type { AgentRole } from '../types/league';
 
 export interface LeaderboardRow {
   name: string;
@@ -10,9 +11,13 @@ export interface LeaderboardRow {
 
 interface LeaderboardProps {
   rows: LeaderboardRow[];
+  /** Every row on one leaderboard shares the same functional role — AM or
+   * TM — shown as a small badge next to each name so it's never ambiguous
+   * which list (or which real-world role) a name belongs to. */
+  role: AgentRole;
 }
 
-export function Leaderboard({ rows }: LeaderboardProps) {
+export function Leaderboard({ rows, role }: LeaderboardProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const maxScore = Math.max(1, ...rows.map((r) => r.finalScore));
 
@@ -36,7 +41,15 @@ export function Leaderboard({ rows }: LeaderboardProps) {
               >
                 {position}
               </span>
-              <span className="flex-1 truncate text-sm font-medium text-ink sm:text-base">{row.name}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-gold/60">Agent</span>
+                <span className="flex items-baseline gap-1.5">
+                  <span className="truncate text-sm font-medium text-ink sm:text-base">{row.name}</span>
+                  <span className="shrink-0 border border-gold/30 px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-gold/80">
+                    {role}
+                  </span>
+                </span>
+              </span>
               <div className="hidden w-32 shrink-0 sm:block">
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div

@@ -26,7 +26,7 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
       <h1 className="mt-5 max-w-full break-words font-display text-[9vw] font-black uppercase leading-[0.92] tracking-tight text-ink sm:text-6xl lg:text-7xl">
         Operatie
         <br />
-        <span className="bg-gold-sweep bg-[length:200%_auto] bg-clip-text text-transparent animate-gold-sweep-move">Wintersport 2027</span>
+        <span className="bg-gold-sweep bg-[length:200%_auto] bg-clip-text text-transparent animate-gold-sweep-move">Wintertrip 2027</span>
       </h1>
       <p className="mt-4 text-sm font-semibold uppercase tracking-[0.5em] text-gold/80">Team Zwolle</p>
 

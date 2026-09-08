@@ -40,13 +40,13 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-/** "operatie-wintersport-2027-receipt-2026-09-08.png" — no client or
- * professional name, ever, per spec. */
+/** "operatie-wintertrip-2027-receipt-2026-09-08.png" — date-stamped, no
+ * client name in the filename itself. */
 export function buildReceiptFilename(date: Date = new Date()): string {
   const y = date.getFullYear();
   const m = pad2(date.getMonth() + 1);
   const d = pad2(date.getDate());
-  return `operatie-wintersport-2027-receipt-${y}-${m}-${d}.png`;
+  return `operatie-wintertrip-2027-receipt-${y}-${m}-${d}.png`;
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
@@ -94,7 +94,7 @@ export interface ReceiptSummaryInput {
  * result — nothing hidden. */
 export function buildWhatsAppSummary(input: ReceiptSummaryInput): string {
   const lines = [
-    'OPERATIE WINTERSPORT 2027',
+    'OPERATIE WINTERTRIP 2027',
     '',
     `MISSION APPROVED — ${input.checkedCount}/${input.total}`,
     '',

@@ -1,6 +1,9 @@
 import { createContext, useContext } from 'react';
 import type { CalculatorForm } from '../calculator/useMissionControlCalculator';
 import type { ScoreResult } from '../../types/scoring';
+import type { AgentRole } from '../../types/league';
+
+export type { AgentRole };
 
 /**
  * The frozen "BEFORE CHECK" state of a deal, captured the moment the
@@ -13,8 +16,6 @@ export interface BeforeCheckSnapshot {
   form: CalculatorForm;
   result: ScoreResult;
 }
-
-export type AgentRole = 'AM' | 'TM';
 
 /**
  * Who ran the check, what they are (AM or TM), and which professional the

@@ -34,7 +34,7 @@ export function MissionControlCalculator({ onRunLeagueCheck }: MissionControlCal
       <div className="relative overflow-hidden border-b border-gold/15 px-4 py-5 sm:px-6">
         <TacticalGrid className="opacity-25" />
         <div className="relative mx-auto flex max-w-[1800px] flex-col gap-2">
-          <p className="label-classified text-gold/70">Operatie Wintersport 2027 · Mission Calculator</p>
+          <p className="label-classified text-gold/70">Operatie Wintertrip 2027 · Mission Calculator</p>
           <MissionSerial />
         </div>
       </div>

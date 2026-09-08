@@ -21,7 +21,7 @@ export function AmLeaderboardSection({ accountManagers }: { accountManagers: Acc
     <div className="panel p-5 sm:p-6">
       <SectionHeader eyebrow="Bijdrage per persoon" title="AM Leaderboard" subtitle="Samen scherp. Samen #1." />
       <div className="mt-5">
-        <Leaderboard rows={rows} />
+        <Leaderboard rows={rows} role="AM" />
       </div>
     </div>
   );

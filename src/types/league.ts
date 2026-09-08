@@ -1,5 +1,5 @@
 /**
- * Core domain types for 007 — Operatie Wintersport 2027.
+ * Core domain types for 007 — Operatie Wintertrip 2027.
  *
  * Dates are represented as ISO date-only strings ("YYYY-MM-DD"). Keeping dates
  * as plain strings (rather than Date objects) through the data layer avoids
@@ -10,6 +10,9 @@
 export type IsoDate = string;
 
 export type MissionType = 'NEW_PLACEMENT' | 'EXTENSION' | 'HOURS_INCREASE';
+
+/** The two functional roles a League Check Agent can hold. */
+export type AgentRole = 'AM' | 'TM';
 
 /** Business domain of the assignment. W&S never scores within the league. */
 export type Domain =
@@ -100,6 +103,7 @@ export interface WeeklyMissionUpdate {
   leagueChecks: number;
   biggestDeal: number;
   topContributor: string;
+  topContributorRole: AgentRole;
 }
 
 export interface WeeklyScorePoint {

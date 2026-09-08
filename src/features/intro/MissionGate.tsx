@@ -29,7 +29,7 @@ export function MissionGate({ onAccept }: MissionGateProps) {
         <div className="space-y-1.5">
           <p className="font-display text-2xl font-bold tracking-[0.14em] text-ink">007</p>
           <p className="font-display text-xl font-bold uppercase leading-tight tracking-[0.08em] text-gold-gradient bg-gold-sweep bg-[length:200%_auto] bg-clip-text text-transparent">
-            Operatie Wintersport 2027
+            Operatie Wintertrip 2027
           </p>
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-gold/80">Team Zwolle</p>
         </div>
