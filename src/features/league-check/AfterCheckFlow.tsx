@@ -4,6 +4,7 @@ import { GoldButton } from '../../components/GoldButton';
 import { formatFoundPoints, formatVcdbValue } from '../../utils/format';
 import { AfterCheckEditor } from './AfterCheckEditor';
 import { MissionReceipt } from './MissionReceipt';
+import { ReceiptActions } from './ReceiptActions';
 import { useAfterCheck } from './useAfterCheck';
 import type { BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
 
@@ -58,7 +59,10 @@ export function AfterCheckFlow({ beforeCheck, professional, checkedCount, total 
       </div>
 
       {receiptGenerated && (
-        <MissionReceipt beforeCheck={beforeCheck} afterCheck={afterCheck} professional={professional} checkedCount={checkedCount} total={total} />
+        <>
+          <MissionReceipt beforeCheck={beforeCheck} afterCheck={afterCheck} professional={professional} checkedCount={checkedCount} total={total} />
+          <ReceiptActions beforeCheck={beforeCheck} afterCheck={afterCheck} checkedCount={checkedCount} total={total} />
+        </>
       )}
     </div>
   );

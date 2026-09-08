@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { LEAGUE_CHECK_ITEMS } from '../../data/leagueCheckItems';
 import { getQualifyingTermRange } from '../calculator/computeResult';
 import { formatIsoDateReceipt } from '../../utils/dates';
@@ -7,13 +8,19 @@ import type { BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
 import type { CalculatorForm } from '../calculator/useMissionControlCalculator';
 import type { MissionType } from '../../types/league';
 
-interface MissionReceiptProps {
+export interface ReceiptCardProps {
   beforeCheck: BeforeCheckSnapshot;
   afterCheck: AfterCheckOutput;
   professional: string;
   checkedCount: number;
   total: number;
+  /** Strips the Professional row — used for the shareable/downloadable PNG,
+   * which carries no personal data by default. The on-screen receipt keeps
+   * showing it. */
+  redactPersonal?: boolean;
 }
+
+type MissionReceiptProps = ReceiptCardProps;
 
 const MISSION_TYPE_LABEL: Record<MissionType, string> = {
   NEW_PLACEMENT: 'NIEUWE PLAATSING',
@@ -69,23 +76,27 @@ function ReceiptRow({ label, value, valueClassName = 'text-ink' }: { label: stri
 }
 
 /**
- * The Mission Receipt — a premium black/gold "kassabon" printed the moment
- * a League Check closes 6/6, laying BEFORE and AFTER side by side so the
- * commercial improvement the check itself surfaced is unmistakable. Found
- * points come straight from services/missionReceipt.ts: a pure Base Score
- * delta, never inflated by a Factor change alone.
+ * The bordered kassabon itself — perforated edges, all receipt content,
+ * nothing else. Shared verbatim by the on-screen MissionReceipt (wrapped in
+ * its ambient glow) and the off-screen export node ReceiptActions renders
+ * to produce the shareable/downloadable PNG, so the two can never drift
+ * apart visually.
  */
-export function MissionReceipt({ beforeCheck, afterCheck, professional, checkedCount, total }: MissionReceiptProps) {
+export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function ReceiptCard(
+  { beforeCheck, afterCheck, professional, checkedCount, total, redactPersonal = false },
+  ref,
+) {
   const term = getQualifyingTermRange(afterCheck.form);
   const vcdb = vcdbFieldFor(afterCheck.form);
 
   return (
-    <div className="relative mx-auto max-w-[420px] py-3">
-      <div className="pointer-events-none absolute -inset-8 -z-10 opacity-80" style={{ background: 'radial-gradient(60% 60% at 50% 40%, rgba(255,215,104,0.16), transparent 72%)' }} aria-hidden />
-
-      <div className="panel relative shadow-gold-lg" style={{ background: 'linear-gradient(180deg, #0b0e12 0%, #08090b 60%, #06080a 100%)' }}>
-        <PerforatedEdge position="top" />
-        <PerforatedEdge position="bottom" />
+    <div
+      ref={ref}
+      className="panel relative shadow-gold-lg"
+      style={{ background: 'linear-gradient(180deg, #0b0e12 0%, #08090b 60%, #06080a 100%)' }}
+    >
+      <PerforatedEdge position="top" />
+      <PerforatedEdge position="bottom" />
 
         <div className="space-y-4 px-6 py-7 font-mono">
           <div className="space-y-1 text-center">
@@ -108,7 +119,7 @@ export function MissionReceipt({ beforeCheck, afterCheck, professional, checkedC
           <ReceiptDivider />
 
           <div className="space-y-1.5">
-            {professional && <ReceiptRow label="Professional" value={professional} />}
+            {!redactPersonal && professional && <ReceiptRow label="Professional" value={professional} />}
             <ReceiptRow label="Mission Type" value={MISSION_TYPE_LABEL[afterCheck.form.missionType]} />
           </div>
 
@@ -177,12 +188,31 @@ export function MissionReceipt({ beforeCheck, afterCheck, professional, checkedC
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">0 Punten Laten Liggen</p>
           </div>
 
-          <div className="flex justify-center pt-2">
-            <ReceiptBarcode />
-          </div>
-          <p className="text-center text-[9px] uppercase tracking-[0.3em] text-ink-dim">WS27-2609-ZWL</p>
+        <div className="flex justify-center pt-2">
+          <ReceiptBarcode />
         </div>
+        <p className="text-center text-[9px] uppercase tracking-[0.3em] text-ink-dim">WS27-2609-ZWL</p>
       </div>
+    </div>
+  );
+});
+
+/**
+ * The Mission Receipt — a premium black/gold "kassabon" printed the moment
+ * a League Check closes 6/6, laying BEFORE and AFTER side by side so the
+ * commercial improvement the check itself surfaced is unmistakable. Found
+ * points come straight from services/missionReceipt.ts: a pure Base Score
+ * delta, never inflated by a Factor change alone.
+ */
+export function MissionReceipt(props: MissionReceiptProps) {
+  return (
+    <div className="relative mx-auto max-w-[420px] py-3">
+      <div
+        className="pointer-events-none absolute -inset-8 -z-10 opacity-80"
+        style={{ background: 'radial-gradient(60% 60% at 50% 40%, rgba(255,215,104,0.16), transparent 72%)' }}
+        aria-hidden
+      />
+      <ReceiptCard {...props} />
     </div>
   );
 }
