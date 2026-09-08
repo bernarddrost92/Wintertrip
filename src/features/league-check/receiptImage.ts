@@ -2,6 +2,7 @@ import { toBlob } from 'html-to-image';
 import { formatIsoDateReceipt } from '../../utils/dates';
 import { formatFactor, formatFoundPoints, formatVcdbValue } from '../../utils/format';
 import type { IsoDate, MissionType } from '../../types/league';
+import type { AgentIdentity } from '../missionFlow/missionFlowContext';
 
 /** Target output width for the exported PNG — high enough to stay crisp on
  * a phone screen after a WhatsApp re-compress, without ballooning file size. */
@@ -75,6 +76,7 @@ export function canShareFiles(): boolean {
 }
 
 export interface ReceiptSummaryInput {
+  agent: AgentIdentity;
   missionType: MissionType;
   term: { start: IsoDate; end: IsoDate } | null;
   vcdbPerMonth: number;
@@ -87,30 +89,43 @@ export interface ReceiptSummaryInput {
 }
 
 /** Plain-text WhatsApp summary — the COPY WHATSAPP TEXT fallback when
- * native file sharing isn't available. Mission/League results only, no
- * personal data, matching the exported PNG's own privacy default. */
+ * native file sharing isn't available, and matches the on-screen/PNG
+ * receipt: who ran the check, for which professional, and the mission
+ * result — nothing hidden. */
 export function buildWhatsAppSummary(input: ReceiptSummaryInput): string {
   const lines = [
-    'TEAM ZWOLLE — OPERATIE WINTERSPORT 2027',
-    'MISSION RECEIPT',
+    'OPERATIE WINTERSPORT 2027',
     '',
-    `Mission status: approved ${input.checkedCount}/${input.total}`,
-    `Mission type: ${MISSION_TYPE_LABEL[input.missionType]}`,
+    `MISSION APPROVED — ${input.checkedCount}/${input.total}`,
+    '',
+    'AGENT:',
+    `${input.agent.agentName || '—'} — ${input.agent.agentRole}`,
+    '',
+    'PROFESSIONAL:',
+    input.agent.professionalName || '—',
+    '',
+    `MISSION TYPE: ${MISSION_TYPE_LABEL[input.missionType]}`,
   ];
   if (input.term) {
-    lines.push(`Qualifying term: ${formatIsoDateReceipt(input.term.start)} — ${formatIsoDateReceipt(input.term.end)}`);
+    lines.push(`QUALIFYING TERM: ${formatIsoDateReceipt(input.term.start)} — ${formatIsoDateReceipt(input.term.end)}`);
   }
   lines.push(
-    `VCDB/month: ${formatVcdbValue(input.vcdbPerMonth)}`,
-    `Factor: ${formatFactor(input.factor)}`,
+    `VCDB/MONTH: ${formatVcdbValue(input.vcdbPerMonth)}`,
+    `FACTOR: ${formatFactor(input.factor)}`,
     '',
-    `Before — base ${formatVcdbValue(input.before.baseScore)} · value ${formatVcdbValue(input.before.finalScore)}`,
-    `After — base ${formatVcdbValue(input.after.baseScore)} · value ${formatVcdbValue(input.after.finalScore)}`,
+    'BEFORE LEAGUE CHECK:',
+    `${formatVcdbValue(input.before.finalScore)} punten`,
     '',
-    `Punten gevonden: ${formatFoundPoints(input.found.foundLeaguePoints)} league points`,
-    `Base points found: ${formatFoundPoints(input.found.foundBasePoints)}`,
+    'AFTER LEAGUE CHECK:',
+    `${formatVcdbValue(input.after.finalScore)} punten`,
     '',
-    '2 paar ogen. 0 punten laten liggen.',
+    'PUNTEN GEVONDEN:',
+    formatFoundPoints(input.found.foundLeaguePoints),
+    '',
+    'FINAL MISSION VALUE:',
+    `${formatVcdbValue(input.after.finalScore)} punten`,
+    '',
+    '2 PAAR OGEN = 0 PUNTEN LATEN LIGGEN',
   );
   return lines.join('\n');
 }

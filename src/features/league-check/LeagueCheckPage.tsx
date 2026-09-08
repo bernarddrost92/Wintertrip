@@ -8,6 +8,7 @@ import { SectionHeader } from '../../components/SectionHeader';
 import { LEAGUE_CHECK_GROUPS, LEAGUE_CHECK_ITEMS, TEAM_AGREEMENTS } from '../../data/leagueCheckItems';
 import { useMissionFlow } from '../missionFlow/missionFlowContext';
 import { AfterCheckFlow } from './AfterCheckFlow';
+import { RoleToggle } from './RoleToggle';
 import { useLeagueCheck } from './useLeagueCheck';
 
 const ITEMS_BY_ID = Object.fromEntries(LEAGUE_CHECK_ITEMS.map((item) => [item.id, item]));
@@ -15,9 +16,18 @@ const ITEMS_BY_ID = Object.fromEntries(LEAGUE_CHECK_ITEMS.map((item) => [item.id
 const MISSION_TYPE_LABEL_NL = { NEW_PLACEMENT: 'Nieuwe plaatsing', EXTENSION: 'Verlenging', HOURS_INCREASE: 'Urenuitbreiding' } as const;
 
 export function LeagueCheckPage() {
-  const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck();
-  const { beforeCheck } = useMissionFlow();
+  const { beforeCheck, agent, updateAgent, resetAgent, clearBeforeCheck } = useMissionFlow();
+  const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck({
+    agentName: agent.agentName,
+    professionalName: agent.professionalName,
+  });
   const showAfterCheckFlow = missionApproved && beforeCheck !== null;
+
+  function handleNewMission() {
+    reset();
+    clearBeforeCheck();
+    resetAgent();
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
@@ -33,20 +43,35 @@ export function LeagueCheckPage() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <FormField id="professional" label="Professional / dealnaam">
+      {/* Identity block — who is running this check, and for which professional.
+          Kept in the shared Mission Flow context so it survives all the way
+          through After Check, the Mission Receipt, and its download/share. */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <FormField id="agentName" label="Agent">
           <TextInput
-            id="professional"
-            value={state.professional}
-            onChange={(e) => update('professional', e.target.value)}
-            placeholder="Bijv. Professional 03 — Salland Techniek"
+            id="agentName"
+            value={agent.agentName}
+            onChange={(e) => updateAgent('agentName', e.target.value)}
+            placeholder="Naam"
           />
         </FormField>
+        <div>
+          <p className="label-classified mb-1.5">Role</p>
+          <RoleToggle value={agent.agentRole} onChange={(role) => updateAgent('agentRole', role)} />
+        </div>
+        <FormField id="professionalName" label="Professional">
+          <TextInput
+            id="professionalName"
+            value={agent.professionalName}
+            onChange={(e) => updateAgent('professionalName', e.target.value)}
+            placeholder="Naam professional"
+          />
+        </FormField>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <FormField id="checkDate" label="Datum check">
           <TextInput id="checkDate" type="date" value={state.checkDate} onChange={(e) => update('checkDate', e.target.value)} />
-        </FormField>
-        <FormField id="lc-am" label="AM of TM">
-          <TextInput id="lc-am" value={state.accountManager} onChange={(e) => update('accountManager', e.target.value)} placeholder="Naam AM of TM" />
         </FormField>
         <FormField id="reviewer" label="Reviewer / tweede paar ogen">
           <TextInput id="reviewer" value={state.reviewer} onChange={(e) => update('reviewer', e.target.value)} placeholder="Naam reviewer" />
@@ -89,7 +114,7 @@ export function LeagueCheckPage() {
       </div>
 
       {showAfterCheckFlow && beforeCheck ? (
-        <AfterCheckFlow beforeCheck={beforeCheck} professional={state.professional} checkedCount={checkedCount} total={total} />
+        <AfterCheckFlow beforeCheck={beforeCheck} agent={agent} checkedCount={checkedCount} total={total} />
       ) : (
         <div
           className={`relative mt-8 flex flex-col items-center gap-3 overflow-hidden border px-6 py-8 text-center transition-all duration-500 ${
@@ -118,8 +143,8 @@ export function LeagueCheckPage() {
       )}
 
       <div className="mt-6 flex justify-end">
-        <GoldButton variant="ghost" onClick={reset}>
-          Reset check
+        <GoldButton variant="ghost" onClick={handleNewMission}>
+          New Mission
         </GoldButton>
       </div>
 

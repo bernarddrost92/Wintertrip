@@ -4,14 +4,18 @@ import type { LeagueCheckState } from '../../types/league';
 import { isoDateToday } from '../../utils/dates';
 
 const INITIAL_STATE: LeagueCheckState = {
-  professional: '',
-  accountManager: '',
   reviewer: '',
   checkDate: isoDateToday(),
   checkedItems: {},
 };
 
-export function useLeagueCheck() {
+/**
+ * Identity fields the mission is gated on — Agent name and Professional
+ * name now live in the shared Mission Flow context (missionFlowContext.ts)
+ * rather than here, so they survive navigating away and back; this hook
+ * just takes their current values to decide whether the check can approve.
+ */
+export function useLeagueCheck(identity: { agentName: string; professionalName: string }) {
   const [state, setState] = useState<LeagueCheckState>(INITIAL_STATE);
 
   function update<K extends keyof Omit<LeagueCheckState, 'checkedItems'>>(key: K, value: LeagueCheckState[K]) {
@@ -36,7 +40,7 @@ export function useLeagueCheck() {
 
   const allChecked = checkedCount === LEAGUE_CHECK_ITEMS.length;
 
-  const fieldsComplete = Boolean(state.professional.trim() && state.accountManager.trim() && state.reviewer.trim());
+  const fieldsComplete = Boolean(identity.professionalName.trim() && identity.agentName.trim() && state.reviewer.trim());
 
   const missionApproved = allChecked && fieldsComplete;
 

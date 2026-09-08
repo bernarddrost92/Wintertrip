@@ -1,21 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Check, Copy, Download, Share2 } from 'lucide-react';
 import { GoldButton } from '../../components/GoldButton';
 import { getQualifyingTermRange } from '../calculator/computeResult';
-import { ReceiptCard } from './MissionReceipt';
-import {
-  buildReceiptFilename,
-  buildWhatsAppSummary,
-  canShareFiles,
-  downloadBlob,
-  renderNodeToPngBlob,
-} from './receiptImage';
+import { buildReceiptFilename, buildWhatsAppSummary, canShareFiles, downloadBlob, renderNodeToPngBlob } from './receiptImage';
 import type { AfterCheckOutput } from './useAfterCheck';
-import type { BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
+import type { AgentIdentity, BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
 
 interface ReceiptActionsProps {
+  receiptRef: RefObject<HTMLDivElement>;
   beforeCheck: BeforeCheckSnapshot;
   afterCheck: AfterCheckOutput;
+  agent: AgentIdentity;
   checkedCount: number;
   total: number;
 }
@@ -34,13 +29,13 @@ function vcdbFieldFor(form: AfterCheckOutput['form']): string {
  * The two ways to get the Mission Receipt off the screen: SHARE (native
  * file share, so it lands straight in WhatsApp's share sheet) and DOWNLOAD
  * (always available — a plain PNG saved to the device, for when share isn't
- * supported or the person just wants the file). Both render from the exact
- * same hidden, redacted ReceiptCard, so the shared and downloaded image are
- * always identical, and both are debounced against double-clicks while a
- * render is in flight.
+ * supported or the person just wants the file). Both render directly from
+ * the on-screen receipt node (receiptRef) — the same DOM the person is
+ * already looking at — so the shared/downloaded image is always visually
+ * identical to it, never a separately maintained copy. Both are debounced
+ * against double-clicks while a render is in flight.
  */
-export function ReceiptActions({ beforeCheck, afterCheck, checkedCount, total }: ReceiptActionsProps) {
-  const exportRef = useRef<HTMLDivElement>(null);
+export function ReceiptActions({ receiptRef, beforeCheck, afterCheck, agent, checkedCount, total }: ReceiptActionsProps) {
   const [hasShare] = useState(canShareFiles);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
@@ -65,8 +60,8 @@ export function ReceiptActions({ beforeCheck, afterCheck, checkedCount, total }:
   }
 
   async function generatePng(): Promise<Blob> {
-    const node = exportRef.current;
-    if (!node) throw new Error('Receipt export node not mounted');
+    const node = receiptRef.current;
+    if (!node) throw new Error('Receipt node not mounted');
     return renderNodeToPngBlob(node);
   }
 
@@ -105,6 +100,7 @@ export function ReceiptActions({ beforeCheck, afterCheck, checkedCount, total }:
     try {
       const term = getQualifyingTermRange(afterCheck.form);
       const text = buildWhatsAppSummary({
+        agent,
         missionType: afterCheck.form.missionType,
         term,
         vcdbPerMonth: Number(vcdbFieldFor(afterCheck.form).replace(',', '.')) || 0,
@@ -126,14 +122,6 @@ export function ReceiptActions({ beforeCheck, afterCheck, checkedCount, total }:
 
   return (
     <div className="mt-4 space-y-3">
-      {/* Hidden export card — a redacted (no professional name), opaque-background
-          copy of the receipt, rendered off-screen purely as the PNG source. */}
-      <div className="pointer-events-none fixed left-0 top-0 h-0 w-0 overflow-hidden" aria-hidden>
-        <div ref={exportRef} style={{ width: 420, padding: 32, background: '#030405' }}>
-          <ReceiptCard beforeCheck={beforeCheck} afterCheck={afterCheck} professional="" checkedCount={checkedCount} total={total} redactPersonal />
-        </div>
-      </div>
-
       <div className="mx-auto grid max-w-[420px] grid-cols-1 gap-3 sm:grid-cols-2">
         {hasShare ? (
           <GoldButton onClick={handleShare} disabled={busy} icon={<Share2 size={16} />} className="w-full py-4 sm:py-3">
@@ -157,7 +145,7 @@ export function ReceiptActions({ beforeCheck, afterCheck, checkedCount, total }:
         } ${status === 'error' ? 'text-red-400' : status === 'done' ? 'text-gold' : 'text-ink-muted'}`}
       >
         {status === 'done' && <Check size={12} className="mr-1 inline" aria-hidden />}
-        {message || ' '}
+        {message || ' '}
       </p>
     </div>
   );

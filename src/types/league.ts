@@ -134,8 +134,6 @@ export interface LeagueCheckItem {
 }
 
 export interface LeagueCheckState {
-  professional: string;
-  accountManager: string;
   reviewer: string;
   checkDate: IsoDate;
   checkedItems: Record<string, boolean>;

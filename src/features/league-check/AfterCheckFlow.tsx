@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { GoldButton } from '../../components/GoldButton';
 import { formatFoundPoints, formatVcdbValue } from '../../utils/format';
@@ -6,11 +6,11 @@ import { AfterCheckEditor } from './AfterCheckEditor';
 import { MissionReceipt } from './MissionReceipt';
 import { ReceiptActions } from './ReceiptActions';
 import { useAfterCheck } from './useAfterCheck';
-import type { BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
+import type { AgentIdentity, BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
 
 interface AfterCheckFlowProps {
   beforeCheck: BeforeCheckSnapshot;
-  professional: string;
+  agent: AgentIdentity;
   checkedCount: number;
   total: number;
 }
@@ -21,9 +21,10 @@ interface AfterCheckFlowProps {
  * NO CHANGE deal still generates a receipt, with +0.00 found points, which
  * the spec explicitly treats as a fully valid outcome.
  */
-export function AfterCheckFlow({ beforeCheck, professional, checkedCount, total }: AfterCheckFlowProps) {
+export function AfterCheckFlow({ beforeCheck, agent, checkedCount, total }: AfterCheckFlowProps) {
   const afterCheck = useAfterCheck(beforeCheck);
   const [receiptGenerated, setReceiptGenerated] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="mt-8 space-y-6">
@@ -60,8 +61,15 @@ export function AfterCheckFlow({ beforeCheck, professional, checkedCount, total 
 
       {receiptGenerated && (
         <>
-          <MissionReceipt beforeCheck={beforeCheck} afterCheck={afterCheck} professional={professional} checkedCount={checkedCount} total={total} />
-          <ReceiptActions beforeCheck={beforeCheck} afterCheck={afterCheck} checkedCount={checkedCount} total={total} />
+          <MissionReceipt ref={receiptRef} beforeCheck={beforeCheck} afterCheck={afterCheck} agent={agent} checkedCount={checkedCount} total={total} />
+          <ReceiptActions
+            receiptRef={receiptRef}
+            beforeCheck={beforeCheck}
+            afterCheck={afterCheck}
+            agent={agent}
+            checkedCount={checkedCount}
+            total={total}
+          />
         </>
       )}
     </div>

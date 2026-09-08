@@ -14,10 +14,34 @@ export interface BeforeCheckSnapshot {
   result: ScoreResult;
 }
 
+export type AgentRole = 'AM' | 'TM';
+
+/**
+ * Who ran the check, what they are (AM or TM), and which professional the
+ * deal is for — entered once on the League Check page but needed all the
+ * way through to the Mission Receipt, its downloaded PNG and the WhatsApp
+ * text, so it lives here rather than as page-local state that would be
+ * lost on navigating away and back.
+ */
+export interface AgentIdentity {
+  agentName: string;
+  agentRole: AgentRole;
+  professionalName: string;
+}
+
+export const INITIAL_AGENT_IDENTITY: AgentIdentity = {
+  agentName: '',
+  agentRole: 'AM',
+  professionalName: '',
+};
+
 export interface MissionFlowContextValue {
   beforeCheck: BeforeCheckSnapshot | null;
   setBeforeCheck: (snapshot: BeforeCheckSnapshot) => void;
   clearBeforeCheck: () => void;
+  agent: AgentIdentity;
+  updateAgent: <K extends keyof AgentIdentity>(key: K, value: AgentIdentity[K]) => void;
+  resetAgent: () => void;
 }
 
 export const MissionFlowContext = createContext<MissionFlowContextValue | null>(null);
