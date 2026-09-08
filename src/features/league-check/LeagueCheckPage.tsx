@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { FormField, TextInput } from '../../components/FormField';
 import { GoldButton } from '../../components/GoldButton';
@@ -7,7 +7,7 @@ import { MissionCheckBlock } from '../../components/MissionCheckBlock';
 import { SectionHeader } from '../../components/SectionHeader';
 import { LEAGUE_CHECK_GROUPS, LEAGUE_CHECK_ITEMS, TEAM_AGREEMENTS } from '../../data/leagueCheckItems';
 import { useMissionFlow } from '../missionFlow/missionFlowContext';
-import { AfterCheckFlow } from './AfterCheckFlow';
+import { MissionReceiptFlow } from './MissionReceiptFlow';
 import { RoleToggle } from './RoleToggle';
 import { useLeagueCheck } from './useLeagueCheck';
 
@@ -15,18 +15,24 @@ const ITEMS_BY_ID = Object.fromEntries(LEAGUE_CHECK_ITEMS.map((item) => [item.id
 
 const MISSION_TYPE_LABEL_NL = { NEW_PLACEMENT: 'Nieuwe plaatsing', EXTENSION: 'Verlenging', HOURS_INCREASE: 'Urenuitbreiding' } as const;
 
+function bareCode(code: string): string {
+  return code.replace(/^\d+\s*/, '');
+}
+
 export function LeagueCheckPage() {
   const { beforeCheck, agent, updateAgent, resetAgent, clearBeforeCheck } = useMissionFlow();
-  const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck({
-    agentName: agent.agentName,
-    professionalName: agent.professionalName,
-  });
-  const showAfterCheckFlow = missionApproved && beforeCheck !== null;
+  const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck();
+  const openItems = LEAGUE_CHECK_ITEMS.filter((item) => !state.checkedItems[item.id]);
+  /** Bumped on New Mission so MissionReceiptFlow — which owns its own local
+   * "receipt generated" / after-check-editor state — remounts clean rather
+   * than carrying a stale receipt from the previous mission. */
+  const [resetKey, setResetKey] = useState(0);
 
   function handleNewMission() {
     reset();
     clearBeforeCheck();
     resetAgent();
+    setResetKey((k) => k + 1);
   }
 
   return (
@@ -45,7 +51,9 @@ export function LeagueCheckPage() {
 
       {/* Identity block — who is running this check, and for which professional.
           Kept in the shared Mission Flow context so it survives all the way
-          through After Check, the Mission Receipt, and its download/share. */}
+          through After Check, the Mission Receipt, and its download/share.
+          League Check works fully standalone here too: nothing below requires
+          having come from the Calculator first. */}
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <FormField id="agentName" label="Agent">
           <TextInput
@@ -113,34 +121,43 @@ export function LeagueCheckPage() {
         </div>
       </div>
 
-      {showAfterCheckFlow && beforeCheck ? (
-        <AfterCheckFlow beforeCheck={beforeCheck} agent={agent} checkedCount={checkedCount} total={total} />
-      ) : (
-        <div
-          className={`relative mt-8 flex flex-col items-center gap-3 overflow-hidden border px-6 py-8 text-center transition-all duration-500 ${
-            missionApproved ? 'animate-rise-in border-gold bg-gold/5 shadow-gold-lg' : 'border-white/10 bg-mission-panel/50'
-          }`}
-        >
-          {missionApproved && (
-            <>
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gold-sweep bg-[length:200%_auto] animate-gold-sweep-move" aria-hidden />
-              <Sparkles className="animate-pulse-glow text-gold" size={28} aria-hidden />
-            </>
-          )}
-          <p className={`font-display text-2xl font-bold uppercase tracking-[0.08em] ${missionApproved ? 'text-gold' : 'text-ink-dim'}`}>
-            {missionApproved ? 'Mission Approved' : 'Review Required'}
-          </p>
-          {missionApproved ? (
+      {/* Status hero — 6/6 only changes what this shows, it never blocks the
+          receipt flow below. Below 6/6 it names exactly which checks are
+          still open rather than guessing at what they might be worth. */}
+      <div
+        className={`relative mt-8 flex flex-col items-center gap-3 overflow-hidden border px-6 py-8 text-center transition-all duration-500 ${
+          missionApproved ? 'animate-rise-in border-gold bg-gold/5 shadow-gold-lg' : 'border-white/10 bg-mission-panel/50'
+        }`}
+      >
+        {missionApproved ? (
+          <>
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gold-sweep bg-[length:200%_auto] animate-gold-sweep-move" aria-hidden />
+            <Sparkles className="animate-pulse-glow text-gold" size={28} aria-hidden />
+            <p className="font-display text-2xl font-bold uppercase tracking-[0.08em] text-gold">Mission Approved</p>
             <div className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.22em] text-gold/80">
               <span>2 Paar Ogen</span>
               <span className="text-gold/30">|</span>
               <span>0 Punten Laten Liggen</span>
             </div>
-          ) : (
-            <p className="max-w-sm text-sm text-ink-muted">Vink alle punten af en vul de velden in om deze deal vrij te geven.</p>
-          )}
-        </div>
-      )}
+          </>
+        ) : (
+          <>
+            <p className="label-classified text-ink-muted">Open Opportunities</p>
+            <p className="font-display text-4xl font-bold tabular-nums text-gold">{openItems.length}</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink">
+              {openItems.map((item) => (
+                <span key={item.id} className="flex items-center gap-1.5">
+                  <span className="text-ink-muted">○</span>
+                  {bareCode(item.code)}
+                </span>
+              ))}
+            </div>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-gold/80">Hier kan nog winst liggen</p>
+          </>
+        )}
+      </div>
+
+      <MissionReceiptFlow key={resetKey} beforeCheck={beforeCheck} agent={agent} checkedItems={state.checkedItems} checkedCount={checkedCount} total={total} />
 
       <div className="mt-6 flex justify-end">
         <GoldButton variant="ghost" onClick={handleNewMission}>

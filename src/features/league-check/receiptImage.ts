@@ -77,55 +77,74 @@ export function canShareFiles(): boolean {
 
 export interface ReceiptSummaryInput {
   agent: AgentIdentity;
-  missionType: MissionType;
-  term: { start: IsoDate; end: IsoDate } | null;
-  vcdbPerMonth: number;
-  factor: number;
-  before: { baseScore: number; finalScore: number };
-  after: { baseScore: number; finalScore: number };
-  found: { foundBasePoints: number; foundLeaguePoints: number };
   checkedCount: number;
   total: number;
+  /** Bare check codes ("HOURS", "VALUE") that are not yet ticked — printed
+   * plainly, never turned into a guessed points figure. */
+  openCodes: string[];
+  /** Null when the League Check was run standalone, without a Calculator
+   * session behind it — the summary then reads "Mission Value: Pending
+   * Calculation" instead of fabricating a score. */
+  missionType: MissionType | null;
+  term: { start: IsoDate; end: IsoDate } | null;
+  vcdbPerMonth: number | null;
+  factor: number | null;
+  before: { baseScore: number; finalScore: number } | null;
+  after: { baseScore: number; finalScore: number } | null;
+  found: { foundBasePoints: number; foundLeaguePoints: number } | null;
 }
 
 /** Plain-text WhatsApp summary — the COPY WHATSAPP TEXT fallback when
  * native file sharing isn't available, and matches the on-screen/PNG
  * receipt: who ran the check, for which professional, and the mission
- * result — nothing hidden. */
+ * result — nothing hidden, and available at any checked count. */
 export function buildWhatsAppSummary(input: ReceiptSummaryInput): string {
+  const missionApproved = input.checkedCount === input.total;
+
   const lines = [
     'OPERATIE WINTERTRIP 2027',
     '',
-    `MISSION APPROVED — ${input.checkedCount}/${input.total}`,
+    `MISSION ${missionApproved ? 'APPROVED' : 'OPEN'} — ${input.checkedCount}/${input.total}`,
     '',
     'AGENT:',
     `${input.agent.agentName || '—'} — ${input.agent.agentRole}`,
     '',
     'PROFESSIONAL:',
     input.agent.professionalName || '—',
-    '',
-    `MISSION TYPE: ${MISSION_TYPE_LABEL[input.missionType]}`,
   ];
-  if (input.term) {
-    lines.push(`QUALIFYING TERM: ${formatIsoDateReceipt(input.term.start)} — ${formatIsoDateReceipt(input.term.end)}`);
+
+  if (!missionApproved && input.openCodes.length > 0) {
+    lines.push('', 'OPEN CHECKS:', ...input.openCodes.map((code) => `- ${code}`));
   }
-  lines.push(
-    `VCDB/MONTH: ${formatVcdbValue(input.vcdbPerMonth)}`,
-    `FACTOR: ${formatFactor(input.factor)}`,
-    '',
-    'BEFORE LEAGUE CHECK:',
-    `${formatVcdbValue(input.before.finalScore)} punten`,
-    '',
-    'AFTER LEAGUE CHECK:',
-    `${formatVcdbValue(input.after.finalScore)} punten`,
-    '',
-    'PUNTEN GEVONDEN:',
-    formatFoundPoints(input.found.foundLeaguePoints),
-    '',
-    'FINAL MISSION VALUE:',
-    `${formatVcdbValue(input.after.finalScore)} punten`,
-    '',
-    '2 PAAR OGEN = 0 PUNTEN LATEN LIGGEN',
-  );
+
+  if (input.missionType) {
+    lines.push('', `MISSION TYPE: ${MISSION_TYPE_LABEL[input.missionType]}`);
+    if (input.term) {
+      lines.push(`QUALIFYING TERM: ${formatIsoDateReceipt(input.term.start)} — ${formatIsoDateReceipt(input.term.end)}`);
+    }
+    lines.push(`VCDB/MONTH: ${formatVcdbValue(input.vcdbPerMonth ?? 0)}`, `FACTOR: ${formatFactor(input.factor ?? 0)}`);
+  }
+
+  if (input.before && input.after && input.found) {
+    lines.push(
+      '',
+      'BEFORE LEAGUE CHECK:',
+      `${formatVcdbValue(input.before.finalScore)} punten`,
+      '',
+      'AFTER LEAGUE CHECK:',
+      `${formatVcdbValue(input.after.finalScore)} punten`,
+      '',
+      'PUNTEN GEVONDEN:',
+      formatFoundPoints(input.found.foundLeaguePoints),
+      '',
+      'FINAL MISSION VALUE:',
+      `${formatVcdbValue(input.after.finalScore)} punten`,
+    );
+  } else {
+    lines.push('', 'MISSION VALUE:', 'PENDING CALCULATION');
+  }
+
+  lines.push('', missionApproved ? '2 PAAR OGEN = 0 PUNTEN LATEN LIGGEN' : 'MOGELIJKE WINST NOG NIET VOLLEDIG GECONTROLEERD');
+
   return lines.join('\n');
 }

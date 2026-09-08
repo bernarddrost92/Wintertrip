@@ -9,9 +9,15 @@ import type { CalculatorForm } from '../calculator/useMissionControlCalculator';
 import type { MissionType } from '../../types/league';
 
 export interface ReceiptCardProps {
-  beforeCheck: BeforeCheckSnapshot;
-  afterCheck: AfterCheckOutput;
+  /** Both null when the League Check was run standalone, without ever
+   * going through the Mission Calculator — the receipt still prints, just
+   * without a scored Mission Value. */
+  beforeCheck: BeforeCheckSnapshot | null;
+  afterCheck: AfterCheckOutput | null;
   agent: AgentIdentity;
+  /** Which of the six checks are ticked — drives the Open Checks list, not
+   * just the checkedCount/total figure the header shows. */
+  checkedItems: Record<string, boolean>;
   checkedCount: number;
   total: number;
 }
@@ -28,6 +34,11 @@ function vcdbFieldFor(form: CalculatorForm): string {
   if (form.missionType === 'NEW_PLACEMENT') return form.vcdbPerMonth;
   if (form.missionType === 'EXTENSION') return form.extensionVcdbPerMonth;
   return form.extraVcdbPerMonth;
+}
+
+/** Strips the leading "04 " off a check code, e.g. "04 HOURS" -> "HOURS". */
+function bareCode(code: string): string {
+  return code.replace(/^\d+\s*/, '');
 }
 
 const BARCODE_PATTERN = [2, 1, 1, 3, 1, 2, 4, 1, 1, 2, 1, 3, 2, 1, 4, 1, 1, 2, 3, 1, 1, 2, 1, 4, 2, 1, 1, 3, 1, 2, 1, 1, 4, 2, 1, 1, 3, 2, 1, 1];
@@ -62,13 +73,22 @@ function ReceiptRow({ label, value, valueClassName = 'text-ink' }: { label: stri
  * decorative cutouts. Shared verbatim by the on-screen MissionReceipt and
  * the off-screen export node ReceiptActions renders for the PNG, so the
  * two can never drift apart visually.
+ *
+ * A Mission Receipt is available at any checked count and with or without
+ * a Calculator session behind it — 6/6 only changes the status it shows,
+ * it is never required to print. When the check is incomplete, the open
+ * items are printed plainly (never as a fabricated "potential points"
+ * figure); when there is no Calculator snapshot, Mission Value reads
+ * PENDING CALCULATION rather than a fake 0.
  */
 export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function ReceiptCard(
-  { beforeCheck, afterCheck, agent, checkedCount, total },
+  { beforeCheck, afterCheck, agent, checkedItems, checkedCount, total },
   ref,
 ) {
-  const term = getQualifyingTermRange(afterCheck.form);
-  const vcdb = vcdbFieldFor(afterCheck.form);
+  const missionApproved = checkedCount === total;
+  const openItems = LEAGUE_CHECK_ITEMS.filter((item) => !checkedItems[item.id]);
+  const term = afterCheck ? getQualifyingTermRange(afterCheck.form) : null;
+  const vcdb = afterCheck ? vcdbFieldFor(afterCheck.form) : null;
 
   return (
     <div
@@ -106,96 +126,140 @@ export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function
           <div className="flex items-center justify-between pt-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-gold">Mission Status</span>
             <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gold">
-              Approved <span className="text-ink-muted">{checkedCount}/{total}</span>
+              {missionApproved ? 'Approved' : 'Open'} <span className="text-ink-muted">{checkedCount}/{total}</span>
             </span>
           </div>
         </div>
 
-        <ReceiptDivider />
-
-        <div className="space-y-1.5">
-          <ReceiptRow label="Mission Type" value={MISSION_TYPE_LABEL[afterCheck.form.missionType]} />
-        </div>
-
-        {term && (
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-ink-muted">Qualifying Term</p>
-            <p className="text-sm font-semibold tabular-nums text-ink">{formatIsoDateReceipt(term.start)}</p>
-            <p className="text-sm font-semibold tabular-nums text-ink">{formatIsoDateReceipt(term.end)}</p>
-          </div>
+        {!missionApproved && (
+          <>
+            <ReceiptDivider />
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-ink-muted">Open Checks</p>
+              {openItems.map((item) => (
+                <p key={item.id} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink">
+                  <span className="text-ink-muted">○</span> {bareCode(item.code)}
+                </p>
+              ))}
+            </div>
+          </>
         )}
 
-        <div className="space-y-1.5">
-          <ReceiptRow label="VCDB / Month" value={formatVcdbValue(Number(vcdb.replace(',', '.')) || 0)} />
-          <ReceiptRow label="Factor" value={formatFactor(afterCheck.form.factor)} />
-        </div>
+        {afterCheck && (
+          <>
+            <ReceiptDivider />
 
-        <ReceiptDivider />
+            <div className="space-y-1.5">
+              <ReceiptRow label="Mission Type" value={MISSION_TYPE_LABEL[afterCheck.form.missionType]} />
+            </div>
 
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase tracking-wider text-ink-muted">Before League Check</p>
-          <ReceiptRow label="Base Score" value={formatVcdbValue(beforeCheck.result.baseScore)} />
-          <ReceiptRow label="Mission Value" value={formatVcdbValue(beforeCheck.result.finalScore)} />
-        </div>
+            {term && (
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-ink-muted">Qualifying Term</p>
+                <p className="text-sm font-semibold tabular-nums text-ink">{formatIsoDateReceipt(term.start)}</p>
+                <p className="text-sm font-semibold tabular-nums text-ink">{formatIsoDateReceipt(term.end)}</p>
+              </div>
+            )}
 
-        <ReceiptDivider />
+            <div className="space-y-1.5">
+              <ReceiptRow label="VCDB / Month" value={formatVcdbValue(Number((vcdb ?? '0').replace(',', '.')) || 0)} />
+              <ReceiptRow label="Factor" value={formatFactor(afterCheck.form.factor)} />
+            </div>
+          </>
+        )}
 
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase tracking-wider text-ink-muted">After League Check</p>
-          <ReceiptRow label="Base Score" value={formatVcdbValue(afterCheck.result.baseScore)} />
-          <ReceiptRow label="Mission Value" value={formatVcdbValue(afterCheck.result.finalScore)} />
-        </div>
+        {beforeCheck && afterCheck ? (
+          <>
+            <ReceiptDivider />
 
-        <ReceiptDivider />
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-ink-muted">Before League Check</p>
+              <ReceiptRow label="Base Score" value={formatVcdbValue(beforeCheck.result.baseScore)} />
+              <ReceiptRow label="Mission Value" value={formatVcdbValue(beforeCheck.result.finalScore)} />
+            </div>
 
-        {/* Hero #1 — the whole point of the receipt: what did the check find. */}
-        <div className="space-y-1 py-1 text-center">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Punten Gevonden</p>
-          <p className="font-display text-4xl font-bold tabular-nums text-gold drop-shadow-[0_0_20px_rgba(255,215,104,0.4)]">
-            {formatFoundPoints(afterCheck.found.foundLeaguePoints)}
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">League Points</p>
-          <p className="mt-2 flex items-center justify-center gap-2 text-xs tabular-nums text-ink-muted">
-            <span>{formatVcdbValue(beforeCheck.result.finalScore)}</span>
-            <span className="text-gold/60">→</span>
-            <span className="font-semibold text-ink">{formatVcdbValue(afterCheck.result.finalScore)}</span>
-          </p>
-        </div>
+            <ReceiptDivider />
 
-        <ReceiptDivider />
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-ink-muted">After League Check</p>
+              <ReceiptRow label="Base Score" value={formatVcdbValue(afterCheck.result.baseScore)} />
+              <ReceiptRow label="Mission Value" value={formatVcdbValue(afterCheck.result.finalScore)} />
+            </div>
 
-        {/* Hero #2 — the resulting end value, secondary to Punten Gevonden but still a clear standalone result. */}
-        <div className="space-y-1 py-1 text-center">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Final Mission Value</p>
-          <p className="font-display text-2xl font-semibold tabular-nums text-ink">
-            {formatVcdbValue(afterCheck.result.finalScore)} <span className="text-sm font-normal text-ink-muted">points</span>
-          </p>
-        </div>
+            <ReceiptDivider />
 
-        <ReceiptDivider />
+            {/* Hero #1 — the whole point of the receipt: what did the check find.
+                Always the real Base Score delta × Factor, never a guess at what
+                an unchecked item might be worth. */}
+            <div className="space-y-1 py-1 text-center">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Punten Gevonden</p>
+              <p className="font-display text-4xl font-bold tabular-nums text-gold drop-shadow-[0_0_20px_rgba(255,215,104,0.4)]">
+                {formatFoundPoints(afterCheck.found.foundLeaguePoints)}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">League Points</p>
+              <p className="mt-2 flex items-center justify-center gap-2 text-xs tabular-nums text-ink-muted">
+                <span>{formatVcdbValue(beforeCheck.result.finalScore)}</span>
+                <span className="text-gold/60">→</span>
+                <span className="font-semibold text-ink">{formatVcdbValue(afterCheck.result.finalScore)}</span>
+              </p>
+            </div>
 
-        <div className="space-y-1.5">
-          <ReceiptRow label="Base Points Found" value={formatFoundPoints(afterCheck.found.foundBasePoints)} />
-          <ReceiptRow label="Factor Boost" value={`× ${afterCheck.form.factor.toLocaleString('nl-NL')}`} />
-        </div>
+            <ReceiptDivider />
+
+            {/* Hero #2 — the resulting end value, secondary to Punten Gevonden but still a clear standalone result. */}
+            <div className="space-y-1 py-1 text-center">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Final Mission Value</p>
+              <p className="font-display text-2xl font-semibold tabular-nums text-ink">
+                {formatVcdbValue(afterCheck.result.finalScore)} <span className="text-sm font-normal text-ink-muted">points</span>
+              </p>
+            </div>
+
+            <ReceiptDivider />
+
+            <div className="space-y-1.5">
+              <ReceiptRow label="Base Points Found" value={formatFoundPoints(afterCheck.found.foundBasePoints)} />
+              <ReceiptRow label="Factor Boost" value={`× ${afterCheck.form.factor.toLocaleString('nl-NL')}`} />
+            </div>
+          </>
+        ) : (
+          <>
+            <ReceiptDivider />
+            <div className="space-y-1 py-1 text-center">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-muted">Mission Value</p>
+              <p className="font-display text-xl font-bold uppercase tracking-wide text-ink-muted">Pending Calculation</p>
+            </div>
+          </>
+        )}
 
         <ReceiptDivider />
 
         <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-          {LEAGUE_CHECK_ITEMS.map((item) => (
-            <li key={item.id} className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink">
-              <span className="text-gold">✓</span>
-              {item.code.replace(/^\d+\s*/, '')}
-            </li>
-          ))}
+          {LEAGUE_CHECK_ITEMS.map((item) => {
+            const done = Boolean(checkedItems[item.id]);
+            return (
+              <li key={item.id} className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider ${done ? 'text-ink' : 'text-ink-muted'}`}>
+                <span className={done ? 'text-gold' : 'text-ink-muted'}>{done ? '✓' : '○'}</span>
+                {bareCode(item.code)}
+              </li>
+            );
+          })}
         </ul>
 
         <ReceiptDivider />
 
-        <div className="space-y-1 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">2 Paar Ogen</p>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">0 Punten Laten Liggen</p>
-        </div>
+        {missionApproved ? (
+          <div className="space-y-1 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Mission Approved</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">2 Paar Ogen</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">0 Punten Laten Liggen</p>
+          </div>
+        ) : (
+          <div className="space-y-1 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+              Mogelijke winst nog niet volledig gecontroleerd
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-center pt-2">
           <ReceiptBarcode />
@@ -207,11 +271,12 @@ export const ReceiptCard = forwardRef<HTMLDivElement, ReceiptCardProps>(function
 });
 
 /**
- * The Mission Receipt — a premium 007-style intelligence receipt printed
- * the moment a League Check closes 6/6, laying BEFORE and AFTER side by
- * side so the commercial improvement the check itself surfaced is
- * unmistakable. Found points come straight from services/missionReceipt.ts:
- * a pure Base Score delta, never inflated by a Factor change alone.
+ * The Mission Receipt — a premium 007-style intelligence receipt available
+ * from the League Check at any point, laying BEFORE and AFTER side by side
+ * when a Calculator session backs it so the commercial improvement the
+ * check surfaced is unmistakable. Found points come straight from
+ * services/missionReceipt.ts: a pure Base Score delta, never inflated by a
+ * Factor change alone, and never fabricated for an unchecked item.
  *
  * Forwards its ref straight to the ReceiptCard root — ReceiptActions reads
  * that same node to generate the downloaded/shared PNG, so the exported

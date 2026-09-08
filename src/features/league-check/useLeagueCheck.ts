@@ -10,12 +10,11 @@ const INITIAL_STATE: LeagueCheckState = {
 };
 
 /**
- * Identity fields the mission is gated on — Agent name and Professional
- * name now live in the shared Mission Flow context (missionFlowContext.ts)
- * rather than here, so they survive navigating away and back; this hook
- * just takes their current values to decide whether the check can approve.
+ * Agent name and Professional name live in the shared Mission Flow context
+ * (missionFlowContext.ts) rather than here, so they survive navigating away
+ * and back — this hook only tracks the checklist itself.
  */
-export function useLeagueCheck(identity: { agentName: string; professionalName: string }) {
+export function useLeagueCheck() {
   const [state, setState] = useState<LeagueCheckState>(INITIAL_STATE);
 
   function update<K extends keyof Omit<LeagueCheckState, 'checkedItems'>>(key: K, value: LeagueCheckState[K]) {
@@ -38,11 +37,11 @@ export function useLeagueCheck(identity: { agentName: string; professionalName: 
     [state.checkedItems],
   );
 
-  const allChecked = checkedCount === LEAGUE_CHECK_ITEMS.length;
+  /** 6/6 alone determines Mission Approved — it no longer also requires the
+   * Reviewer/Agent/Professional fields to be filled in. Receipt generation
+   * itself is never gated on this at all: a Mission Receipt is available at
+   * any checked count, this only decides which status it shows. */
+  const missionApproved = checkedCount === LEAGUE_CHECK_ITEMS.length;
 
-  const fieldsComplete = Boolean(identity.professionalName.trim() && identity.agentName.trim() && state.reviewer.trim());
-
-  const missionApproved = allChecked && fieldsComplete;
-
-  return { state, update, toggleItem, reset, checkedCount, total: LEAGUE_CHECK_ITEMS.length, allChecked, fieldsComplete, missionApproved };
+  return { state, update, toggleItem, reset, checkedCount, total: LEAGUE_CHECK_ITEMS.length, missionApproved };
 }

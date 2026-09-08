@@ -14,11 +14,14 @@ describe('buildReceiptFilename', () => {
   });
 });
 
-describe('buildWhatsAppSummary', () => {
+describe('buildWhatsAppSummary — complete (6/6) with a Calculator session', () => {
   const agent: AgentIdentity = { agentName: 'Bernard', agentRole: 'AM', professionalName: 'Tim Jansen' };
 
   const base: ReceiptSummaryInput = {
     agent,
+    checkedCount: 6,
+    total: 6,
+    openCodes: [],
     missionType: 'NEW_PLACEMENT',
     term: { start: '2027-01-05', end: '2027-08-01' },
     vcdbPerMonth: 20,
@@ -26,8 +29,6 @@ describe('buildWhatsAppSummary', () => {
     before: { baseScore: 40, finalScore: 100 },
     after: { baseScore: 60, finalScore: 150 },
     found: { foundBasePoints: 20, foundLeaguePoints: 50 },
-    checkedCount: 6,
-    total: 6,
   };
 
   it('includes the Agent name and role', () => {
@@ -52,6 +53,11 @@ describe('buildWhatsAppSummary', () => {
     expect(text).toContain('2,5x');
   });
 
+  it('reads MISSION APPROVED at 6/6', () => {
+    const text = buildWhatsAppSummary(base);
+    expect(text).toContain('MISSION APPROVED — 6/6');
+  });
+
   it('omits the qualifying term block when there is no term', () => {
     const text = buildWhatsAppSummary({ ...base, term: null });
     expect(text).not.toContain('QUALIFYING TERM');
@@ -61,5 +67,65 @@ describe('buildWhatsAppSummary', () => {
     const text = buildWhatsAppSummary({ ...base, agent: { agentName: '', agentRole: 'AM', professionalName: '' } });
     expect(text).toContain('— AM');
     expect(text).toContain('—');
+  });
+});
+
+describe('buildWhatsAppSummary — incomplete (relaxed gating)', () => {
+  const agent: AgentIdentity = { agentName: 'Bernard', agentRole: 'AM', professionalName: 'Tim' };
+
+  const incomplete: ReceiptSummaryInput = {
+    agent,
+    checkedCount: 5,
+    total: 6,
+    openCodes: ['VALUE'],
+    missionType: 'NEW_PLACEMENT',
+    term: { start: '2027-01-05', end: '2027-08-01' },
+    vcdbPerMonth: 20,
+    factor: 2.5,
+    before: { baseScore: 40, finalScore: 61.33 },
+    after: { baseScore: 60, finalScore: 61.33 },
+    found: { foundBasePoints: 17.79, foundLeaguePoints: 44.47 },
+  };
+
+  it('C. reads MISSION OPEN, not APPROVED, below 6/6', () => {
+    const text = buildWhatsAppSummary(incomplete);
+    expect(text).toContain('MISSION OPEN — 5/6');
+    expect(text).not.toContain('MISSION APPROVED');
+  });
+
+  it('D. lists the open check codes', () => {
+    const text = buildWhatsAppSummary(incomplete);
+    expect(text).toContain('OPEN CHECKS');
+    expect(text).toContain('- VALUE');
+  });
+
+  it('still shows Mission Value and Points Found when a Calculator session exists', () => {
+    const text = buildWhatsAppSummary(incomplete);
+    expect(text).toContain('+44,47');
+  });
+
+  it('shows the not-yet-verified disclaimer instead of the approved line', () => {
+    const text = buildWhatsAppSummary(incomplete);
+    expect(text).toContain('MOGELIJKE WINST NOG NIET VOLLEDIG GECONTROLEERD');
+    expect(text).not.toContain('2 PAAR OGEN = 0 PUNTEN LATEN LIGGEN');
+  });
+
+  it('F/G. without a Calculator session, shows Mission Value as Pending Calculation, never 0', () => {
+    const text = buildWhatsAppSummary({
+      agent,
+      checkedCount: 3,
+      total: 6,
+      openCodes: ['MAX TERM', 'HOURS', 'VALUE'],
+      missionType: null,
+      term: null,
+      vcdbPerMonth: null,
+      factor: null,
+      before: null,
+      after: null,
+      found: null,
+    });
+    expect(text).toContain('PENDING CALCULATION');
+    expect(text).not.toContain('MISSION TYPE');
+    expect(text).not.toMatch(/0,00 punten/);
   });
 });

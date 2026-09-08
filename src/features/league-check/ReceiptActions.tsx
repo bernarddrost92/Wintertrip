@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Check, Copy, Download, Share2 } from 'lucide-react';
 import { GoldButton } from '../../components/GoldButton';
+import { LEAGUE_CHECK_ITEMS } from '../../data/leagueCheckItems';
 import { getQualifyingTermRange } from '../calculator/computeResult';
 import { buildReceiptFilename, buildWhatsAppSummary, canShareFiles, downloadBlob, renderNodeToPngBlob } from './receiptImage';
 import type { AfterCheckOutput } from './useAfterCheck';
@@ -8,11 +9,19 @@ import type { AgentIdentity, BeforeCheckSnapshot } from '../missionFlow/missionF
 
 interface ReceiptActionsProps {
   receiptRef: RefObject<HTMLDivElement>;
-  beforeCheck: BeforeCheckSnapshot;
-  afterCheck: AfterCheckOutput;
+  /** Both null when this receipt was generated without ever going through
+   * the Mission Calculator — DOWNLOAD/SHARE/COPY still work, they just
+   * carry no scored Mission Value. */
+  beforeCheck: BeforeCheckSnapshot | null;
+  afterCheck: AfterCheckOutput | null;
   agent: AgentIdentity;
+  checkedItems: Record<string, boolean>;
   checkedCount: number;
   total: number;
+}
+
+function bareCode(code: string): string {
+  return code.replace(/^\d+\s*/, '');
 }
 
 type Status = 'idle' | 'busy' | 'done' | 'error';
@@ -33,9 +42,11 @@ function vcdbFieldFor(form: AfterCheckOutput['form']): string {
  * the on-screen receipt node (receiptRef) — the same DOM the person is
  * already looking at — so the shared/downloaded image is always visually
  * identical to it, never a separately maintained copy. Both are debounced
- * against double-clicks while a render is in flight.
+ * against double-clicks while a render is in flight, and neither is gated
+ * on the check being complete or on a Calculator session existing — an
+ * incomplete or calculator-less receipt downloads/shares exactly the same way.
  */
-export function ReceiptActions({ receiptRef, beforeCheck, afterCheck, agent, checkedCount, total }: ReceiptActionsProps) {
+export function ReceiptActions({ receiptRef, beforeCheck, afterCheck, agent, checkedItems, checkedCount, total }: ReceiptActionsProps) {
   const [hasShare] = useState(canShareFiles);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
@@ -98,18 +109,20 @@ export function ReceiptActions({ receiptRef, beforeCheck, afterCheck, agent, che
     if (status === 'busy') return;
     settle('busy', 'Copying…');
     try {
-      const term = getQualifyingTermRange(afterCheck.form);
+      const term = afterCheck ? getQualifyingTermRange(afterCheck.form) : null;
+      const openCodes = LEAGUE_CHECK_ITEMS.filter((item) => !checkedItems[item.id]).map((item) => bareCode(item.code));
       const text = buildWhatsAppSummary({
         agent,
-        missionType: afterCheck.form.missionType,
-        term,
-        vcdbPerMonth: Number(vcdbFieldFor(afterCheck.form).replace(',', '.')) || 0,
-        factor: afterCheck.form.factor,
-        before: { baseScore: beforeCheck.result.baseScore, finalScore: beforeCheck.result.finalScore },
-        after: { baseScore: afterCheck.result.baseScore, finalScore: afterCheck.result.finalScore },
-        found: afterCheck.found,
         checkedCount,
         total,
+        openCodes,
+        missionType: afterCheck?.form.missionType ?? null,
+        term,
+        vcdbPerMonth: afterCheck ? Number(vcdbFieldFor(afterCheck.form).replace(',', '.')) || 0 : null,
+        factor: afterCheck?.form.factor ?? null,
+        before: beforeCheck ? { baseScore: beforeCheck.result.baseScore, finalScore: beforeCheck.result.finalScore } : null,
+        after: afterCheck ? { baseScore: afterCheck.result.baseScore, finalScore: afterCheck.result.finalScore } : null,
+        found: afterCheck ? afterCheck.found : null,
       });
       await navigator.clipboard.writeText(text);
       settle('done', 'Copied for WhatsApp');
