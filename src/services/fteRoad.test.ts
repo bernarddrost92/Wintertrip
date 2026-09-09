@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateFteGap, calculateFteProgress } from './fteRoad';
+import { calculateFteGap, calculateFteGapToBenchmark, calculateFteMilestones, calculateFteProgress } from './fteRoad';
 
 describe('calculateFteGap', () => {
   it('target 30, projected 27.5 -> gap 2.5', () => {
@@ -54,5 +54,40 @@ describe('calculateFteProgress', () => {
   it('returns null when target is missing or non-positive', () => {
     expect(calculateFteProgress(24.8, null)).toBeNull();
     expect(calculateFteProgress(24.8, 0)).toBeNull();
+  });
+});
+
+describe('calculateFteGapToBenchmark', () => {
+  it('current -79.01, current #1 benchmark -23.60 -> gap 55.41', () => {
+    expect(calculateFteGapToBenchmark(-79.01, -23.6)).toBe(55.41);
+  });
+
+  it('returns null when the current Net FTE is missing', () => {
+    expect(calculateFteGapToBenchmark(null, -23.6)).toBeNull();
+  });
+
+  it('returns null when the benchmark is missing — never a fabricated gap', () => {
+    expect(calculateFteGapToBenchmark(-79.01, null)).toBeNull();
+  });
+});
+
+describe('calculateFteMilestones', () => {
+  it('computes the improvement needed to each reference position from the current Net FTE', () => {
+    const milestones = calculateFteMilestones(-79.01, [
+      { position: 8, netFte: -55.85 },
+      { position: 5, netFte: -39.7 },
+      { position: 3, netFte: -25.83 },
+      { position: 1, netFte: -23.6 },
+    ]);
+    expect(milestones).toEqual([
+      { position: 8, gapFte: 23.16 },
+      { position: 5, gapFte: 39.31 },
+      { position: 3, gapFte: 53.18 },
+      { position: 1, gapFte: 55.41 },
+    ]);
+  });
+
+  it('returns an empty list when the current Net FTE is missing — never a fabricated milestone', () => {
+    expect(calculateFteMilestones(null, [{ position: 1, netFte: -23.6 }])).toEqual([]);
   });
 });

@@ -6,6 +6,7 @@ import { isLiveApiConfigured } from '../../services/api';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { formatFactor, formatPoints, formatSignedPoints } from '../../utils/format';
 import { AmLeaderboardSection } from './AmLeaderboardSection';
+import { PowerBiIntelligenceCard } from './PowerBiIntelligenceCard';
 import { ProductionSection } from './ProductionSection';
 import { RoadToJan31Card } from './RoadToJan31Card';
 import { TmLeaderboardSection } from './TmLeaderboardSection';
@@ -15,7 +16,7 @@ import { useLeagueDataset } from './useLeagueDataset';
 
 export function MissionControlPage() {
   const { dataset, loading } = useLeagueDataset();
-  const { ranking, fte } = getMissionSnapshot();
+  const { ranking, fte, powerBi } = getMissionSnapshot();
 
   if (loading || !dataset) {
     return (
@@ -32,6 +33,7 @@ export function MissionControlPage() {
       <section className="mx-auto max-w-6xl space-y-6 px-4 pt-10 sm:px-6">
         <VirtualPositionCard ranking={ranking} />
         <RoadToJan31Card fte={fte} />
+        <PowerBiIntelligenceCard powerBi={powerBi} />
         <ProductionSection />
       </section>
 

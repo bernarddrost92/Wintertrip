@@ -79,3 +79,58 @@ describe('RoadToJan31Card', () => {
     expect(screen.queryByText('Progress')).not.toBeInTheDocument();
   });
 });
+
+describe('RoadToJan31Card — Power BI Net FTE benchmark', () => {
+  it('current -79.01 vs current #1 benchmark -23.60 -> gap to current #1 = 55,41 FTE, no fixed-target wording', () => {
+    render(
+      <RoadToJan31Card
+        fte={fte({
+          currentNetFte: -79.01,
+          netFteRanking: 9,
+          currentNumberOneBenchmark: -23.6,
+          currentFteFactor: 1.3,
+        })}
+      />,
+    );
+    expect(screen.getByText('#9')).toBeInTheDocument();
+    expect(screen.getByText('-79,01')).toBeInTheDocument();
+    expect(screen.getByText('-23,60')).toBeInTheDocument();
+    expect(screen.getByText(/55,41 fte/i)).toBeInTheDocument();
+    expect(screen.getByText(/dynamic benchmark/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nog .* fte nodig/i)).not.toBeInTheDocument();
+  });
+
+  it('renders FTE milestones as improvement-needed, never with "lost" or "already realized" wording', () => {
+    render(
+      <RoadToJan31Card
+        fte={fte({
+          currentNetFte: -79.01,
+          currentNumberOneBenchmark: -23.6,
+          fteMilestones: [
+            { position: 8, gapFte: 23.16 },
+            { position: 5, gapFte: 39.31 },
+            { position: 3, gapFte: 53.18 },
+            { position: 1, gapFte: 55.41 },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText('+23,16 FTE')).toBeInTheDocument();
+    expect(screen.getByText('+39,31 FTE')).toBeInTheDocument();
+    expect(screen.getByText('+53,18 FTE')).toBeInTheDocument();
+    expect(screen.getByText('+55,41 FTE')).toBeInTheDocument();
+    expect(screen.getByText(/improvement needed/i)).toBeInTheDocument();
+  });
+
+  it('current FTE factor renders as 1,3x', () => {
+    render(<RoadToJan31Card fte={fte({ currentNetFte: -79.01, currentNumberOneBenchmark: -23.6, currentFteFactor: 1.3 })} />);
+    expect(screen.getByText('1,3x')).toBeInTheDocument();
+  });
+
+  it('no benchmark data -> no benchmark block, and the old fixed-target UI is unaffected', () => {
+    render(<RoadToJan31Card fte={fte()} />);
+    expect(screen.queryByText(/current #1 benchmark/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/dynamic benchmark/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/awaiting target/i)).toBeInTheDocument();
+  });
+});

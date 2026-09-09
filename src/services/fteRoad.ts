@@ -1,3 +1,5 @@
+import type { FteMilestone } from '../types/missionSnapshot';
+
 export type FteGapOutcome =
   | { kind: 'awaiting-target' }
   | { kind: 'awaiting-projection' }
@@ -33,4 +35,25 @@ export function calculateFteProgress(projectedFteOnJan31: number | null, targetF
   const percent = Math.min(100, Math.max(0, raw));
   const overTarget = projectedFteOnJan31 > targetFteOnJan31 ? Math.round((projectedFteOnJan31 - targetFteOnJan31) * 100) / 100 : 0;
   return { percent, overTarget };
+}
+
+/**
+ * Distance from Zwolle's current Net FTE to the current #1 team's Net FTE
+ * — a dynamic ranking benchmark, never a fixed target. null when either
+ * figure is unknown, never a fabricated gap.
+ */
+export function calculateFteGapToBenchmark(currentNetFte: number | null, benchmarkNetFte: number | null): number | null {
+  if (currentNetFte === null || benchmarkNetFte === null) return null;
+  return Math.round((benchmarkNetFte - currentNetFte) * 100) / 100;
+}
+
+export interface FteMilestoneInput {
+  position: number;
+  netFte: number;
+}
+
+/** Computes the improvement still needed to reach each reference position — never hardcoded per screenshot. */
+export function calculateFteMilestones(currentNetFte: number | null, milestones: FteMilestoneInput[]): FteMilestone[] {
+  if (currentNetFte === null) return [];
+  return milestones.map((m) => ({ position: m.position, gapFte: Math.round((m.netFte - currentNetFte) * 100) / 100 }));
 }
