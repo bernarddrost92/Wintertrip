@@ -22,15 +22,15 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
 
   it('current #1 benchmark is -23.60, gap is computed centrally to 55.41 FTE', () => {
     expect(result.fte.currentNumberOneBenchmark).toBe(-23.6);
-    expect(result.fte.fteMilestones).toContainEqual({ position: 1, gapFte: 55.41 });
+    expect(result.fte.fteMilestones).toContainEqual({ position: 1, team: 'Middelburg', gapFte: 55.41 });
   });
 
-  it('FTE milestones cover the reference positions from the snapshot', () => {
+  it('FTE milestones cover the reference positions from the snapshot, team names carried through', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 8, gapFte: 23.16 },
-      { position: 5, gapFte: 39.31 },
-      { position: 3, gapFte: 53.18 },
-      { position: 1, gapFte: 55.41 },
+      { position: 8, team: 'Alkmaar', gapFte: 23.16 },
+      { position: 5, team: 'Utrecht', gapFte: 39.31 },
+      { position: 3, team: 'Breda', gapFte: 53.18 },
+      { position: 1, team: 'Middelburg', gapFte: 55.41 },
     ]);
   });
 

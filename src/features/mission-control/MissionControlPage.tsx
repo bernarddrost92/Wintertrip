@@ -6,11 +6,10 @@ import { isLiveApiConfigured } from '../../services/api';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { formatFactor, formatPoints, formatSignedPoints } from '../../utils/format';
 import { AmLeaderboardSection } from './AmLeaderboardSection';
-import { PowerBiIntelligenceCard } from './PowerBiIntelligenceCard';
+import { CommandBriefingCard } from './CommandBriefingCard';
 import { ProductionSection } from './ProductionSection';
 import { RoadToJan31Card } from './RoadToJan31Card';
 import { TmLeaderboardSection } from './TmLeaderboardSection';
-import { VirtualPositionCard } from './VirtualPositionCard';
 import { WeeklyMissionUpdateSection } from './WeeklyMissionUpdateSection';
 import { useLeagueDataset } from './useLeagueDataset';
 
@@ -30,11 +29,10 @@ export function MissionControlPage() {
 
   return (
     <div className="relative">
-      <section className="mx-auto max-w-6xl space-y-6 px-4 pt-10 sm:px-6">
-        <VirtualPositionCard ranking={ranking} />
+      <section className="mx-auto max-w-6xl space-y-4 px-4 pt-10 sm:px-6">
+        <CommandBriefingCard ranking={ranking} powerBi={powerBi} fte={fte} />
         <RoadToJan31Card fte={fte} />
-        <PowerBiIntelligenceCard powerBi={powerBi} />
-        <ProductionSection />
+        <ProductionSection powerBi={powerBi} currentFteFactor={fte.currentFteFactor ?? null} />
       </section>
 
       <section className="relative mt-10 overflow-hidden border-y border-gold/10 px-4 py-14 sm:px-6">

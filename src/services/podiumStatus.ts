@@ -8,3 +8,9 @@ export function getPodiumState(virtualPosition: number | null): PodiumState {
   if (virtualPosition === 3) return 'bronze';
   return 'default';
 }
+
+/** How far the leader's score is ahead of another team's — never hardcoded, always derived from the current Top 3 snapshot. */
+export function calculateScoreLead(leaderScore: number | null, otherScore: number | null): number | null {
+  if (leaderScore === null || otherScore === null) return null;
+  return Math.round((leaderScore - otherScore) * 100) / 100;
+}

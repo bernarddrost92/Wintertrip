@@ -1,20 +1,27 @@
 import { getAmContribution, getProductionDataQuality, getTeamTotal, getTmContribution } from '../../services/productionAggregate';
 import { scoreProductionFeed } from '../../services/productionScoring';
-import { ProductionContributionSection } from './ProductionContributionSection';
-import { ProductionDataQualitySection } from './ProductionDataQualitySection';
-import { ProductionHeroSection } from './ProductionHeroSection';
+import { IntelligenceStatusSection } from './IntelligenceStatusSection';
+import { ScoreIntelligenceSection } from './ScoreIntelligenceSection';
+import { TeamContributionSection } from './TeamContributionSection';
 import { useProductionFeed } from './useProductionFeed';
+import type { PowerBiIntelligenceSnapshot } from '../../types/missionSnapshot';
+
+interface ProductionSectionProps {
+  powerBi: PowerBiIntelligenceSnapshot;
+  currentFteFactor: number | null;
+}
 
 /**
- * The production dashboard — Marre's Google Sheet, sanitized (see
- * types/productionFeed.ts: no professional/client name ever reaches this
- * component), scored through the same central scoring engine the
- * Calculator uses, and never presented as live when it isn't (mock/
- * degraded states are always visible in the hero). Mobile order matches
- * the DOM order below: Total Base League Points -> AM Contribution -> TM
- * Contribution -> Data Quality.
+ * The production-feed-driven part of Mission Control — Marre's Google
+ * Sheet, sanitized (see types/productionFeed.ts: no professional/client
+ * name ever reaches this component), scored through the same central
+ * scoring engine the Calculator uses, and never presented as live when it
+ * isn't (mock/degraded states surface in Score Intelligence and
+ * Intelligence Status). powerBi/currentFteFactor are passed through purely
+ * for display alongside Base League Points — this component still owns
+ * all production-feed fetching/scoring, unchanged from before.
  */
-export function ProductionSection() {
+export function ProductionSection({ powerBi, currentFteFactor }: ProductionSectionProps) {
   const { feed, loading, refreshing, refresh } = useProductionFeed();
 
   if (loading || !feed) {
@@ -33,17 +40,16 @@ export function ProductionSection() {
 
   return (
     <div className="space-y-6">
-      <ProductionHeroSection
-        team={team}
-        mock={feed.mock}
-        degraded={feed.degraded}
+      <ScoreIntelligenceSection team={team} mock={feed.mock} degraded={feed.degraded} powerBi={powerBi} currentFteFactor={currentFteFactor} />
+      <TeamContributionSection am={amContribution} tm={tmContribution} />
+      <IntelligenceStatusSection
         fetchedAt={feed.fetchedAt}
+        degraded={feed.degraded}
         refreshing={refreshing}
         onRefresh={refresh}
+        powerBiUpdatedAt={powerBi.updatedAt}
+        dataQuality={dataQuality}
       />
-      <ProductionContributionSection role="AM" agents={amContribution} />
-      <ProductionContributionSection role="TM" agents={tmContribution} />
-      <ProductionDataQualitySection quality={dataQuality} />
     </div>
   );
 }

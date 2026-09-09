@@ -14,6 +14,7 @@ export interface RankingSnapshot {
 /** A computed distance (never hardcoded) from Zwolle's current Net FTE to a reference ranking position. */
 export interface FteMilestone {
   position: number;
+  team: string;
   gapFte: number;
 }
 

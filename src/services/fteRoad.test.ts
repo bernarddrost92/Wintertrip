@@ -72,22 +72,22 @@ describe('calculateFteGapToBenchmark', () => {
 });
 
 describe('calculateFteMilestones', () => {
-  it('computes the improvement needed to each reference position from the current Net FTE', () => {
+  it('computes the improvement needed to each reference position from the current Net FTE, carrying the team name through unchanged', () => {
     const milestones = calculateFteMilestones(-79.01, [
-      { position: 8, netFte: -55.85 },
-      { position: 5, netFte: -39.7 },
-      { position: 3, netFte: -25.83 },
-      { position: 1, netFte: -23.6 },
+      { position: 8, team: 'Alkmaar', netFte: -55.85 },
+      { position: 5, team: 'Utrecht', netFte: -39.7 },
+      { position: 3, team: 'Breda', netFte: -25.83 },
+      { position: 1, team: 'Middelburg', netFte: -23.6 },
     ]);
     expect(milestones).toEqual([
-      { position: 8, gapFte: 23.16 },
-      { position: 5, gapFte: 39.31 },
-      { position: 3, gapFte: 53.18 },
-      { position: 1, gapFte: 55.41 },
+      { position: 8, team: 'Alkmaar', gapFte: 23.16 },
+      { position: 5, team: 'Utrecht', gapFte: 39.31 },
+      { position: 3, team: 'Breda', gapFte: 53.18 },
+      { position: 1, team: 'Middelburg', gapFte: 55.41 },
     ]);
   });
 
   it('returns an empty list when the current Net FTE is missing — never a fabricated milestone', () => {
-    expect(calculateFteMilestones(null, [{ position: 1, netFte: -23.6 }])).toEqual([]);
+    expect(calculateFteMilestones(null, [{ position: 1, team: 'Middelburg', netFte: -23.6 }])).toEqual([]);
   });
 });

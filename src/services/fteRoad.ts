@@ -49,11 +49,12 @@ export function calculateFteGapToBenchmark(currentNetFte: number | null, benchma
 
 export interface FteMilestoneInput {
   position: number;
+  team: string;
   netFte: number;
 }
 
 /** Computes the improvement still needed to reach each reference position — never hardcoded per screenshot. */
 export function calculateFteMilestones(currentNetFte: number | null, milestones: FteMilestoneInput[]): FteMilestone[] {
   if (currentNetFte === null) return [];
-  return milestones.map((m) => ({ position: m.position, gapFte: Math.round((m.netFte - currentNetFte) * 100) / 100 }));
+  return milestones.map((m) => ({ position: m.position, team: m.team, gapFte: Math.round((m.netFte - currentNetFte) * 100) / 100 }));
 }
