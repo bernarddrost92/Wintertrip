@@ -7,9 +7,21 @@ function formatSyncTime(isoDateTime: string): string {
   return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** Always rendered in Europe/Amsterdam — the team's own timezone, not the viewer's — so the snapshot time reads the same for everyone. */
-function formatPowerBiTime(isoDateTime: string): string {
-  const date = new Date(isoDateTime);
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+/**
+ * Always rendered in Europe/Amsterdam — the team's own timezone, not the
+ * viewer's — so a snapshot time reads the same for everyone. A date-only
+ * snapshot (no reliable Power BI refresh time in the screenshot) renders
+ * as just the date, never a fabricated time.
+ */
+function formatPowerBiTime(isoDateOrDateOnly: string): string {
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDateOrDateOnly);
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    return `${day} ${MONTH_ABBR[Number(month) - 1]} ${year}`;
+  }
+  const date = new Date(isoDateOrDateOnly);
   if (Number.isNaN(date.getTime())) return '—';
   const zone = 'Europe/Amsterdam';
   const day = date.toLocaleString('en-GB', { day: '2-digit', timeZone: zone });

@@ -38,6 +38,21 @@ describe('IntelligenceStatusSection', () => {
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
+  it('a date-only snapshot (no reliable refresh time) renders just the date, never a fabricated time', () => {
+    render(
+      <IntelligenceStatusSection
+        fetchedAt="2026-09-10T08:06:00.000Z"
+        degraded={false}
+        refreshing={false}
+        onRefresh={vi.fn()}
+        powerBiUpdatedAt="2026-09-10"
+        dataQuality={{ scoringPendingCount: 0, scoringMismatchCount: 0 }}
+      />,
+    );
+    expect(screen.getByText('10 SEP 2026')).toBeInTheDocument();
+    expect(screen.queryByText(/10 sep 2026 ·/i)).not.toBeInTheDocument();
+  });
+
   it('no Power BI timestamp -> Awaiting Update', () => {
     render(
       <IntelligenceStatusSection
