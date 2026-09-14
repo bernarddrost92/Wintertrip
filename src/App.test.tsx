@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { grantAccess, hasAccess } from './features/access/accessStorage';
 
@@ -111,5 +111,40 @@ describe('App — mission gate / intro / home flow (access already granted)', ()
     expect(hasAccess()).toBe(false);
     expect(screen.getByRole('button', { name: /authorize/i })).toBeInTheDocument();
     expect(screen.queryByText('Missie #1')).not.toBeInTheDocument();
+  });
+});
+
+describe('App — /mission-updates direct route (via the 404.html redirect param)', () => {
+  afterEach(() => {
+    window.history.pushState({}, '', '/');
+  });
+
+  it('a direct /mission-updates link never shows app content while access is ungranted', () => {
+    window.history.pushState({}, '', '/?redirect=mission-updates');
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: /authorize/i })).toBeInTheDocument();
+    expect(screen.queryByText(/mission archive/i)).not.toBeInTheDocument();
+  });
+
+  it('once access + the intro are already clear, the direct link lands straight on Mission Updates', () => {
+    grantAccess();
+    sessionStorage.setItem('ws27-intro-seen', '1');
+    window.history.pushState({}, '', '/?redirect=mission-updates');
+
+    render(<App />);
+
+    expect(screen.getByText(/007 · mission archive/i)).toBeInTheDocument();
+    expect(screen.queryByText('Missie #1')).not.toBeInTheDocument();
+  });
+
+  it('cleans the redirect param out of the visible URL after restoring the view', () => {
+    grantAccess();
+    sessionStorage.setItem('ws27-intro-seen', '1');
+    window.history.pushState({}, '', '/?redirect=mission-updates');
+
+    render(<App />);
+
+    expect(window.location.search).toBe('');
   });
 });

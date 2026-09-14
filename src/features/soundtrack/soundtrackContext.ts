@@ -9,6 +9,11 @@ export interface SoundtrackContextValue {
   start: () => void;
   togglePlay: () => void;
   toggleMute: () => void;
+  /** Fades out and pauses, unconditionally — never toggles back on if
+   * already paused. Used only for necessary audio coordination (e.g. a
+   * Mission Update video must never play at the same time as the app
+   * soundtrack), never as a second way to express togglePlay's intent. */
+  pause: () => void;
 }
 
 export const SoundtrackContext = createContext<SoundtrackContextValue | null>(null);

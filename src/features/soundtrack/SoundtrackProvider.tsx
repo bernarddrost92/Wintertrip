@@ -90,13 +90,19 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
       });
   }
 
+  function pause() {
+    const audio = audioRef.current;
+    if (!audio || audio.paused) return;
+    fadeVolumeTo(0, () => audio.pause());
+  }
+
   function togglePlay() {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
       start();
     } else {
-      fadeVolumeTo(0, () => audio.pause());
+      pause();
     }
   }
 
@@ -110,7 +116,7 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SoundtrackContext.Provider value={{ isPlaying, isMuted, start, togglePlay, toggleMute }}>
+    <SoundtrackContext.Provider value={{ isPlaying, isMuted, start, togglePlay, toggleMute, pause }}>
       <audio
         ref={audioRef}
         src={AUDIO_SRC}

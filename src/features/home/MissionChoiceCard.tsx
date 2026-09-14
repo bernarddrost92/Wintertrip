@@ -11,11 +11,14 @@ interface MissionChoiceCardProps {
   icon: LucideIcon;
   onClick: () => void;
   size?: 'lg' | 'md';
+  /** Compact status pill next to the icon — e.g. "1 UPDATE". Never a loud
+   * badge; same restrained mono/uppercase treatment as the rest of the card. */
+  badge?: string;
 }
 
 /** A "mission terminal", not a web card — the primary way in and out of
  * each operation from the briefing page. */
-export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onClick, size = 'md' }: MissionChoiceCardProps) {
+export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onClick, size = 'md', badge }: MissionChoiceCardProps) {
   const isLarge = size === 'lg';
 
   return (
@@ -31,7 +34,14 @@ export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onCl
 
       <div className="relative flex items-start justify-between">
         <span className={`font-mono font-bold uppercase tracking-[0.25em] text-gold/50 ${isLarge ? 'text-sm' : 'text-xs'}`}>{code}</span>
-        <Icon className="text-gold/60 transition-colors duration-200 group-hover:text-gold" size={isLarge ? 26 : 20} aria-hidden />
+        <div className="flex items-center gap-2">
+          {badge && (
+            <span className="border border-gold/30 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-gold/80">
+              {badge}
+            </span>
+          )}
+          <Icon className="text-gold/60 transition-colors duration-200 group-hover:text-gold" size={isLarge ? 26 : 20} aria-hidden />
+        </div>
       </div>
 
       <p className={`relative mt-4 font-display font-bold uppercase leading-tight tracking-[0.02em] text-ink ${isLarge ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>

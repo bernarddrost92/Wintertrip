@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <title>007 — Operatie Wintertrip 2027</title>
+    <script>
+      // GitHub Pages SPA fallback: this is a static single-page app with no
+      // server-side rewrite rules, so a deep link like
+      // /Wintertrip/mission-updates 404s at the CDN before the app's own
+      // JS ever runs. This captures the intended sub-path, then redirects
+      // to the app's own index.html with it encoded as a "redirect" query
+      // param — src/utils/deepLink.ts reads it back on load.
+      var segments = window.location.pathname.replace(/^\/+/, '').split('/');
+      var base = '/' + (segments[0] ? segments[0] + '/' : '');
+      var rest = window.location.pathname.slice(base.length) + window.location.search + window.location.hash;
+      window.location.replace(base + '?redirect=' + encodeURIComponent(rest));
+    </script>
+  </head>
+  <body></body>
+</html>

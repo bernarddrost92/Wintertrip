@@ -13,9 +13,11 @@ import { MissionGate } from './features/intro/MissionGate';
 import { MissionIntroSequence } from './features/intro/MissionIntroSequence';
 import { LeagueCheckPage } from './features/league-check/LeagueCheckPage';
 import { MissionControlPage } from './features/mission-control/MissionControlPage';
+import { MissionUpdatesPage } from './features/mission-updates/MissionUpdatesPage';
 import { MissionFlowProvider } from './features/missionFlow/MissionFlowProvider';
 import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
 import type { AppView } from './types/navigation';
+import { clearDeepLinkParam, readDeepLinkView } from './utils/deepLink';
 
 type GatePhase = 'gate' | 'intro' | 'ready';
 
@@ -24,6 +26,7 @@ const ACCESS_LABEL: Record<AppView, string> = {
   calculator: 'ACCESSING MISSION CALCULATOR...',
   'league-check': 'ACCESSING LEAGUE CHECK...',
   'mission-control': 'ACCESSING MISSION CONTROL...',
+  'mission-updates': 'ACCESSING MISSION UPDATES...',
 };
 
 const TRANSITION_MS = 650;
@@ -49,7 +52,15 @@ const TRANSITION_MS = 650;
 export default function App() {
   const [accessGranted, setAccessGranted] = useState(() => hasAccess());
   const [gatePhase, setGatePhase] = useState<GatePhase>(() => (hasSeenIntro() ? 'ready' : 'gate'));
-  const [view, setView] = useState<AppView>('home');
+  // A bookmarked/shared /mission-updates link survives GitHub Pages' lack of
+  // server-side routing via public/404.html + this restore — see
+  // utils/deepLink.ts. Still fully gated: this only ever picks which view
+  // renders once accessGranted/gatePhase actually clear it to render at all.
+  const [view, setView] = useState<AppView>(() => {
+    const deepLinkView = readDeepLinkView();
+    if (deepLinkView) clearDeepLinkParam();
+    return deepLinkView ?? 'home';
+  });
   const [transition, setTransition] = useState<AppView | null>(null);
 
   function handleResetAccess() {
@@ -113,6 +124,7 @@ export default function App() {
                         <MissionControlPage />
                       </CommandFrame>
                     )}
+                    {view === 'mission-updates' && <MissionUpdatesPage />}
                   </main>
                   <Footer onReplayIntro={handleReplayIntro} onResetAccess={handleResetAccess} />
                 </div>

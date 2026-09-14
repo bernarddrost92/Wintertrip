@@ -1,4 +1,5 @@
-import { Calculator, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Calculator, LayoutDashboard, Radio, ShieldCheck } from 'lucide-react';
+import { missionUpdates } from '../../data/missionUpdates';
 import type { AppView } from '../../types/navigation';
 import { MissionChoiceCard } from './MissionChoiceCard';
 
@@ -13,6 +14,9 @@ interface MissionHomepageProps {
  * choices rather than a settings page, calculator visually the largest.
  */
 export function MissionHomepage({ onSelect }: MissionHomepageProps) {
+  const updateCount = missionUpdates.length;
+  const updateBadge = updateCount > 0 ? `${updateCount} UPDATE${updateCount === 1 ? '' : 'S'}` : undefined;
+
   return (
     <div className="relative mx-auto flex max-w-[1200px] flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-20">
       <div
@@ -67,6 +71,15 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
             onClick={() => onSelect('mission-control')}
           />
         </div>
+        <MissionChoiceCard
+          code="04"
+          title="Mission Updates"
+          subtitle="Classified transmissions from Team Zwolle."
+          cta="View Archive"
+          icon={Radio}
+          badge={updateBadge}
+          onClick={() => onSelect('mission-updates')}
+        />
       </div>
     </div>
   );
