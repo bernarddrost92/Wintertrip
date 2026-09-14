@@ -16,8 +16,9 @@ import type { RawProductionFeedRecord } from '../../types/productionFeed';
 
 export const MOCK_PRODUCTION_FEED_RECORDS: RawProductionFeedRecord[] = [
   {
-    // Matches the integration spec's own worked example exactly: 8 full
-    // months × 10 DB = 80 base points. Sheet agrees -> SCORING VERIFIED.
+    // Matches the official worked example exactly: 8 full months × 10 DB =
+    // 80 fixed monthly mission value, × 5 active league months (Sep–Jan) =
+    // 400 base league points. Sheet agrees -> SCORING VERIFIED.
     id: 'deal-001',
     agreementType: 'Detachering',
     dealType: 'Nieuwe plaatsing',
@@ -32,11 +33,13 @@ export const MOCK_PRODUCTION_FEED_RECORDS: RawProductionFeedRecord[] = [
     status: 'aangeboden',
     sheetQualifyingStart: '2026-09-01',
     sheetEligible: 'WAAR',
-    sheetLeagueScore: 80,
+    sheetLeagueScore: 400,
     sheetControl: 'OK',
   },
   {
-    // 4 full months x 20 DB = 80 — but the sheet says 60: SCORING MISMATCH.
+    // 4 full months x 20 DB = 80 fixed monthly mission value, × 4 active
+    // league months = 320 — but the sheet still says 60 (stale, pre-dates
+    // the restored league-month multiplier): SCORING MISMATCH.
     id: 'deal-002',
     agreementType: 'Detachering',
     dealType: 'Nieuwe plaatsing',
@@ -93,7 +96,8 @@ export const MOCK_PRODUCTION_FEED_RECORDS: RawProductionFeedRecord[] = [
     sheetControl: 'OK',
   },
   {
-    // Hours increase: +8/week, 3 full months x 5 DB = 15 base points.
+    // Hours increase: +8/week, 3 full months x 5 DB = 15 fixed monthly
+    // mission value, × 3 active league months (Nov, Dec, Jan) = 45 base points.
     id: 'deal-005',
     agreementType: 'Detachering',
     dealType: 'Urenuitbreiding',
@@ -108,7 +112,7 @@ export const MOCK_PRODUCTION_FEED_RECORDS: RawProductionFeedRecord[] = [
     status: 'aangeboden',
     sheetQualifyingStart: '2026-11-01',
     sheetEligible: 'WAAR',
-    sheetLeagueScore: 15,
+    sheetLeagueScore: 45,
     sheetControl: 'OK',
   },
   {

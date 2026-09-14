@@ -45,7 +45,7 @@ src/
     leagueRules.ts      League-periode, Factor-ladder, drempels, factorApplicationMode, Deal Category-opties
   types/
     league.ts            Domeinmodellen (Placement, AccountManagerStats, ...)
-    scoring.ts            Score-resultaattypes (QualifyingTermBreakdown, LeagueExposureBreakdown, ScoreResult, ...)
+    scoring.ts            Score-resultaattypes (QualifyingTermBreakdown, ScoreResult, ...)
   utils/
     dates.ts             Timezone-veilige date-only berekeningen (incl. epoch-day utilities)
     format.ts             NL-getalnotatie
@@ -72,19 +72,19 @@ npm run typecheck
 
 ## Tests
 
-40 tests in `src/services/proration.test.ts` en `src/services/scoring.test.ts`, onder meer:
+Tests in `src/services/proration.test.ts` en `src/services/scoring.test.ts`, onder meer:
 
-- Officiële voorbeeld: 1 sep, 8 volledige maanden, VCDB 10 → Qualifying Term Value 80, League Exposure 5, Base 400, ×2,5 = **1.000**; ×1,3 = **520**
-- Gedeeltelijke september (start 15 sep): exposure exact **16/30**
+- **Officiële formule** (herbevestigd september 2026): FIXED MONTHLY MISSION VALUE = kwalificerende looptijd in maanden × VCDB per maand; BASE LEAGUE SCORE = die vaste waarde × ACTIVE LEAGUE MONTHS (het aantal league-kalendermaanden — 1 sep 2026 t/m 31 jan 2027, max 5 — waarin de kwalificerende termijn actief is). Officieel voorbeeld: 1 sep, 8 volledige maanden, VCDB 10 → fixed value 80, active league months 5, base 400, ×2,5 = **1.000**; ×1,3 = **520**. Er bestaat geen losse formule meer waarbij de looptijd × VCDB zelf al de eindscore is — die multiplicatie zonder league-maand-vermenigvuldiger is nadrukkelijk onjuist.
+- Vroeg starten wint: dezelfde 8 maanden/VCDB 10-plaatsing scoort 400 bij start september, 320 bij oktober, 240 bij november, 160 bij december, 80 bij januari — active league months daalt lineair met 1 per latere startmaand.
+- Bestaande plaatsingen tellen niet als nieuwe plaatsing: een plaatsing die al vóór 1 september 2026 liep scoort 0, ongeacht hoeveel van de looptijd binnen de league valt.
+- Gedeeltelijke september (start 15 sep): qualifying-term fractie exact **16/30**
 - Kalenderverschillen: september 30 dagen, januari 31, februari 2027 (niet-schrikkel) 28, februari 2028 (schrikkel) 29
-- Willekeurige plaatsing 15 sep – 5 mrt: volledige Qualifying Term- en League Exposure-uitsplitsing per maand
 - Eén-dag-overlap en maandgrens (30 sep → 1 okt) zonder off-by-one
-- Verlenging — Qualifying Term: alleen de nieuw toegevoegde termijn telt mee (bv. oude einddatum 31 jan → nieuwe 30 jun = alleen feb–jun)
-- Verlenging — Award Date: League Exposure loopt vanaf de Award Date t/m league-einde, ook als de toegevoegde maanden zelf na de league vallen (award 15 okt → okt(partial)/nov/dec/jan tellen mee); een Award Date ná league-einde geeft exposure 0
-- Urenuitbreiding: +2 u/w niet scoorbaar, +4 u/w wel
+- Verlenging: alleen de nieuw toegevoegde termijn telt mee, vanaf de dag ná de oude einddatum (bv. oude einddatum 30 sep → nieuwe termijn vanaf 1 okt); de nieuwe termijn kwalificeert alleen als die vóór of op 31 januari start. Ook hier: fixed monthly mission value × active league months van uitsluitend de nieuwe termijn.
+- Urenuitbreiding: +2 u/w niet scoorbaar, +4 u/w wel — alleen de extra VCDB scoort, via dezelfde fixed-value × active-league-months formule.
 - W&S: altijd 0, voor alle drie mission types, ongeacht verder geldige invoer
 - Validatie: einddatum vóór startdatum, VCDB ≤ 0, verlenging zonder nieuwe periode
-- Factor-precisie (1,7x / 1,3x) en plaatsingen volledig buiten de leagueperiode (exposure 0)
+- Factor-precisie (1,7x / 1,3x) en plaatsingen volledig buiten de leagueperiode (active league months 0)
 
 ```bash
 npm run test
@@ -134,7 +134,7 @@ JSON API  (VITE_LEAGUE_API_URL)
 
 De Factor-toepassing op league-niveau is nog een openstaande interpretatievraag (alle VCDB van de vestiging vs. alleen contractant-gebonden VCDB). Dit is als `FACTOR_APPLICATION_MODE` (`ALL_VCDB` / `CONTRACTANT_ONLY`) centraal geconfigureerd in `src/config/leagueRules.ts`, zodat de uiteindelijke keuze zonder UI-wijzigingen doorgevoerd kan worden.
 
-De verlengingsregel (was in V2 nog open) is vastgesteld: League Exposure van de nieuw toegevoegde termijn loopt vanaf de **Award Date** (verplicht veld) t/m `min(nieuwe einddatum, league-einde)` — niet vanaf de kalendermaanden van de toegevoegde termijn zelf. Een verlenging die op 15 oktober wordt afgesproken voor maanden die pas in februari beginnen, scoort dus alsnog voor okt(deels)/nov/dec/jan, omdat de waarde al binnen de league is "verkocht" op het moment van afspreken. Zie de toelichting boven `calculateExtensionScore` in `src/services/scoring.ts` en de comment in `src/config/leagueRules.ts`.
+De verlengingsregel is vastgesteld: er is geen apart Award Date-veld. De nieuwe termijn start altijd automatisch de kalenderdag na de huidige einddatum (`nextIsoDay(oldEndDate)`), en kwalificeert alleen als die nieuwe start op of vóór 31 januari 2027 valt — start die na 31 januari, dan scoort de verlenging 0. Kwalificeert de verlenging wel, dan wordt de FIXED MONTHLY MISSION VALUE berekend over de volledige nieuwe termijn (tot de nieuwe einddatum, hoe ver ook na januari), vermenigvuldigd met het aantal ACTIVE LEAGUE MONTHS dat die nieuwe termijn binnen de league-periode beslaat. Zie de toelichting boven `calculateExtensionScore` en `evaluateExtensionTiming` in `src/services/scoring.ts`.
 
 ## Data privacy
 

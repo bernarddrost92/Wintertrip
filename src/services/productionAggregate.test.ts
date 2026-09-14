@@ -20,7 +20,7 @@ function raw(overrides: Partial<RawProductionFeedRecord>): RawProductionFeedReco
     status: 'aangeboden',
     sheetQualifyingStart: '2026-09-01',
     sheetEligible: 'WAAR',
-    sheetLeagueScore: 80,
+    sheetLeagueScore: 400,
     sheetControl: 'OK',
     ...overrides,
   };
@@ -30,15 +30,15 @@ describe('production aggregation — no double-counting, correct attribution', (
   it('5. the AM gets the deal score', () => {
     const scored = scoreProductionFeed([raw({ id: 'a', accountManager: 'KS', talentManager: 'BVM' })].map(normalizeProductionFeedRecord));
     const am = getAmContribution(scored);
-    expect(am).toEqual([{ code: 'KS', score: 80, deals: 1 }]);
+    expect(am).toEqual([{ code: 'KS', score: 400, deals: 1 }]);
   });
 
   it('6. the TM gets the exact same attribution score as the AM for the same deal', () => {
     const scored = scoreProductionFeed([raw({ id: 'a', accountManager: 'KS', talentManager: 'BVM' })].map(normalizeProductionFeedRecord));
     const am = getAmContribution(scored);
     const tm = getTmContribution(scored);
-    expect(am[0].score).toBe(80);
-    expect(tm[0].score).toBe(80);
+    expect(am[0].score).toBe(400);
+    expect(tm[0].score).toBe(400);
     expect(tm[0].code).toBe('BVM');
   });
 
@@ -49,7 +49,7 @@ describe('production aggregation — no double-counting, correct attribution', (
     const tm = getTmContribution(scored);
     expect(tm).toEqual([]);
     // ...but the AM side is unaffected — empty TM never blocks AM attribution.
-    expect(getAmContribution(scored)).toEqual([{ code: 'KS', score: 80, deals: 1 }]);
+    expect(getAmContribution(scored)).toEqual([{ code: 'KS', score: 400, deals: 1 }]);
   });
 
   it('7. Team Zwolle counts a deal exactly once — never AM-sum + TM-sum', () => {
@@ -71,24 +71,24 @@ describe('production aggregation — no double-counting, correct attribution', (
   it('excluded (Geannuleerd) deals never count toward the team total or any leaderboard', () => {
     const scored = scoreProductionFeed(
       [
-        raw({ id: 'a', accountManager: 'KS', talentManager: 'BVM', monthlyDb: 10, sheetLeagueScore: 80 }),
+        raw({ id: 'a', accountManager: 'KS', talentManager: 'BVM', monthlyDb: 10, sheetLeagueScore: 400 }),
         raw({ id: 'b', accountManager: 'KS', talentManager: 'BVM', monthlyDb: 999, status: 'Geannuleerd', sheetLeagueScore: null }),
       ].map(normalizeProductionFeedRecord),
     );
     const team = getTeamTotal(scored);
-    expect(team.totalBaseLeaguePoints).toBe(80);
-    expect(getAmContribution(scored)).toEqual([{ code: 'KS', score: 80, deals: 1 }]);
+    expect(team.totalBaseLeaguePoints).toBe(400);
+    expect(getAmContribution(scored)).toEqual([{ code: 'KS', score: 400, deals: 1 }]);
   });
 
   it('pending deals never count toward the total and are reported separately', () => {
     const scored = scoreProductionFeed(
       [
-        raw({ id: 'a', accountManager: 'KS', monthlyDb: 10, sheetLeagueScore: 80 }),
+        raw({ id: 'a', accountManager: 'KS', monthlyDb: 10, sheetLeagueScore: 400 }),
         raw({ id: 'b', accountManager: 'BD', monthlyDb: null, sheetLeagueScore: null }),
       ].map(normalizeProductionFeedRecord),
     );
     const team = getTeamTotal(scored);
-    expect(team.totalBaseLeaguePoints).toBe(80);
+    expect(team.totalBaseLeaguePoints).toBe(400);
     expect(team.scoringPending).toBe(1);
   });
 

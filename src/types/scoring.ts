@@ -31,6 +31,17 @@ export interface QualifyingTermBreakdown {
 
 export interface ScoreResult {
   qualifyingTerm: QualifyingTermBreakdown;
+  /** Calendar-day-precise duration of the qualifying term, in months —
+   * qualifyingTerm.totalValue / qualifyingTerm.vcdbPerMonth. */
+  qualifyingDurationMonths: number;
+  /** qualifyingDurationMonths × vcdbPerMonth — the FIXED MONTHLY MISSION
+   * VALUE, unchanged across every active league month. Equal to
+   * qualifyingTerm.totalValue; kept as its own field for a clearer display
+   * name in the Calculator's Show Calculation breakdown. */
+  fixedMonthlyMissionValue: number;
+  /** Official league-month multiplier — see proration.ts#calculateActiveLeagueMonths. */
+  activeLeagueMonths: number;
+  /** BASE LEAGUE SCORE = fixedMonthlyMissionValue × activeLeagueMonths. */
   baseScore: number;
   factor: number;
   finalScore: number;

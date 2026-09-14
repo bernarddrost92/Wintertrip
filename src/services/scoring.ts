@@ -4,15 +4,41 @@
  * math lives one level down in services/proration.ts; this file only
  * orchestrates it into the three mission types and applies the Factor.
  *
- * Scoring model (settled): BASE SCORE = VCDB per month × the full
- * qualifying term (calendar-day prorated). There is no separate "League
- * Exposure" multiplier and no fixed five-month (Sep–Jan) window applied to
- * the score — the entire agreed term counts, however far past January it
- * runs. The only place 31 January 2027 still matters is as the EXTENSION
- * qualification gate (see calculateExtensionScore below).
+ * OFFICIAL scoring model (restored September 2026 — the temporary "full
+ * qualifying term, one multiplication, no league-month multiplier"
+ * interpretation used between roughly Fase 2 and this change has been
+ * reverted and is no longer correct):
+ *
+ *   STEP 1 — FIXED MONTHLY MISSION VALUE
+ *     = qualifying duration in months × VCDB per month
+ *     (calendar-day prorated for partial start/end months — see
+ *     proration.ts#calculateQualifyingTermBreakdown. This value is FIXED:
+ *     it does not change per month.)
+ *
+ *   STEP 2 — BASE LEAGUE SCORE
+ *     = FIXED MONTHLY MISSION VALUE × ACTIVE LEAGUE MONTHS
+ *     (the number of league calendar months — 1 September 2026 through 31
+ *     January 2027, max 5 — the qualifying term is active in. See
+ *     proration.ts#calculateActiveLeagueMonths, the one central helper for
+ *     this count.)
+ *
+ * So the official worked example (8-month placement, VCDB 10/month,
+ * starting 1 September) is 8 × 10 = 80 fixed value, × 5 active league
+ * months = 400 base league points — never 80 alone. Starting the same deal
+ * later in the league linearly loses active league months (October → ×4 =
+ * 320, November → ×3 = 240, and so on) — early start is a core strategic
+ * lever again. A placement that was already running before 1 September
+ * does not count as a new placement at all, regardless of how much of it
+ * overlaps the league (see isNewPlacementWithinLeague below) — existing
+ * placements never retroactively qualify.
+ *
+ * 31 January 2027 remains a hard ceiling: months after it are never
+ * "active league months", however far the agreed term itself runs (the
+ * FIXED MONTHLY MISSION VALUE still uses the term's full duration — only
+ * the multiplier stops growing after January).
  */
 import { FACTOR_OPTIONS, LEAGUE_PERIOD, MIN_HOURS_INCREASE_PER_WEEK, WS_MESSAGE } from '../config/leagueRules';
-import { calculateQualifyingTermBreakdown } from './proration';
+import { calculateActiveLeagueMonths, calculateQualifyingTermBreakdown } from './proration';
 import type { DealCategory, ExtensionTiming, FactorScenario, HoursIncreaseEligibility, QualifyingTermBreakdown, ScoreResult, ValidationResult } from '../types/scoring';
 import type { IsoDate } from '../types/league';
 import { compareIsoDates, isValidIsoDate } from '../utils/dates';
@@ -39,11 +65,28 @@ export function isLeagueEligibleCategory(dealCategory: DealCategory): boolean {
   return dealCategory === 'DETACHERING';
 }
 
-function buildResult(qualifyingTerm: QualifyingTermBreakdown, factor: number): ScoreResult {
-  const baseScore = qualifyingTerm.totalValue;
+/**
+ * NEW_PLACEMENT-only gate: a new placement only counts if it STARTS within
+ * the league period itself (01-09-2026 t/m 31-01-2027). A placement that
+ * was already running before the league started is an existing placement,
+ * never a new one — it scores 0 regardless of how much of its own term
+ * later overlaps the league window.
+ */
+export function isNewPlacementWithinLeague(start: IsoDate): boolean {
+  if (!isValidIsoDate(start)) return false;
+  return compareIsoDates(start, LEAGUE_PERIOD.start) >= 0 && compareIsoDates(start, LEAGUE_PERIOD.end) <= 0;
+}
+
+function buildResult(qualifyingTerm: QualifyingTermBreakdown, activeLeagueMonths: number, factor: number): ScoreResult {
+  const fixedMonthlyMissionValue = qualifyingTerm.totalValue;
+  const qualifyingDurationMonths = qualifyingTerm.vcdbPerMonth > 0 ? fixedMonthlyMissionValue / qualifyingTerm.vcdbPerMonth : 0;
+  const baseScore = fixedMonthlyMissionValue * activeLeagueMonths;
   const finalScore = applyFactor(baseScore, factor);
   return {
     qualifyingTerm,
+    qualifyingDurationMonths,
+    fixedMonthlyMissionValue,
+    activeLeagueMonths,
     baseScore,
     factor,
     finalScore,
@@ -54,7 +97,14 @@ function buildResult(qualifyingTerm: QualifyingTermBreakdown, factor: number): S
 const EMPTY_TERM: QualifyingTermBreakdown = { segments: [], vcdbPerMonth: 0, totalValue: 0 };
 
 function emptyResult(factor: number): ScoreResult {
-  return buildResult(EMPTY_TERM, factor);
+  return buildResult(EMPTY_TERM, 0, factor);
+}
+
+/** Every official scoring path's active-league-months count, pinned to the
+ * one official league period — Calculator and Marre Production Feed scoring
+ * always call this exact helper, never a second implementation. */
+function activeLeagueMonthsFor(start: IsoDate, end: IsoDate): number {
+  return calculateActiveLeagueMonths(start, end, LEAGUE_PERIOD.start, LEAGUE_PERIOD.end);
 }
 
 // ---------------------------------------------------------------------------
@@ -107,10 +157,11 @@ export function calculateHoursIncreaseEligibility(oldHours: number, newHours: nu
 // ---------------------------------------------------------------------------
 
 /**
- * NEW_PLACEMENT: Base Score is the Qualifying Term Value over the entire
- * agreed placement period — calendar-day prorated for any partial start or
- * end month, with no cap at the league window. W&S deals never score — see
- * isLeagueEligibleCategory.
+ * NEW_PLACEMENT: BASE LEAGUE SCORE = FIXED MONTHLY MISSION VALUE (the
+ * calendar-day-prorated qualifying term × VCDB per month) × ACTIVE LEAGUE
+ * MONTHS. Only counts at all if the placement STARTS within the league
+ * period itself — an existing placement never qualifies as new. W&S deals
+ * never score — see isLeagueEligibleCategory.
  */
 export function calculateNewPlacementScore(
   start: IsoDate,
@@ -124,18 +175,22 @@ export function calculateNewPlacementScore(
   const window = validateMissionWindow(start, end);
   const vcdb = validateVcdb(vcdbPerMonth);
   if (!window.valid || !vcdb.valid) return emptyResult(factor);
+  if (!isNewPlacementWithinLeague(start)) return emptyResult(factor);
 
   const qualifyingTerm = calculateQualifyingTermBreakdown(start, end, vcdbPerMonth);
-  return buildResult(qualifyingTerm, factor);
+  return buildResult(qualifyingTerm, activeLeagueMonthsFor(start, end), factor);
 }
 
 /**
  * EXTENSION: only the newly added term counts, and only if it qualifies.
  * The new term always starts the calendar day after the current end date
  * (evaluateExtensionTiming). If that start falls after 31 January 2027, the
- * extension scores zero outright — a deal that qualifies is never truncated
- * at January, though: its Base Score covers the newly added term in full,
- * all the way through the new end date, however far past January that runs.
+ * extension scores zero outright. Once it qualifies, its FIXED MONTHLY
+ * MISSION VALUE covers the newly added term in full through the new end
+ * date (however far past January that runs) — but that fixed value is then
+ * multiplied by ACTIVE LEAGUE MONTHS, exactly like a new placement, so
+ * months past January never add extra multiplier even though they're part
+ * of the qualifying term's own duration.
  */
 export function calculateExtensionScore(
   oldEndDate: IsoDate,
@@ -154,13 +209,14 @@ export function calculateExtensionScore(
   if (!qualifies) return emptyResult(factor);
 
   const qualifyingTerm = calculateQualifyingTermBreakdown(newTermStart, newEndDate, vcdbPerMonth);
-  return buildResult(qualifyingTerm, factor);
+  return buildResult(qualifyingTerm, activeLeagueMonthsFor(newTermStart, newEndDate), factor);
 }
 
 /**
  * HOURS_INCREASE: only the extra hours (and their attributable extra VCDB)
- * count, over the full agreed period. Below the weekly threshold, the deal
- * scores 0 outright.
+ * count, over the full agreed period — same FIXED MONTHLY MISSION VALUE ×
+ * ACTIVE LEAGUE MONTHS formula, applied to just the extra VCDB. Below the
+ * weekly threshold, the deal scores 0 outright.
  */
 export function calculateHoursIncreaseScore(
   oldHours: number,
@@ -183,7 +239,7 @@ export function calculateHoursIncreaseScore(
   }
 
   const qualifyingTerm = calculateQualifyingTermBreakdown(start, end, extraVcdbPerMonth);
-  return { ...buildResult(qualifyingTerm, factor), ...eligibility };
+  return { ...buildResult(qualifyingTerm, activeLeagueMonthsFor(start, end), factor), ...eligibility };
 }
 
 export { WS_MESSAGE };

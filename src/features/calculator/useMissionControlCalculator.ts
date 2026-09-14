@@ -4,6 +4,7 @@ import {
   calculateHoursIncreaseEligibility,
   evaluateExtensionTiming,
   isLeagueEligibleCategory,
+  isNewPlacementWithinLeague,
   validateExtensionWindow,
   validateMissionWindow,
   validateVcdb,
@@ -69,7 +70,7 @@ export interface OpportunitySignal {
 export type MissionReadiness = 'INPUT_REQUIRED' | 'INVALID' | 'NOT_ELIGIBLE' | 'READY';
 
 export interface NotEligible {
-  reason: 'HOURS' | 'WS' | 'TOO_LATE';
+  reason: 'HOURS' | 'WS' | 'TOO_LATE' | 'EXISTING_PLACEMENT';
   message: string;
 }
 
@@ -130,6 +131,14 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
 
     if (wsIneligible) {
       return baseOutput(completion, null, null, { reason: 'WS', message: WS_MESSAGE }, [wsSignal()], 'NOT_ELIGIBLE', null);
+    }
+
+    if (!isNewPlacementWithinLeague(form.startDate)) {
+      const notEligible: NotEligible = {
+        reason: 'EXISTING_PLACEMENT',
+        message: `Plaatsing start ${formatIsoDateNl(form.startDate)} — buiten de league (01-09-2026 t/m 31-01-2027). Een bestaande plaatsing telt niet mee als nieuwe plaatsing.`,
+      };
+      return baseOutput(completion, null, null, notEligible, [existingPlacementSignal(form.startDate)], 'NOT_ELIGIBLE', null);
     }
 
     const result = computeResultForForm(form);
@@ -217,6 +226,14 @@ function computeOutput(form: CalculatorForm): CalculatorOutput {
 
 function wsSignal(): OpportunitySignal {
   return { key: 'ws-not-eligible', kind: 'warning', text: `${WS_MESSAGE}` };
+}
+
+function existingPlacementSignal(startDate: string): OpportunitySignal {
+  return {
+    key: 'existing-placement',
+    kind: 'warning',
+    text: `EXISTING PLACEMENT — start ${formatIsoDateNl(startDate)} valt buiten de league`,
+  };
 }
 
 function tooLateSignal(timing: ExtensionTiming): OpportunitySignal {

@@ -21,7 +21,7 @@ function baseRaw(overrides: Partial<RawProductionFeedRecord> = {}): RawProductio
     status: 'aangeboden',
     sheetQualifyingStart: '2026-09-01',
     sheetEligible: 'WAAR',
-    sheetLeagueScore: 80,
+    sheetLeagueScore: 400,
     sheetControl: 'OK',
     ...overrides,
   };
@@ -36,7 +36,7 @@ describe('scoreProductionRecord — empty TM', () => {
     const { outcome } = scoreProductionRecord(record({ talentManager: null }));
     expect(outcome.kind).toBe('scored');
     if (outcome.kind === 'scored') {
-      expect(outcome.calculatedLeagueScore).toBeCloseTo(80, 5);
+      expect(outcome.calculatedLeagueScore).toBeCloseTo(400, 5);
     }
   });
 });
@@ -48,14 +48,14 @@ describe('scoreProductionRecord — reuses the central scoring engine exactly', 
     expect(outcome.kind).toBe('scored');
     if (outcome.kind === 'scored') {
       expect(outcome.calculatedLeagueScore).toBeCloseTo(direct.baseScore, 5);
-      expect(outcome.calculatedLeagueScore).toBeCloseTo(80, 5); // 8 full months x 10 DB
+      expect(outcome.calculatedLeagueScore).toBeCloseTo(400, 5); // 8 full months x 10 DB = 80 fixed value x 5 active league months
     }
   });
 });
 
 describe('scoreProductionRecord — sheet verification', () => {
   it('9/verified. calculated score within tolerance of the sheet score reads as verified', () => {
-    const { outcome } = scoreProductionRecord(record({ sheetLeagueScore: 80 }));
+    const { outcome } = scoreProductionRecord(record({ sheetLeagueScore: 400 }));
     expect(outcome.kind).toBe('scored');
     if (outcome.kind === 'scored') expect(outcome.sheetComparison).toBe('verified');
   });
@@ -128,7 +128,7 @@ describe('scoreProductionRecord — Urenuitbreiding threshold', () => {
     expect(outcome.kind).toBe('scored');
     if (outcome.kind === 'scored') {
       expect(outcome.eligible).toBe(true);
-      expect(outcome.calculatedLeagueScore).toBeCloseTo(15, 5);
+      expect(outcome.calculatedLeagueScore).toBeCloseTo(45, 5); // 3 full months x 5 DB = 15 fixed value x 3 active league months
     }
   });
 

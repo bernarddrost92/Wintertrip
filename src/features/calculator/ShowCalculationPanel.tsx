@@ -7,11 +7,16 @@ interface ShowCalculationPanelProps {
   result: ScoreResult;
 }
 
+/** "8,00" — always 2 decimals, matching the rest of the transparent-math figures. */
+function formatMonths(value: number): string {
+  return formatVcdbValue(value);
+}
+
 /**
  * The full, transparent math behind Mission Value — never a black box.
- * Per qualifying-term month: active days × (monthly VCDB / days in that
- * month) = that month's value. No League Exposure multiplier exists
- * anymore — the sum of these months' values IS the Base Score.
+ * Official formula (restored): qualifying duration × VCDB/month = the FIXED
+ * MONTHLY MISSION VALUE, which then counts once for every ACTIVE LEAGUE
+ * MONTH — not a single one-time multiplication.
  */
 export function ShowCalculationPanel({ result }: ShowCalculationPanelProps) {
   const [open, setOpen] = useState(false);
@@ -32,22 +37,34 @@ export function ShowCalculationPanel({ result }: ShowCalculationPanelProps) {
       {open && (
         <div className="space-y-5 px-4 pb-5 font-mono text-xs">
           <section>
-            <p className="label-classified mb-2">Qualifying Term</p>
-            <div className="space-y-1">
-              {result.qualifyingTerm.segments.map((s) => (
-                <div key={s.monthKey} className="flex items-center justify-between text-ink-muted">
-                  <span>
-                    {s.label} <span className="text-ink-dim">{s.overlapDays}/{s.daysInMonth}d</span>
-                  </span>
-                  <span className="text-ink">
-                    {s.overlapDays} × ({formatVcdbValue(vcdbPerMonth)}/{s.daysInMonth}) = {formatVcdbValue(s.value)}
-                  </span>
-                </div>
-              ))}
+            <p className="label-classified mb-2">Fixed Monthly Mission Value</p>
+            <div className="space-y-1.5 text-ink-muted">
+              <div className="flex items-center justify-between">
+                <span className="uppercase tracking-wider">Qualifying Duration</span>
+                <span className="text-ink">{formatMonths(result.qualifyingDurationMonths)} months</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="uppercase tracking-wider">VCDB / month</span>
+                <span className="text-ink">{formatVcdbValue(vcdbPerMonth)}</span>
+              </div>
             </div>
             <div className="mt-2 flex items-center justify-between border-t border-gold/10 pt-2 text-gold">
-              <span className="uppercase tracking-wider">Total Base Score</span>
-              <span className="font-semibold">{formatScore(result.baseScore)}</span>
+              <span className="uppercase tracking-wider">Fixed Monthly Mission Value</span>
+              <span className="font-semibold">{formatScore(result.fixedMonthlyMissionValue)}</span>
+            </div>
+          </section>
+
+          <section>
+            <p className="label-classified mb-2">Base League Score</p>
+            <div className="flex items-center justify-between text-ink-muted">
+              <span className="uppercase tracking-wider">Active League Months</span>
+              <span className="text-ink">{result.activeLeagueMonths}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between border-t border-gold/10 pt-2 text-gold">
+              <span className="uppercase tracking-wider">Base League Score</span>
+              <span className="font-semibold">
+                {formatScore(result.fixedMonthlyMissionValue)} × {result.activeLeagueMonths} = {formatScore(result.baseScore)}
+              </span>
             </div>
           </section>
 

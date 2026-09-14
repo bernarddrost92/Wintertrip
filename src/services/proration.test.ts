@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  calculateActiveLeagueMonths,
   calculateCalendarMonthFraction,
   calculateQualifyingTermBreakdown,
   calculateQualifyingTermValue,
   getDaysInMonth,
   getInclusiveOverlapDays,
 } from './proration';
+
+const LEAGUE_START = '2026-09-01';
+const LEAGUE_END = '2027-01-31';
 
 describe('getDaysInMonth (TEST 4 — calendar differences, TEST 9 — leap-safe)', () => {
   it('knows September has 30 days', () => {
@@ -160,5 +164,42 @@ describe('Explicit day-value worked examples (VCDB is a monthly value, never a f
     expect(byMonth['2027-08'].daysInMonth).toBe(31);
     expect(byMonth['2027-08'].overlapDays).toBe(1);
     expect(byMonth['2027-08'].value).toBeCloseTo(1 * (10 / 31), 10);
+  });
+});
+
+describe('calculateActiveLeagueMonths — the official league-month multiplier, capped at the 5 official months', () => {
+  it('a full Sep–Apr term (8 months) counts exactly the 5 official league months', () => {
+    expect(calculateActiveLeagueMonths('2026-09-01', '2027-04-30', LEAGUE_START, LEAGUE_END)).toBe(5);
+  });
+
+  it('each active month counts fully regardless of partial-day coverage — 15 Sep still counts September', () => {
+    expect(calculateActiveLeagueMonths('2026-09-15', '2027-04-30', LEAGUE_START, LEAGUE_END)).toBe(5);
+  });
+
+  it('starting later in the league loses one active league month per later start month', () => {
+    expect(calculateActiveLeagueMonths('2026-10-01', '2027-05-31', LEAGUE_START, LEAGUE_END)).toBe(4);
+    expect(calculateActiveLeagueMonths('2026-11-01', '2027-06-30', LEAGUE_START, LEAGUE_END)).toBe(3);
+    expect(calculateActiveLeagueMonths('2026-12-01', '2027-07-31', LEAGUE_START, LEAGUE_END)).toBe(2);
+    expect(calculateActiveLeagueMonths('2027-01-01', '2027-08-31', LEAGUE_START, LEAGUE_END)).toBe(1);
+  });
+
+  it('a term entirely before the league overlaps 0 league months', () => {
+    expect(calculateActiveLeagueMonths('2026-01-01', '2026-08-31', LEAGUE_START, LEAGUE_END)).toBe(0);
+  });
+
+  it('a term entirely after the league overlaps 0 league months', () => {
+    expect(calculateActiveLeagueMonths('2027-02-01', '2027-06-30', LEAGUE_START, LEAGUE_END)).toBe(0);
+  });
+
+  it('months beyond January never add extra league months, however long the term runs past it', () => {
+    const eightMonths = calculateActiveLeagueMonths('2026-09-01', '2027-04-30', LEAGUE_START, LEAGUE_END);
+    const twoYears = calculateActiveLeagueMonths('2026-09-01', '2028-08-31', LEAGUE_START, LEAGUE_END);
+    expect(eightMonths).toBe(5);
+    expect(twoYears).toBe(5);
+  });
+
+  it('invalid or inverted ranges return 0 rather than throwing', () => {
+    expect(calculateActiveLeagueMonths('not-a-date', '2027-01-31', LEAGUE_START, LEAGUE_END)).toBe(0);
+    expect(calculateActiveLeagueMonths('2027-01-31', '2026-09-01', LEAGUE_START, LEAGUE_END)).toBe(0);
   });
 });

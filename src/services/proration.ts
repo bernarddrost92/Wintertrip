@@ -79,7 +79,7 @@ export function calculateCalendarMonthFraction(
 const MONTH_LABEL = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
 
 /** Every calendar month a date range touches, in order, inclusive on both ends. */
-function calendarMonthsTouched(start: IsoDate, end: IsoDate): { year: number; month: number }[] {
+export function calendarMonthsTouched(start: IsoDate, end: IsoDate): { year: number; month: number }[] {
   if (!isValidIsoDate(start) || !isValidIsoDate(end) || compareIsoDates(end, start) < 0) return [];
   const s = parseIsoDate(start);
   const e = parseIsoDate(end);
@@ -120,4 +120,37 @@ export function calculateQualifyingTermBreakdown(
 
 export function calculateQualifyingTermValue(start: IsoDate, end: IsoDate, vcdbPerMonth: number): number {
   return calculateQualifyingTermBreakdown(start, end, vcdbPerMonth).totalValue;
+}
+
+/**
+ * ACTIVE LEAGUE MONTHS — the official league-month multiplier (rule
+ * restored September 2026). Every calendar month the qualifying term is
+ * active in AND that overlaps the league period counts as exactly one
+ * league month, regardless of how many days of that month are covered —
+ * there is no partial/fractional league month, unlike the calendar-day
+ * proration above. Capped naturally at the league's own span (5 months for
+ * the official 01-09-2026 – 31-01-2027 window): a term running past 31
+ * January never earns extra league months for the months after it.
+ *
+ * This is the ONE central helper for this count — every caller (Calculator,
+ * Marre Production Feed scoring) must go through this function rather than
+ * re-deriving it, so Calculator and Mission Control can never drift apart.
+ */
+export function calculateActiveLeagueMonths(
+  qualifyingStart: IsoDate,
+  qualifyingEnd: IsoDate,
+  leagueStart: IsoDate,
+  leagueEnd: IsoDate,
+): number {
+  if (!isValidIsoDate(qualifyingStart) || !isValidIsoDate(qualifyingEnd)) return 0;
+  if (!isValidIsoDate(leagueStart) || !isValidIsoDate(leagueEnd)) return 0;
+  if (compareIsoDates(qualifyingEnd, qualifyingStart) < 0) return 0;
+  if (compareIsoDates(leagueEnd, leagueStart) < 0) return 0;
+
+  let count = 0;
+  for (const { year, month } of calendarMonthsTouched(qualifyingStart, qualifyingEnd)) {
+    const { start: monthStart, end: monthEnd } = monthBounds(year, month);
+    if (getInclusiveOverlapDays(monthStart, monthEnd, leagueStart, leagueEnd) > 0) count += 1;
+  }
+  return count;
 }
