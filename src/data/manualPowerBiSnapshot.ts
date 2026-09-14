@@ -53,34 +53,38 @@ export interface ManualPowerBiSnapshot {
 }
 
 export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
-  updatedAt: '2026-09-11T05:19:00+02:00',
+  // Date-only: this screenshot carried no reliable Power BI "last refresh"
+  // time, so updatedAt stays a bare date rather than a fabricated time —
+  // see IntelligenceStatusSection.tsx's formatPowerBiTime, which renders a
+  // date-only string without a time suffix.
+  updatedAt: '2026-09-14',
 
   virtualPosition: 1,
 
   vcdbRanking: 1,
-  vcdbScore: 13869.25,
+  vcdbScore: 14679.72,
 
-  placementsInScope: 78,
-  placementsExtraHoursRule: 6,
+  placementsInScope: 81,
+  placementsExtraHoursRule: 5,
 
   netFteRanking: 9,
-  netFte: -79.01,
+  netFte: -79.61,
   factor: 1.3,
 
-  finalScore: 18030.03,
+  finalScore: 19083.64,
 
-  currentNumberOneBenchmark: -23.4,
+  currentNumberOneBenchmark: -22.4,
 
   fteMilestones: [
     { position: 8, team: 'Alkmaar', netFte: -56.35 },
     { position: 5, team: 'Utrecht', netFte: -39.4 },
-    { position: 3, team: 'Breda', netFte: -25.33 },
-    { position: 1, team: 'Middelburg', netFte: -23.4 },
+    { position: 3, team: 'Eindhoven', netFte: -25.7 },
+    { position: 1, team: 'Middelburg', netFte: -22.4 },
   ],
 
   topThree: [
-    { position: 1, team: 'Zwolle', finalScore: 18030.03 },
-    { position: 2, team: 'Maastricht', finalScore: 12900.73 },
-    { position: 3, team: 'Middelburg', finalScore: 10520.38 },
+    { position: 1, team: 'Zwolle', finalScore: 19083.64 },
+    { position: 2, team: 'Maastricht', finalScore: 13636.54 },
+    { position: 3, team: 'Rotterdam', finalScore: 10628.08 },
   ],
 };
