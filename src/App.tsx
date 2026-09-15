@@ -14,6 +14,7 @@ import { MissionIntroSequence } from './features/intro/MissionIntroSequence';
 import { LeagueCheckPage } from './features/league-check/LeagueCheckPage';
 import { MissionControlPage } from './features/mission-control/MissionControlPage';
 import { MissionUpdatesPage } from './features/mission-updates/MissionUpdatesPage';
+import { MissionHuntErrorBoundary } from './features/mission-hunt/MissionHuntErrorBoundary';
 import { MissionFlowProvider } from './features/missionFlow/MissionFlowProvider';
 import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
 import type { AppView } from './types/navigation';
@@ -68,6 +69,20 @@ export default function App() {
     return deepLinkView ?? 'home';
   });
   const [transition, setTransition] = useState<AppView | null>(null);
+
+  /** A rejected React.lazy() import (the chunk 404ing — a stale cached
+   * index.html after a redeploy, or any transient fetch failure) doesn't
+   * just get cached on the lazy object: confirmed by direct testing, the
+   * browser's module loader itself won't re-fetch a specifier it has
+   * already failed to load once, for the rest of the page's lifetime — so
+   * no in-place React trick (new lazy() instance, remounting) reliably
+   * retries it. A full navigation is the only thing that reliably does.
+   * Routes back through the same public/404.html deep-link mechanism used
+   * for a shared /mission-hunt link, so RETRY lands the user back on
+   * Mission Hunt (not the homepage) once the fresh load completes. */
+  function handleMissionHuntRetry() {
+    window.location.href = `${import.meta.env.BASE_URL}?redirect=mission-hunt`;
+  }
 
   function handleResetAccess() {
     resetAccess();
@@ -132,9 +147,15 @@ export default function App() {
                     )}
                     {view === 'mission-updates' && <MissionUpdatesPage />}
                     {view === 'mission-hunt' && (
-                      <Suspense fallback={<p className="px-4 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Mission Hunt laden…</p>}>
-                        <MissionHuntPage onNavigateToCalculator={() => handleNavigate('calculator')} />
-                      </Suspense>
+                      <MissionHuntErrorBoundary onRetry={handleMissionHuntRetry} onBackHome={() => setView('home')}>
+                        <Suspense
+                          fallback={
+                            <p className="px-4 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Loading project intelligence…</p>
+                          }
+                        >
+                          <MissionHuntPage onNavigateToCalculator={() => handleNavigate('calculator')} />
+                        </Suspense>
+                      </MissionHuntErrorBoundary>
                     )}
                   </main>
                   <Footer onReplayIntro={handleReplayIntro} onResetAccess={handleResetAccess} />

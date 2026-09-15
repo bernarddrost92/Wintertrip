@@ -4,6 +4,7 @@ import { SetupRequiredNotice } from './SetupRequiredNotice';
 import { MissionHuntAuthProvider } from './MissionHuntAuthProvider';
 import { useMissionHuntAuth } from './missionHuntAuthContext';
 import { AuthGate } from './AuthGate';
+import { GoldButton } from '../../components/GoldButton';
 import { useMissionHuntData } from './useMissionHuntData';
 import { MyProjectsView } from './MyProjectsView';
 import { TeamDashboardView } from './TeamDashboardView';
@@ -28,10 +29,28 @@ export function MissionHuntPage({ onNavigateToCalculator }: MissionHuntPageProps
 }
 
 function MissionHuntShell({ onNavigateToCalculator }: MissionHuntPageProps) {
-  const { status, profile, signOut } = useMissionHuntAuth();
+  const { status, profile, errorMessage, signOut, retry } = useMissionHuntAuth();
 
   if (status === 'loading') {
-    return <p className="px-4 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Mission Hunt laden…</p>;
+    return (
+      <div className="px-4 py-20 text-center">
+        <p className="label-classified text-gold/70">Mission Hunt</p>
+        <p className="mt-3 font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Authenticating agent…</p>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center">
+        <p className="label-classified text-gold/70">Mission Hunt</p>
+        <h1 className="mt-2 font-display text-3xl font-black uppercase tracking-wide text-ink">System Error</h1>
+        <p className="mt-4 text-sm text-ink-muted">{errorMessage ?? 'Mission intelligence kon niet worden geladen.'}</p>
+        <GoldButton type="button" onClick={retry} className="mt-8">
+          Retry
+        </GoldButton>
+      </div>
+    );
   }
 
   if (status !== 'signed_in' || !profile) {
@@ -79,8 +98,15 @@ function MissionHuntDashboard({
         <TabButton label="Team Dashboard" active={tab === 'team-dashboard'} onClick={() => setTab('team-dashboard')} />
       </div>
 
-      {data.loading && <p className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Laden…</p>}
-      {data.error && <p className="mt-6 text-sm text-red-400">{data.error}</p>}
+      {data.loading && <p className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Loading project intelligence…</p>}
+      {data.error && (
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-red-400">{data.error}</p>
+          <GoldButton type="button" variant="subtle" onClick={data.refresh} className="!px-3 !py-1.5 !text-xs">
+            Retry
+          </GoldButton>
+        </div>
+      )}
 
       {!data.loading && !data.error && (
         <div className="mt-6">

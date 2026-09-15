@@ -15,13 +15,19 @@ vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseCl
 /** Minimal fake of the subset of supabase-js's query builder this feature
  * actually calls — enough to drive MissionHuntAuthProvider/useMissionHuntData
  * through a real render without a live Supabase project. */
-function buildFakeSupabaseClient(tables: { profiles: unknown[]; projects: unknown[] }) {
+function buildFakeSupabaseClient(
+  tables: { profiles: unknown[]; projects: unknown[] },
+  options: { getSessionNeverResolves?: boolean; profileFetchThrows?: boolean } = {},
+) {
   function from(table: 'profiles' | 'projects') {
     const rows = tables[table];
     const builder = {
       select: () => builder,
       eq: (_col: string, _value: string) => builder,
-      maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
+      maybeSingle: async () => {
+        if (options.profileFetchThrows) throw new Error('network down');
+        return { data: rows[0] ?? null, error: null };
+      },
       then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
     };
     return builder;
@@ -29,7 +35,7 @@ function buildFakeSupabaseClient(tables: { profiles: unknown[]; projects: unknow
 
   return {
     auth: {
-      getSession: async () => ({ data: { session: mockAuthState.session } }),
+      getSession: () => (options.getSessionNeverResolves ? new Promise(() => {}) : Promise.resolve({ data: { session: mockAuthState.session } })),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
       signInWithOtp: async () => ({ error: null }),
       signOut: async () => {
@@ -86,5 +92,32 @@ describe('MissionHuntPage — signed-in flow', () => {
     await waitFor(() => expect(screen.getByText('Bernard')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /my projects/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /team dashboard/i })).toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — loading state renders', () => {
+  it('shows an "authenticating agent" loading state, never a blank screen, while the session check is pending', () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = null;
+    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }, { getSessionNeverResolves: true }));
+
+    render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+
+    expect(screen.getByText(/authenticating agent/i)).toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — profile fetch error renders a safe error state', () => {
+  it('never black-screens when the profiles query throws — shows System Error + Retry instead', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }, { profileFetchThrows: true }));
+
+    const { container } = render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    // A real render happened — this is not an empty/unmounted tree.
+    expect(container.textContent).not.toBe('');
   });
 });

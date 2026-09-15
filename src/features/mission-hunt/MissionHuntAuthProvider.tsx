@@ -5,6 +5,8 @@ import { profileRowToProfile, type ProfileRow } from '../../services/missionHunt
 import type { MissionHuntProfile } from '../../types/missionHunt';
 import { MissionHuntAuthContext, type MagicLinkResult, type MissionHuntAuthStatus } from './missionHuntAuthContext';
 
+const GENERIC_AUTH_ERROR = 'Kon geen verbinding maken met Mission Hunt. Probeer het opnieuw.';
+
 /**
  * Mission Hunt's own authentication layer, on top of the app's existing
  * Access Gate rather than instead of it — that gate stays a simple
@@ -18,78 +20,139 @@ import { MissionHuntAuthContext, type MagicLinkResult, type MissionHuntAuthStatu
  * auto-provisioned by a DB trigger the instant an invited user's first
  * magic-link sign-in completes (see supabase/migrations/0001_mission_hunt.sql),
  * so "signed in" and "has an identity" are never separated by an extra step.
+ *
+ * Every Supabase call in the mount-time effect is wrapped so nothing here
+ * can throw or reject uncaught: a genuine failure (network down, RLS
+ * rejecting the query, an unexpected response shape) always lands in
+ * status 'error' with a safe generic message — never left to become an
+ * uncaught render/effect error, which (confirmed by direct reproduction)
+ * has no Error Boundary to stop it from unmounting the entire app.
  */
 export function MissionHuntAuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<MissionHuntAuthStatus>('loading');
   const [profile, setProfile] = useState<MissionHuntProfile | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
     let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
 
     async function loadProfileFor(session: Session) {
-      const { data, error } = await supabase.from('profiles').select('*').eq('user_id', session.user.id).maybeSingle<ProfileRow>();
-      if (cancelled) return;
-      if (error || !data) {
-        // Signed in but not provisioned yet (trigger lag, or a user who
-        // predates the trigger) — never crash, just stay signed-out-shaped
-        // rather than showing a broken half-signed-in screen.
-        setProfile(null);
-        setStatus('signed_out');
-        return;
+      try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase.from('profiles').select('*').eq('user_id', session.user.id).maybeSingle<ProfileRow>();
+        if (cancelled) return;
+        if (error) {
+          setStatus('error');
+          setErrorMessage(GENERIC_AUTH_ERROR);
+          return;
+        }
+        if (!data) {
+          // Signed in but not provisioned yet (trigger lag, or a user who
+          // predates the trigger) — not an error, just not ready; falling
+          // back to the login screen is harmless (re-requesting a magic
+          // link is a no-op once the profile exists).
+          setProfile(null);
+          setStatus('signed_out');
+          return;
+        }
+        setProfile(profileRowToProfile(data));
+        setStatus('signed_in');
+      } catch {
+        if (cancelled) return;
+        setStatus('error');
+        setErrorMessage(GENERIC_AUTH_ERROR);
       }
-      setProfile(profileRowToProfile(data));
-      setStatus('signed_in');
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      if (data.session) {
-        loadProfileFor(data.session);
-      } else {
-        setStatus('signed_out');
-      }
-    });
+    async function init() {
+      try {
+        const supabase = getSupabaseClient();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (cancelled) return;
-      if (session) {
-        loadProfileFor(session);
-      } else {
-        setProfile(null);
-        setStatus('signed_out');
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (data.session) {
+          await loadProfileFor(data.session);
+        } else {
+          setStatus('signed_out');
+        }
+        if (cancelled) return;
+
+        const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (cancelled) return;
+          try {
+            if (session) {
+              loadProfileFor(session);
+            } else {
+              setProfile(null);
+              setStatus('signed_out');
+            }
+          } catch {
+            setStatus('error');
+            setErrorMessage(GENERIC_AUTH_ERROR);
+          }
+        });
+        unsubscribe = () => subscription.subscription.unsubscribe();
+      } catch {
+        if (cancelled) return;
+        setStatus('error');
+        setErrorMessage(GENERIC_AUTH_ERROR);
       }
-    });
+    }
+
+    init();
 
     return () => {
       cancelled = true;
-      subscription.subscription.unsubscribe();
+      unsubscribe?.();
     };
-  }, []);
+  }, [retryToken]);
+
+  function retry() {
+    setStatus('loading');
+    setErrorMessage(null);
+    setRetryToken((t) => t + 1);
+  }
 
   async function requestMagicLink(email: string): Promise<MagicLinkResult> {
-    const supabase = getSupabaseClient();
-    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
-    });
-    if (error) {
-      // Never surface Supabase's raw error text (can leak implementation
-      // detail) — a calm, generic message either way, so the invite-only
-      // nature of Mission Hunt isn't used to enumerate who has an account.
+    try {
+      const supabase = getSupabaseClient();
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
+      });
+      if (error) {
+        // Never surface Supabase's raw error text (can leak implementation
+        // detail) — a calm, generic message either way, so the invite-only
+        // nature of Mission Hunt isn't used to enumerate who has an account.
+        return { ok: false, error: 'Kon geen inloglink versturen. Controleer het e-mailadres en probeer het opnieuw.' };
+      }
+      setStatus('awaiting_magic_link');
+      return { ok: true };
+    } catch {
       return { ok: false, error: 'Kon geen inloglink versturen. Controleer het e-mailadres en probeer het opnieuw.' };
     }
-    setStatus('awaiting_magic_link');
-    return { ok: true };
   }
 
   async function signOut() {
-    const supabase = getSupabaseClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = getSupabaseClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Sign-out is a best-effort cleanup — even if the network call fails,
+      // clearing local state below still gets the user back to a clean,
+      // usable login screen rather than stuck signed-in-looking state.
+    }
     setProfile(null);
+    setErrorMessage(null);
     setStatus('signed_out');
   }
 
-  return <MissionHuntAuthContext.Provider value={{ status, profile, requestMagicLink, signOut }}>{children}</MissionHuntAuthContext.Provider>;
+  return (
+    <MissionHuntAuthContext.Provider value={{ status, profile, errorMessage, requestMagicLink, signOut, retry }}>
+      {children}
+    </MissionHuntAuthContext.Provider>
+  );
 }

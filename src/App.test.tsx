@@ -148,3 +148,45 @@ describe('App — /mission-updates direct route (via the 404.html redirect param
     expect(window.location.search).toBe('');
   });
 });
+
+describe('App — Mission Hunt: a failed lazy chunk load never black-screens the app', () => {
+  const originalConsoleError = console.error;
+
+  beforeEach(() => {
+    grantAccess();
+    sessionStorage.setItem('ws27-intro-seen', '1');
+  });
+
+  afterEach(() => {
+    console.error = originalConsoleError;
+    vi.doUnmock('./features/mission-hunt/MissionHuntPage');
+  });
+
+  it('a rejected dynamic import (e.g. a stale chunk reference after a redeploy) shows System Error, not an empty page — and the rest of the app stays usable', async () => {
+    // Simulates exactly the reproduced bug: React.lazy's import() rejecting.
+    // Without an error boundary this unmounts #root entirely (confirmed by
+    // direct reproduction before this fix) — with one, only Mission Hunt's
+    // subtree is affected.
+    vi.doMock('./features/mission-hunt/MissionHuntPage', () => {
+      throw new Error('Failed to fetch dynamically imported module');
+    });
+    console.error = vi.fn();
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getByText('Missie #1')).toBeInTheDocument();
+    await user.click(screen.getByText(/open mission/i));
+
+    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
+
+    // The app shell around Mission Hunt is still there — this is not a
+    // blank/unmounted page.
+    expect(screen.getByRole('button', { name: 'Mission Hunt' })).toBeInTheDocument();
+    expect(document.body.textContent).not.toBe('');
+
+    // BACK TO HOME actually navigates — the rest of the app still works.
+    await user.click(screen.getByRole('button', { name: /back to home/i }));
+    expect(screen.getByText('Missie #1')).toBeInTheDocument();
+  });
+});
