@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AccessGate } from './features/access/AccessGate';
 import { hasAccess, resetAccess } from './features/access/accessStorage';
 import { CommandFrame } from './components/CommandFrame';
@@ -19,6 +19,11 @@ import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
 import type { AppView } from './types/navigation';
 import { clearDeepLinkParam, readDeepLinkView } from './utils/deepLink';
 
+// Mission Hunt pulls in the Supabase client and SheetJS (xlsx) — both sizable
+// and irrelevant to every other view — so it's loaded on demand rather than
+// bundled into the JS every visitor downloads just to see the homepage.
+const MissionHuntPage = lazy(() => import('./features/mission-hunt/MissionHuntPage').then((m) => ({ default: m.MissionHuntPage })));
+
 type GatePhase = 'gate' | 'intro' | 'ready';
 
 const ACCESS_LABEL: Record<AppView, string> = {
@@ -27,6 +32,7 @@ const ACCESS_LABEL: Record<AppView, string> = {
   'league-check': 'ACCESSING LEAGUE CHECK...',
   'mission-control': 'ACCESSING MISSION CONTROL...',
   'mission-updates': 'ACCESSING MISSION UPDATES...',
+  'mission-hunt': 'ACCESSING MISSION HUNT...',
 };
 
 const TRANSITION_MS = 650;
@@ -125,6 +131,11 @@ export default function App() {
                       </CommandFrame>
                     )}
                     {view === 'mission-updates' && <MissionUpdatesPage />}
+                    {view === 'mission-hunt' && (
+                      <Suspense fallback={<p className="px-4 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Mission Hunt laden…</p>}>
+                        <MissionHuntPage onNavigateToCalculator={() => handleNavigate('calculator')} />
+                      </Suspense>
+                    )}
                   </main>
                   <Footer onReplayIntro={handleReplayIntro} onResetAccess={handleResetAccess} />
                 </div>

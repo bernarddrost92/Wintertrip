@@ -42,6 +42,11 @@ jobs:
       - name: Build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Mission Hunt backend — see MISSION_HUNT_SETUP.md. Both optional:
+          # unset repo secrets simply build Mission Hunt in its "SETUP
+          # REQUIRED" state, same as a clean local checkout.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Upload Pages artifact

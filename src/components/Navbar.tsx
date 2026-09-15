@@ -1,4 +1,4 @@
-import { Calculator, Home, LayoutDashboard, Radio, ShieldCheck, Target } from 'lucide-react';
+import { Calculator, Crosshair, Home, LayoutDashboard, Radio, ShieldCheck, Target } from 'lucide-react';
 import type { AppView } from '../types/navigation';
 import { StatusLed } from './MissionSerial';
 import { SoundtrackControl } from './SoundtrackControl';
@@ -9,6 +9,7 @@ const NAV_ITEMS: { view: AppView; label: string; icon: typeof Calculator }[] = [
   { view: 'league-check', label: 'League Check', icon: ShieldCheck },
   { view: 'mission-control', label: 'Mission Control', icon: LayoutDashboard },
   { view: 'mission-updates', label: 'Mission Updates', icon: Radio },
+  { view: 'mission-hunt', label: 'Mission Hunt', icon: Crosshair },
 ];
 
 interface NavbarProps {

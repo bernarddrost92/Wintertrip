@@ -37,3 +37,18 @@ Object.defineProperty(window.HTMLMediaElement.prototype, 'volume', {
 if (!window.Element.prototype.scrollIntoView) {
   window.Element.prototype.scrollIntoView = vi.fn();
 }
+
+// jsdom's Blob/File polyfill doesn't implement arrayBuffer() — Mission
+// Hunt's Excel import reads uploaded files this way (readWorkbookRowsFromFile).
+// FileReader IS implemented by jsdom, so bridge through that instead of
+// hand-rolling a buffer reader.
+if (typeof window.Blob !== 'undefined' && !window.Blob.prototype.arrayBuffer) {
+  window.Blob.prototype.arrayBuffer = function (this: Blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(this);
+    });
+  };
+}

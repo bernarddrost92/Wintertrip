@@ -32,3 +32,21 @@ describe('MissionHomepage — Mission Updates terminal', () => {
     expect(screen.getByText('Mission Control')).toBeInTheDocument();
   });
 });
+
+describe('MissionHomepage — Mission Hunt terminal', () => {
+  it('renders a "05 Mission Hunt" terminal', () => {
+    render(<MissionHomepage onSelect={vi.fn()} />);
+    expect(screen.getByText('05')).toBeInTheDocument();
+    expect(screen.getByText('Mission Hunt')).toBeInTheDocument();
+    expect(screen.getByText(/open mission/i)).toBeInTheDocument();
+  });
+
+  it('clicking the terminal navigates to mission-hunt', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<MissionHomepage onSelect={onSelect} />);
+
+    await user.click(screen.getByText(/open mission/i));
+    expect(onSelect).toHaveBeenCalledWith('mission-hunt');
+  });
+});
