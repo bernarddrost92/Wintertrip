@@ -5,7 +5,17 @@ export interface MissionHuntProfile {
   /** Trimmed + lowercased, matches normalizeEmail() — the same value the
    * database's public.profiles.email_normalized column stores. */
   emailNormalized: string;
-  role: 'member' | 'admin';
+  /**
+   * A coarse, single-valued account role — separate from AM/TM identity,
+   * which stays entirely data-driven (owner_email match / a
+   * placement_talent_managers row) and is never stored here.
+   * manager/office_manager get the same operational placement/import/TM-
+   * assignment write scope as admin, but never the ability to alter roles
+   * (see missionHuntPermissions.ts + migration 0008 — profiles' own write
+   * policy stays admin-only, which is the entire enforcement of that).
+   * hr is read-only everywhere.
+   */
+  role: 'member' | 'admin' | 'manager' | 'office_manager' | 'hr';
   active: boolean;
   createdAt: string;
 }

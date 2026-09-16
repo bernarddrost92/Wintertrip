@@ -125,6 +125,115 @@ describe('MissionHuntPage — signed-in flow, admin', () => {
   });
 });
 
+describe('MissionHuntPage — signed-in flow, manager/office_manager', () => {
+  it.each([
+    ['manager', 'Jordan'],
+    ['office_manager', 'Marre'],
+  ])('%s gets the same three operational tabs as admin', async (role, name) => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    getSupabaseClient.mockReturnValue(
+      buildFakeSupabaseClient({
+        profiles: [{ id: 'p1', user_id: 'user-1', display_name: name, email_normalized: `${name.toLowerCase()}@maandag.com`, role, active: true, created_at: '2026-09-01T00:00:00Z' }],
+        projects: [],
+      }),
+    );
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText(name)).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^my placements$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /team placement import/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /friday review/i })).toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — signed-in flow, hr', () => {
+  it('hr lands directly on the read-only Friday Review overview, with no tab bar and no My Placements/add affordance', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    getSupabaseClient.mockReturnValue(
+      buildFakeSupabaseClient({
+        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Maureen B', email_normalized: 'maureen.bokkers@maandag.com', role: 'hr', active: true, created_at: '2026-09-01T00:00:00Z' }],
+        projects: [],
+      }),
+    );
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText(/team zwolle/i)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /^my placements$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /team placement import/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /friday review/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/voor vrijdag/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /plaatsing toevoegen/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — a single AM+TM login exposes both perspectives without duplicating team totals', () => {
+  it('shows the AM\'s own placement in My Placements AND a colleague\'s TM-linked placement in My Professionals, as two distinct, non-overlapping counts', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    getSupabaseClient.mockReturnValue(
+      buildFakeSupabaseClient({
+        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Kim', email_normalized: 'kim.schuring@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
+        projects: [
+          {
+            id: 'own-1',
+            owner_id: 'user-1',
+            owner_email: 'kim.schuring@maandag.com',
+            owner_display_name: 'Kim',
+            professional_name: 'Kim Own Professional',
+            client_name: 'Klant Own',
+            start_date: '2026-10-01',
+            end_date: '2026-12-31',
+            hours_per_week: 24,
+            monthly_vcdb: 10,
+            note: null,
+            fingerprint: 'fp-own',
+            created_at: 'x',
+            updated_at: 'x',
+          },
+          {
+            id: 'colleague-1',
+            owner_id: null,
+            owner_email: 'jurgen.vandijk@maandag.com',
+            owner_display_name: 'Jurgen',
+            professional_name: 'Jurgen Linked Professional',
+            client_name: 'Klant Linked',
+            start_date: '2026-10-01',
+            end_date: '2026-12-31',
+            hours_per_week: 24,
+            monthly_vcdb: 10,
+            note: null,
+            fingerprint: 'fp-colleague',
+            created_at: 'x',
+            updated_at: 'x',
+          },
+        ],
+        placement_talent_managers: [
+          { id: 'link-1', project_id: 'colleague-1', talent_manager_email: 'kim.schuring@maandag.com', talent_manager_id: null, talent_manager_display_name: 'Kim', created_at: 'x' },
+        ],
+      }),
+    );
+
+    render(<MissionHuntPage />);
+
+    // My Placements (AM perspective) and My Professionals (TM perspective,
+    // additive) render simultaneously for a plain member with both — each
+    // placement shows exactly once, in its own section, never duplicated
+    // or merged into the other's count.
+    await waitFor(() => expect(screen.getByText('Kim Own Professional')).toBeInTheDocument());
+    expect(screen.getByText('Jurgen Linked Professional')).toBeInTheDocument();
+    expect(screen.getAllByText('Kim Own Professional')).toHaveLength(1);
+    expect(screen.getAllByText('Jurgen Linked Professional')).toHaveLength(1);
+
+    // My Professionals groups the TM-linked placement by its real AM.
+    expect(screen.getByText(/mijn professionals/i)).toBeInTheDocument();
+    expect(screen.getByText(/jurgen — 1/i)).toBeInTheDocument();
+  });
+});
+
 describe('MissionHuntPage — loading state renders', () => {
   it('shows an "authenticating agent" loading state, never a blank screen, while the session check is pending', () => {
     isSupabaseConfigured.mockReturnValue(true);

@@ -24,7 +24,7 @@ export interface ProfileRow {
   user_id: string;
   display_name: string;
   email_normalized: string;
-  role: 'member' | 'admin';
+  role: 'member' | 'admin' | 'manager' | 'office_manager' | 'hr';
   active: boolean;
   created_at: string;
 }

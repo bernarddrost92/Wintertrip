@@ -12,7 +12,7 @@ import { FridayReviewView } from './FridayReviewView';
 import { TeamImportPanel } from './TeamImportPanel';
 import { PlacementDetailDrawer } from './PlacementDetailDrawer';
 import { buildTalentManagerSummaries } from '../../services/missionHuntAggregate';
-import { canEditPlacement, canManageTalentManagerAssignments, isOwnPlacement } from '../../services/missionHuntPermissions';
+import { canEditPlacement, canManageAllPlacements, canManageTalentManagerAssignments, isOwnPlacement } from '../../services/missionHuntPermissions';
 import type { TeamImportPreview } from '../../services/missionHuntImportPreview';
 import type { MissionHuntProfile } from '../../types/missionHunt';
 
@@ -62,7 +62,11 @@ function MissionHuntShell() {
 
 function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProfile; onSignOut: () => void }) {
   const data = useMissionHuntData(profile);
-  const isAdmin = profile.role === 'admin';
+  // admin/manager/office_manager share the same operational tab set;
+  // hr is read-only and never gets a tab bar or a "My Placements"/add
+  // affordance — its whole view is the Friday Review overview itself.
+  const isFullAccess = canManageAllPlacements(profile.role);
+  const isHr = profile.role === 'hr';
   const [tab, setTab] = useState<Tab>('my-placements');
   const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
 
@@ -94,10 +98,12 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
         </button>
       </div>
 
-      {/* Admin gets tabs (My Placements / Team Placement Import / Friday
-          Review); a normal member never sees a tab bar at all — they land
-          directly on My Placements and stay there. */}
-      {isAdmin && (
+      {/* Full-access roles (admin/manager/office_manager) get tabs (My
+          Placements / Team Placement Import / Friday Review); hr and a
+          normal member never see a tab bar at all — hr lands directly on
+          the read-only Friday Review overview, a member on My Placements,
+          and both stay there. */}
+      {isFullAccess && (
         <div className="mt-6 flex gap-1 border-b border-white/10">
           <TabButton label="My Placements" active={tab === 'my-placements'} onClick={() => setTab('my-placements')} />
           <TabButton label="Team Placement Import" active={tab === 'team-import'} onClick={() => setTab('team-import')} />
@@ -117,52 +123,7 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
 
       {!data.loading && !data.error && (
         <div className="mt-6">
-          {(!isAdmin || tab === 'my-placements') && (
-            <div className="flex flex-col gap-10">
-              <MyPlacementsView
-                displayName={profile.displayName}
-                placements={myPlacements}
-                isVerified={myReview !== null}
-                verifiedAt={myReview?.verifiedAt ?? null}
-                onAdd={async (input) => {
-                  await data.addPlacement(input);
-                }}
-                onOpenPlacement={setSelectedPlacementId}
-                onVerify={async () => {
-                  await data.submitVerification(myPlacements.length);
-                }}
-              />
-              {/* Additive: shown only once ≥1 placement is linked to me as a
-                  Talent Manager — never a new tab, so "My Placements" stays
-                  exactly what it always was for an AM-only user. */}
-              {myTalentManagerSummary && (
-                <MyProfessionalsView
-                  displayName={profile.displayName}
-                  summary={myTalentManagerSummary}
-                  isVerified={myTalentManagerReview !== null}
-                  verifiedAt={myTalentManagerReview?.verifiedAt ?? null}
-                  onOpenPlacement={setSelectedPlacementId}
-                  onVerify={async () => {
-                    await data.submitTalentManagerVerification(myTalentManagerSummary.counts.total);
-                  }}
-                />
-              )}
-            </div>
-          )}
-          {isAdmin && tab === 'team-import' && (
-            <TeamImportPanel
-              existingPlacements={data.placements.map((p) => ({
-                id: p.id,
-                fingerprint: p.fingerprint,
-                ownerDisplayName: p.ownerDisplayName,
-                hoursPerWeek: p.hoursPerWeek,
-                monthlyDb: p.monthlyDb,
-                talentManagerEmails: data.talentManagerLinks.filter((l) => l.projectId === p.id).map((l) => l.talentManagerEmail),
-              }))}
-              onImport={handleImport}
-            />
-          )}
-          {isAdmin && tab === 'friday-review' && (
+          {isHr ? (
             <FridayReviewView
               placements={data.placements}
               profiles={data.profiles}
@@ -172,6 +133,66 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
               talentManagerReviews={data.talentManagerReviews}
               onOpenPlacement={setSelectedPlacementId}
             />
+          ) : (
+            <>
+              {(!isFullAccess || tab === 'my-placements') && (
+                <div className="flex flex-col gap-10">
+                  <MyPlacementsView
+                    displayName={profile.displayName}
+                    placements={myPlacements}
+                    isVerified={myReview !== null}
+                    verifiedAt={myReview?.verifiedAt ?? null}
+                    onAdd={async (input) => {
+                      await data.addPlacement(input);
+                    }}
+                    onOpenPlacement={setSelectedPlacementId}
+                    onVerify={async () => {
+                      await data.submitVerification(myPlacements.length);
+                    }}
+                  />
+                  {/* Additive: shown only once ≥1 placement is linked to me
+                      as a Talent Manager — never a new tab, so "My
+                      Placements" stays exactly what it always was for an
+                      AM-only user. */}
+                  {myTalentManagerSummary && (
+                    <MyProfessionalsView
+                      displayName={profile.displayName}
+                      summary={myTalentManagerSummary}
+                      isVerified={myTalentManagerReview !== null}
+                      verifiedAt={myTalentManagerReview?.verifiedAt ?? null}
+                      onOpenPlacement={setSelectedPlacementId}
+                      onVerify={async () => {
+                        await data.submitTalentManagerVerification(myTalentManagerSummary.counts.total);
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+              {isFullAccess && tab === 'team-import' && (
+                <TeamImportPanel
+                  existingPlacements={data.placements.map((p) => ({
+                    id: p.id,
+                    fingerprint: p.fingerprint,
+                    ownerDisplayName: p.ownerDisplayName,
+                    hoursPerWeek: p.hoursPerWeek,
+                    monthlyDb: p.monthlyDb,
+                    talentManagerEmails: data.talentManagerLinks.filter((l) => l.projectId === p.id).map((l) => l.talentManagerEmail),
+                  }))}
+                  onImport={handleImport}
+                />
+              )}
+              {isFullAccess && tab === 'friday-review' && (
+                <FridayReviewView
+                  placements={data.placements}
+                  profiles={data.profiles}
+                  teamMembers={data.teamMembers}
+                  placementReviews={data.placementReviews}
+                  talentManagerLinks={data.talentManagerLinks}
+                  talentManagerReviews={data.talentManagerReviews}
+                  onOpenPlacement={setSelectedPlacementId}
+                />
+              )}
+            </>
           )}
         </div>
       )}
@@ -180,7 +201,7 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
         <PlacementDetailDrawer
           placement={selectedPlacement}
           editable={selectedEditable}
-          canReassign={isAdmin}
+          canReassign={isFullAccess}
           talentManagerLinks={selectedTalentManagerLinks}
           canManageTalentManagers={canManageTalentManagerAssignments(profile.role)}
           knownTalentManagerOptions={knownTalentManagerOptions}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canEditPlacement, canManageTalentManagerAssignments, isOwnPlacement } from './missionHuntPermissions';
+import { canEditPlacement, canManageAllPlacements, canManageTalentManagerAssignments, canViewTeamOverview, isOwnPlacement } from './missionHuntPermissions';
 
 describe('canEditPlacement', () => {
   it('a member can edit their own claimed placement', () => {
@@ -22,6 +22,42 @@ describe('canEditPlacement', () => {
     expect(canEditPlacement({ ownerId: 'user-2', ownerEmail: 'b@x.com' }, 'user-1', 'a@x.com', 'admin')).toBe(true);
     expect(canEditPlacement({ ownerId: null, ownerEmail: 'b@x.com' }, 'user-1', 'a@x.com', 'admin')).toBe(true);
   });
+
+  it('a manager or office_manager can edit any placement, matching their broadened RLS write policy', () => {
+    expect(canEditPlacement({ ownerId: 'user-2', ownerEmail: 'b@x.com' }, 'user-1', 'a@x.com', 'manager')).toBe(true);
+    expect(canEditPlacement({ ownerId: 'user-2', ownerEmail: 'b@x.com' }, 'user-1', 'a@x.com', 'office_manager')).toBe(true);
+  });
+
+  it('hr can never edit a placement it does not own — read-only, no bypass', () => {
+    expect(canEditPlacement({ ownerId: 'user-2', ownerEmail: 'b@x.com' }, 'user-1', 'a@x.com', 'hr')).toBe(false);
+    expect(canEditPlacement({ ownerId: null, ownerEmail: 'b@x.com' }, 'user-1', 'a@x.com', 'hr')).toBe(false);
+  });
+});
+
+describe('canManageAllPlacements', () => {
+  it('admin/manager/office_manager get full operational write scope', () => {
+    expect(canManageAllPlacements('admin')).toBe(true);
+    expect(canManageAllPlacements('manager')).toBe(true);
+    expect(canManageAllPlacements('office_manager')).toBe(true);
+  });
+
+  it('hr and a plain member never get it', () => {
+    expect(canManageAllPlacements('hr')).toBe(false);
+    expect(canManageAllPlacements('member')).toBe(false);
+  });
+});
+
+describe('canViewTeamOverview', () => {
+  it('admin/manager/office_manager/hr can all view Friday Review', () => {
+    expect(canViewTeamOverview('admin')).toBe(true);
+    expect(canViewTeamOverview('manager')).toBe(true);
+    expect(canViewTeamOverview('office_manager')).toBe(true);
+    expect(canViewTeamOverview('hr')).toBe(true);
+  });
+
+  it('a plain member does not — matches the existing team-view design', () => {
+    expect(canViewTeamOverview('member')).toBe(false);
+  });
 });
 
 describe('isOwnPlacement', () => {
@@ -39,8 +75,14 @@ describe('isOwnPlacement', () => {
 });
 
 describe('canManageTalentManagerAssignments', () => {
-  it('only an admin may manage Talent Manager assignments — never a plain AM or TM', () => {
+  it('admin/manager/office_manager may manage Talent Manager assignments', () => {
     expect(canManageTalentManagerAssignments('admin')).toBe(true);
+    expect(canManageTalentManagerAssignments('manager')).toBe(true);
+    expect(canManageTalentManagerAssignments('office_manager')).toBe(true);
+  });
+
+  it('never a plain AM/TM (member) or hr', () => {
     expect(canManageTalentManagerAssignments('member')).toBe(false);
+    expect(canManageTalentManagerAssignments('hr')).toBe(false);
   });
 });
