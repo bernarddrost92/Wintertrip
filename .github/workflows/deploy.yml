@@ -49,45 +49,49 @@ jobs:
 
       - name: Verify Supabase build config
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          RAW_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          RAW_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
           # Presence/shape only — never echoes a secret value. A build that
           # silently ships with Mission Hunt/League Check Intelligence
           # disabled is worse than a build that fails loudly here.
-          if [ -n "$VITE_SUPABASE_URL" ]; then
-            echo "SUPABASE URL CONFIGURED: yes"
-          else
-            echo "SUPABASE URL CONFIGURED: no"
-          fi
-          if [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "SUPABASE KEY CONFIGURED: yes"
-          else
-            echo "SUPABASE KEY CONFIGURED: no"
-          fi
+          #
+          # Trims leading/trailing whitespace (a copy-paste-into-the-GitHub-
+          # secrets-UI newline is a real, previously-seen cause of a
+          # secret's shape check failing even when the visible value looks
+          # right) and exports the CLEANED values via GITHUB_ENV so the
+          # Build step below uses the trimmed value, not the raw one — a
+          # trailing newline baked into the bundle could otherwise break
+          # createClient()'s URL parsing at runtime.
+          trim() { printf '%s' "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+          URL=$(trim "$RAW_URL")
+          KEY=$(trim "$RAW_KEY")
+
+          echo "SUPABASE URL CONFIGURED: $([ -n "$URL" ] && echo yes || echo no) (raw length ${#RAW_URL}, trimmed length ${#URL})"
+          echo "SUPABASE KEY CONFIGURED: $([ -n "$KEY" ] && echo yes || echo no) (raw length ${#RAW_KEY}, trimmed length ${#KEY})"
 
           MISSING=0
-          if [ -z "$VITE_SUPABASE_URL" ]; then
+          if [ -z "$URL" ]; then
             echo "::error::VITE_SUPABASE_URL is not set for this build (repository or 'github-pages' environment secret)."
             MISSING=1
-          elif ! printf '%s' "$VITE_SUPABASE_URL" | grep -qE '^https://[A-Za-z0-9-]+\.supabase\.co/?$'; then
+          elif ! printf '%s' "$URL" | grep -qE '^https://[A-Za-z0-9-]+\.supabase\.co/?$'; then
             # Hard fail, not a warning: this field must be a URL. A key
             # pasted into this field would otherwise ship straight to the
             # browser bundle — this exact mistake shipped a live sb_secret_
-            # key to production once already (see git history around the
-            # deploy.yml preflight step).
-            echo "::error::VITE_SUPABASE_URL does not look like https://<ref>.supabase.co — got a value that doesn't match. If this is actually an API key (sb_publishable_/sb_secret_/eyJ...), it's in the wrong secret slot and must be fixed before this can build."
+            # key to production once already (see git history around this
+            # step).
+            echo "::error::VITE_SUPABASE_URL does not look like https://<ref>.supabase.co (trimmed length ${#URL}). If this is actually an API key (sb_publishable_/sb_secret_/eyJ...), it's in the wrong secret slot and must be fixed before this can build."
             MISSING=1
           fi
-          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+          if [ -z "$KEY" ]; then
             echo "::error::VITE_SUPABASE_ANON_KEY is not set for this build (repository or 'github-pages' environment secret)."
             MISSING=1
-          elif printf '%s' "$VITE_SUPABASE_ANON_KEY" | grep -qE '^sb_secret_'; then
+          elif printf '%s' "$KEY" | grep -qE '^sb_secret_'; then
             # A secret key must never be used as the client-side anon key —
             # it bypasses RLS entirely. Hard fail rather than ship it.
             echo "::error::VITE_SUPABASE_ANON_KEY looks like a Supabase SECRET key (sb_secret_...), not a publishable/anon key. Never use a secret key client-side — fix the secret value before this can build."
             MISSING=1
-          elif ! printf '%s' "$VITE_SUPABASE_ANON_KEY" | grep -qE '^(sb_publishable_|eyJ)'; then
+          elif ! printf '%s' "$KEY" | grep -qE '^(sb_publishable_|eyJ)'; then
             echo "::warning::VITE_SUPABASE_ANON_KEY is set but doesn't match a known publishable/anon key prefix — double-check the value."
           fi
 
@@ -96,15 +100,15 @@ jobs:
             exit 1
           fi
 
+          echo "VITE_SUPABASE_URL=$URL" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_ANON_KEY=$KEY" >> "$GITHUB_ENV"
+
       - name: Build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
-          # Mission Hunt + League Check Intelligence backend — see
-          # MISSION_HUNT_SETUP.md. The preflight step above already failed
-          # the build if either is missing, so by this point both are known
-          # to be set.
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY come from the preflight
+          # step above via GITHUB_ENV — already validated and whitespace-
+          # trimmed, not re-read raw from secrets.* here.
         run: npm run build
 
       - name: Upload Pages artifact
