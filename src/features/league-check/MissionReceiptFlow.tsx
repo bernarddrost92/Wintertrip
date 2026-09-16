@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { GoldButton } from '../../components/GoldButton';
+import { useSupabaseSession } from '../../hooks/useSupabaseSession';
+import { upsertLeagueCheckReceipt } from '../../services/leagueCheckReceipts';
 import { formatFoundPoints, formatVcdbValue } from '../../utils/format';
 import { AfterCheckEditor } from './AfterCheckEditor';
 import { MissionReceipt } from './MissionReceipt';
@@ -18,6 +20,28 @@ interface MissionReceiptFlowProps {
   checkedItems: Record<string, boolean>;
   checkedCount: number;
   total: number;
+  /** Stable id for this League Check session (useLeagueCheck) — used to
+   * upsert the same League Check Intelligence row on repeated generates. */
+  receiptId: string;
+}
+
+/**
+ * Registers this receipt in League Check Intelligence (the team-wide
+ * quality-control counter in the Calculator) if — and only if — a Supabase
+ * user is signed in; there is no anon write policy. Never blocks or delays
+ * the on-screen receipt: this fires alongside it, not before it, and a
+ * failure here is silent to the person generating the receipt (the receipt
+ * itself, its download and its share still work identically either way).
+ */
+function useRegisterReceipt(receiptId: string, checkedCount: number, total: number) {
+  const { userId, ready } = useSupabaseSession();
+
+  function register() {
+    if (!userId) return;
+    void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId });
+  }
+
+  return { register, signedIn: userId !== null, authReady: ready };
 }
 
 function GenerateReceiptButton({ missionApproved, onClick }: { missionApproved: boolean; onClick: () => void }) {
@@ -25,6 +49,16 @@ function GenerateReceiptButton({ missionApproved, onClick }: { missionApproved: 
     <GoldButton onClick={onClick} icon={<Sparkles size={16} />}>
       {missionApproved ? 'Mission Approved — View Receipt' : 'Generate Receipt'}
     </GoldButton>
+  );
+}
+
+/** Shown only once a receipt has been generated while signed out — the
+ * receipt itself already printed above this, unaffected either way. */
+function NotRegisteredNote() {
+  return (
+    <p className="text-center font-mono text-[10px] uppercase tracking-wider text-ink-dim">
+      Niet ingelogd — receipt nog niet team-breed geregistreerd. Log in via Mission Hunt om mee te tellen in League Check Intelligence.
+    </p>
   );
 }
 
@@ -37,13 +71,20 @@ function GenerateReceiptButton({ missionApproved, onClick }: { missionApproved: 
  * one, League Check runs fully standalone and the receipt prints with
  * "Mission Value — Pending Calculation" instead of a fabricated score.
  */
-export function MissionReceiptFlow({ beforeCheck, agent, checkedItems, checkedCount, total }: MissionReceiptFlowProps) {
+export function MissionReceiptFlow({ beforeCheck, agent, checkedItems, checkedCount, total, receiptId }: MissionReceiptFlowProps) {
   if (beforeCheck) {
     return (
-      <MissionReceiptFlowWithCalculator beforeCheck={beforeCheck} agent={agent} checkedItems={checkedItems} checkedCount={checkedCount} total={total} />
+      <MissionReceiptFlowWithCalculator
+        beforeCheck={beforeCheck}
+        agent={agent}
+        checkedItems={checkedItems}
+        checkedCount={checkedCount}
+        total={total}
+        receiptId={receiptId}
+      />
     );
   }
-  return <MissionReceiptFlowStandalone agent={agent} checkedItems={checkedItems} checkedCount={checkedCount} total={total} />;
+  return <MissionReceiptFlowStandalone agent={agent} checkedItems={checkedItems} checkedCount={checkedCount} total={total} receiptId={receiptId} />;
 }
 
 interface WithCalculatorProps {
@@ -52,13 +93,20 @@ interface WithCalculatorProps {
   checkedItems: Record<string, boolean>;
   checkedCount: number;
   total: number;
+  receiptId: string;
 }
 
-function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, checkedCount, total }: WithCalculatorProps) {
+function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, checkedCount, total, receiptId }: WithCalculatorProps) {
   const afterCheck = useAfterCheck(beforeCheck);
   const missionApproved = checkedCount === total;
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const { register, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
+
+  function handleGenerate() {
+    setReceiptGenerated(true);
+    register();
+  }
 
   return (
     <div className="mt-8 space-y-6">
@@ -82,7 +130,7 @@ function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, ch
         </div>
 
         <div className="mt-6 flex justify-center">
-          <GenerateReceiptButton missionApproved={missionApproved} onClick={() => setReceiptGenerated(true)} />
+          <GenerateReceiptButton missionApproved={missionApproved} onClick={handleGenerate} />
         </div>
       </div>
 
@@ -106,6 +154,7 @@ function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, ch
             checkedCount={checkedCount}
             total={total}
           />
+          {authReady && !signedIn && <NotRegisteredNote />}
         </>
       )}
     </div>
@@ -117,15 +166,22 @@ interface StandaloneProps {
   checkedItems: Record<string, boolean>;
   checkedCount: number;
   total: number;
+  receiptId: string;
 }
 
 /** League Check run entirely on its own, with no Calculator session behind
  * it — no After Check editor (there is no Before form to compare against),
  * no found points, just Agent/Professional/checklist status printed as-is. */
-function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total }: StandaloneProps) {
+function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total, receiptId }: StandaloneProps) {
   const missionApproved = checkedCount === total;
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const { register, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
+
+  function handleGenerate() {
+    setReceiptGenerated(true);
+    register();
+  }
 
   return (
     <div className="mt-8 space-y-6">
@@ -135,7 +191,7 @@ function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total
         <p className="mt-2 text-xs text-ink-muted">Geen Calculator-sessie gekoppeld — de receipt toont géén score.</p>
 
         <div className="mt-6 flex justify-center">
-          <GenerateReceiptButton missionApproved={missionApproved} onClick={() => setReceiptGenerated(true)} />
+          <GenerateReceiptButton missionApproved={missionApproved} onClick={handleGenerate} />
         </div>
       </div>
 
@@ -159,6 +215,7 @@ function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total
             checkedCount={checkedCount}
             total={total}
           />
+          {authReady && !signedIn && <NotRegisteredNote />}
         </>
       )}
     </div>

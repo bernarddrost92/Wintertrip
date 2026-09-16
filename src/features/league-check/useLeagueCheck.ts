@@ -16,6 +16,11 @@ const INITIAL_STATE: LeagueCheckState = {
  */
 export function useLeagueCheck() {
   const [state, setState] = useState<LeagueCheckState>(INITIAL_STATE);
+  /** Stable id for this League Check session — passed to
+   * upsertLeagueCheckReceipt so re-clicking Generate Receipt within the same
+   * session updates the same League Check Intelligence row instead of
+   * counting as a second receipt. Regenerated only on New Mission. */
+  const [receiptId, setReceiptId] = useState<string>(() => crypto.randomUUID());
 
   function update<K extends keyof Omit<LeagueCheckState, 'checkedItems'>>(key: K, value: LeagueCheckState[K]) {
     setState((prev) => ({ ...prev, [key]: value }));
@@ -30,6 +35,7 @@ export function useLeagueCheck() {
 
   function reset() {
     setState(INITIAL_STATE);
+    setReceiptId(crypto.randomUUID());
   }
 
   const checkedCount = useMemo(
@@ -43,5 +49,5 @@ export function useLeagueCheck() {
    * any checked count, this only decides which status it shows. */
   const missionApproved = checkedCount === LEAGUE_CHECK_ITEMS.length;
 
-  return { state, update, toggleItem, reset, checkedCount, total: LEAGUE_CHECK_ITEMS.length, missionApproved };
+  return { state, update, toggleItem, reset, checkedCount, total: LEAGUE_CHECK_ITEMS.length, missionApproved, receiptId };
 }

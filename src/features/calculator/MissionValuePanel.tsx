@@ -5,6 +5,7 @@ import { TacticalGrid } from '../../components/TacticalGrid';
 import { useCountUp } from '../../hooks/useCountUp';
 import { useFactorPulse } from '../../hooks/useFactorPulse';
 import { formatScore, formatSignedScore } from '../../utils/format';
+import { LeagueCheckIntelligenceStrip } from '../league-check/LeagueCheckIntelligenceStrip';
 import { FactorIntelligence } from './FactorIntelligence';
 import { ShowCalculationPanel } from './ShowCalculationPanel';
 import type { CalculatorOutput } from './useMissionControlCalculator';
@@ -73,6 +74,8 @@ export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePane
         </p>
         <p className="relative mt-3 text-xs font-semibold uppercase tracking-[0.35em] text-ink-muted">Points</p>
       </div>
+
+      <LeagueCheckIntelligenceStrip />
 
       <div className="grid grid-cols-3 divide-x divide-gold/15 border-b border-gold/15">
         <div className="px-4 py-4 text-center">

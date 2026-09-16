@@ -21,7 +21,7 @@ function bareCode(code: string): string {
 
 export function LeagueCheckPage() {
   const { beforeCheck, agent, updateAgent, resetAgent, clearBeforeCheck } = useMissionFlow();
-  const { state, update, toggleItem, reset, checkedCount, total, missionApproved } = useLeagueCheck();
+  const { state, update, toggleItem, reset, checkedCount, total, missionApproved, receiptId } = useLeagueCheck();
   const openItems = LEAGUE_CHECK_ITEMS.filter((item) => !state.checkedItems[item.id]);
   /** Bumped on New Mission so MissionReceiptFlow — which owns its own local
    * "receipt generated" / after-check-editor state — remounts clean rather
@@ -38,6 +38,15 @@ export function LeagueCheckPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
       <SectionHeader eyebrow="2 paar ogen principe" title="League Check" subtitle="2 paar ogen. 0 punten laten liggen." />
+
+      {/* Live, purely local session progress — separate from the team-wide
+          League Check Intelligence strip in the Calculator, which only
+          updates once a receipt is generated. */}
+      <div className="mt-3 flex justify-center">
+        <span className="border border-gold/15 bg-mission-panel px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+          Current Mission <span className="text-gold">·</span> <span className="tabular-nums text-ink">{checkedCount}/{total}</span> Checks
+        </span>
+      </div>
 
       {beforeCheck && (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 border border-gold/15 bg-mission-panel px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-ink-muted">
@@ -157,7 +166,15 @@ export function LeagueCheckPage() {
         )}
       </div>
 
-      <MissionReceiptFlow key={resetKey} beforeCheck={beforeCheck} agent={agent} checkedItems={state.checkedItems} checkedCount={checkedCount} total={total} />
+      <MissionReceiptFlow
+        key={resetKey}
+        beforeCheck={beforeCheck}
+        agent={agent}
+        checkedItems={state.checkedItems}
+        checkedCount={checkedCount}
+        total={total}
+        receiptId={receiptId}
+      />
 
       <div className="mt-6 flex justify-end">
         <GoldButton variant="ghost" onClick={handleNewMission}>
