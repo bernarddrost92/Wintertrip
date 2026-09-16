@@ -105,4 +105,41 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     await waitFor(() => expect(upsert).toHaveBeenCalledTimes(2));
     expect(upsert).toHaveBeenLastCalledWith({ id: 'session-d', checked_count: 4, total_checks: 6, created_by: 'user-123' });
   });
+
+  it('resilience: getSupabaseClient() throws synchronously (the production incident) — League Check still renders and the receipt still generates', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    getSupabaseClient.mockImplementation(() => {
+      throw new Error('Invalid URL');
+    });
+
+    render(
+      <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-e" />,
+    );
+    await screen.findByRole('button', { name: /generate receipt/i });
+    clickGenerate();
+
+    expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
+    expect(await screen.findByText(/niet ingelogd/i)).toBeInTheDocument();
+  });
+
+  it('resilience: the upsert itself rejects while signed in — receipt generation still succeeds, failure is silent to the user', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockSession.current = { user: { id: 'user-123' } };
+    getSupabaseClient.mockReturnValue({
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: mockSession.current } }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      },
+      from: () => ({ upsert: vi.fn().mockRejectedValue(new Error('network down')) }),
+    });
+
+    render(
+      <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-f" />,
+    );
+    await screen.findByRole('button', { name: /generate receipt/i });
+    clickGenerate();
+
+    expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /download receipt/i })).toBeEnabled();
+  });
 });
