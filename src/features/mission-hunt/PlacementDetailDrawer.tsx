@@ -5,16 +5,29 @@ import { GoldButton } from '../../components/GoldButton';
 import { formatIsoDateNl } from '../../utils/dates';
 import { classifyPlacement } from '../../services/missionHuntClassification';
 import { badgesForClassification } from '../../services/missionHuntOpportunity';
-import type { MissionHuntPlacement, PlacementFieldUpdate } from '../../types/missionHunt';
+import type { MissionHuntPlacement, PlacementFieldUpdate, TalentManagerLink } from '../../types/missionHunt';
+
+export interface KnownTalentManagerOption {
+  email: string;
+  displayName: string;
+}
 
 interface PlacementDetailDrawerProps {
   placement: MissionHuntPlacement;
   editable: boolean;
   /** Admin-only: reassign a placement to a different accountmanager email. */
   canReassign: boolean;
+  /** The Talent Managers currently linked to this placement. */
+  talentManagerLinks: TalentManagerLink[];
+  /** Admin-only: every distinct TM seen anywhere else in the app, offered
+   * as checkboxes — same pattern as reassigning an AM: the assignment is
+   * admin-controlled, never self-service. */
+  canManageTalentManagers: boolean;
+  knownTalentManagerOptions: KnownTalentManagerOption[];
   onClose: () => void;
   onUpdateField: (field: keyof PlacementFieldUpdate, value: string | number | null) => void;
   onReassign: (ownerEmail: string, ownerDisplayName: string) => void;
+  onUpdateTalentManagers: (emails: string[], displayNames: string[]) => void;
   onDelete: () => void;
 }
 
@@ -24,7 +37,19 @@ interface PlacementDetailDrawerProps {
  * up. Each field saves on blur. Classification badges are shown but never
  * editable — they're derived, not chosen.
  */
-export function PlacementDetailDrawer({ placement, editable, canReassign, onClose, onUpdateField, onReassign, onDelete }: PlacementDetailDrawerProps) {
+export function PlacementDetailDrawer({
+  placement,
+  editable,
+  canReassign,
+  talentManagerLinks,
+  canManageTalentManagers,
+  knownTalentManagerOptions,
+  onClose,
+  onUpdateField,
+  onReassign,
+  onUpdateTalentManagers,
+  onDelete,
+}: PlacementDetailDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const classification = classifyPlacement(placement.startDate, placement.endDate);
@@ -124,6 +149,21 @@ export function PlacementDetailDrawer({ placement, editable, canReassign, onClos
             </div>
           )}
 
+          <div className="border-t border-white/8 pt-4">
+            <p className="label-classified mb-2 text-gold/70">Talent Managers</p>
+            {canManageTalentManagers ? (
+              <TalentManagerAssignment
+                currentLinks={talentManagerLinks}
+                knownOptions={knownTalentManagerOptions}
+                onSave={onUpdateTalentManagers}
+              />
+            ) : talentManagerLinks.length > 0 ? (
+              <p className="text-sm text-ink">{talentManagerLinks.map((l) => l.talentManagerDisplayName || l.talentManagerEmail).join(', ')}</p>
+            ) : (
+              <p className="text-sm text-ink-muted">Geen talent manager gekoppeld.</p>
+            )}
+          </div>
+
           {editable && (
             <div className="mt-2 border-t border-white/8 pt-4">
               {confirmingDelete ? (
@@ -150,6 +190,91 @@ export function PlacementDetailDrawer({ placement, editable, canReassign, onClos
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Admin-only checkbox UX for TM assignment ("☑ Kim ☑ Monique ☐ Huub") plus
+ * a free-text add-by-email row for a TM not yet known anywhere else.
+ * Writes only on explicit Save — never per-checkbox — so a normal
+ * AM/TM user (who never sees this control at all) can't be affected by
+ * an in-progress admin edit, and the admin can freely toggle before
+ * committing.
+ */
+function TalentManagerAssignment({
+  currentLinks,
+  knownOptions,
+  onSave,
+}: {
+  currentLinks: TalentManagerLink[];
+  knownOptions: KnownTalentManagerOption[];
+  onSave: (emails: string[], displayNames: string[]) => void;
+}) {
+  const initial = new Map(currentLinks.map((l) => [l.talentManagerEmail, l.talentManagerDisplayName ?? l.talentManagerEmail]));
+  const [selected, setSelected] = useState<Map<string, string>>(initial);
+  const [newEmail, setNewEmail] = useState('');
+  const [newName, setNewName] = useState('');
+  const [dirty, setDirty] = useState(false);
+
+  const options = new Map<string, string>();
+  for (const opt of knownOptions) options.set(opt.email, opt.displayName || opt.email);
+  for (const [email, name] of selected) if (!options.has(email)) options.set(email, name);
+
+  function toggle(email: string, displayName: string) {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (next.has(email)) next.delete(email);
+      else next.set(email, displayName);
+      return next;
+    });
+    setDirty(true);
+  }
+
+  function addNew() {
+    const email = newEmail.trim().toLowerCase();
+    if (!email) return;
+    setSelected((prev) => new Map(prev).set(email, newName.trim() || email));
+    setNewEmail('');
+    setNewName('');
+    setDirty(true);
+  }
+
+  function handleSave() {
+    onSave([...selected.keys()], [...selected.values()]);
+    setDirty(false);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {options.size > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {[...options.entries()].map(([email, displayName]) => (
+            <label key={email} className="flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" checked={selected.has(email)} onChange={() => toggle(email, displayName)} className="h-3.5 w-3.5 accent-gold" />
+              {displayName}
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-end gap-2">
+        <FormField id="mh-detail-tm-new-name" label="Naam (nieuw)">
+          <TextInput id="mh-detail-tm-new-name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+        </FormField>
+        <FormField id="mh-detail-tm-new-email" label="E-mailadres (nieuw)">
+          <TextInput id="mh-detail-tm-new-email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+        </FormField>
+        <GoldButton type="button" variant="ghost" onClick={addNew} className="!px-3 !py-2 !text-xs">
+          + Toevoegen
+        </GoldButton>
+      </div>
+
+      {dirty && (
+        <GoldButton type="button" variant="subtle" onClick={handleSave} className="self-start !px-3 !py-1.5 !text-xs">
+          Toewijzing opslaan
+        </GoldButton>
+      )}
     </div>
   );
 }

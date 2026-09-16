@@ -185,7 +185,8 @@ export function TeamImportPanel({ existingPlacements, onImport }: TeamImportPane
       {(state.phase === 'preview' || state.phase === 'importing') && (
         <div className="mt-3 flex flex-col gap-3 border border-gold/20 bg-mission-void p-3">
           <p className="font-mono text-sm font-bold uppercase tracking-[0.1em] text-ink">
-            {state.preview.totalFound} PLAATSINGEN GEVONDEN · {state.preview.accountManagers.length} ACCOUNTMANAGERS
+            {state.preview.totalFound} PLAATSINGEN GEVONDEN · {state.preview.accountManagers.length} ACCOUNTMANAGERS · {state.preview.talentManagers.length} TALENT MANAGERS ·{' '}
+            {state.preview.talentManagerRelationCount} TM-KOPPELINGEN
           </p>
           <div className="flex flex-wrap gap-4 font-mono text-xs uppercase tracking-[0.08em]">
             <span className="text-status-go">{state.preview.newRows.length} NIEUW</span>
@@ -201,6 +202,19 @@ export function TeamImportPanel({ existingPlacements, onImport }: TeamImportPane
                 {state.preview.accountManagers.map((am) => (
                   <p key={am.emailNormalized} className="text-xs text-ink">
                     {am.displayName} — {am.count}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {state.preview.talentManagers.length > 0 && (
+            <div className="border border-white/10 bg-mission-raised p-2.5">
+              <p className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-gold/70">Talent Managers herkend</p>
+              <div className="flex flex-col gap-0.5">
+                {state.preview.talentManagers.map((tm) => (
+                  <p key={tm.emailNormalized} className="text-xs text-ink">
+                    {tm.displayName} — {tm.count}
                   </p>
                 ))}
               </div>

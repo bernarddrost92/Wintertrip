@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canEditPlacement, isOwnPlacement } from './missionHuntPermissions';
+import { canEditPlacement, canManageTalentManagerAssignments, isOwnPlacement } from './missionHuntPermissions';
 
 describe('canEditPlacement', () => {
   it('a member can edit their own claimed placement', () => {
@@ -35,5 +35,12 @@ describe('isOwnPlacement', () => {
 
   it('does not match a colleague\'s claimed placement even if emails happen to differ only by claim state', () => {
     expect(isOwnPlacement({ ownerId: 'user-2', ownerEmail: 'a@x.com' }, 'user-1', 'a@x.com')).toBe(false);
+  });
+});
+
+describe('canManageTalentManagerAssignments', () => {
+  it('only an admin may manage Talent Manager assignments — never a plain AM or TM', () => {
+    expect(canManageTalentManagerAssignments('admin')).toBe(true);
+    expect(canManageTalentManagerAssignments('member')).toBe(false);
   });
 });

@@ -30,3 +30,14 @@ export function isOwnPlacement(placement: Pick<MissionHuntPlacement, 'ownerId' |
   if (placement.ownerId === currentUserId) return true;
   return placement.ownerId === null && normalizeEmail(placement.ownerEmail) === normalizeEmail(currentUserEmail);
 }
+
+/**
+ * Talent Manager assignment is admin-only, mirroring migration 0007's
+ * "an admin may manage placement_talent_managers" RLS policy (the only
+ * write policy on that table — no AM/TM self-service path exists). Used
+ * purely to decide whether the UI offers the assignment checkboxes; the
+ * database enforces this regardless.
+ */
+export function canManageTalentManagerAssignments(role: MissionHuntProfile['role']): boolean {
+  return role === 'admin';
+}

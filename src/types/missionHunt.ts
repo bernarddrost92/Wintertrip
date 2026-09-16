@@ -57,7 +57,10 @@ export type PlacementFieldUpdate = Partial<NewPlacementInput>;
 
 /** One row of the office manager's central Team Placement Import, already
  * shaped into canonical fields (missionHuntExcelParse.ts owns the header
- * recognition). ownerEmail is raw as typed — normalize before comparing. */
+ * recognition). ownerEmail is raw as typed — normalize before comparing.
+ * talentManagerEmails/talentManagerDisplayNames are parallel arrays parsed
+ * from the semicolon-separated "Talent Manager"/"E-mail Talent Manager"
+ * columns — both empty is valid (a placement with no TM yet). */
 export interface TeamImportRow {
   ownerEmail: string;
   ownerDisplayName: string;
@@ -67,6 +70,50 @@ export interface TeamImportRow {
   endDate: string;
   hoursPerWeek: number | null;
   monthlyDb: number | null;
+  talentManagerEmails: string[];
+  talentManagerDisplayNames: string[];
+}
+
+/**
+ * The many-to-many link between one placement and one Talent Manager
+ * (public.placement_talent_managers, migration 0007). A placement stays ONE
+ * row in MissionHuntPlacement — this is a separate relation, never a
+ * duplicated placement. talentManagerId is nullable for the same reason
+ * MissionHuntPlacement.ownerId is: a TM can be linked by email before they
+ * have ever signed in.
+ */
+export interface TalentManagerLink {
+  id: string;
+  projectId: string;
+  /** Normalized (trim + lowercase) — the durable linkage key. */
+  talentManagerEmail: string;
+  talentManagerId: string | null;
+  talentManagerDisplayName: string | null;
+  createdAt: string;
+}
+
+/** A Talent Manager's own "ALLES KLOPT" (public.talent_manager_reviews,
+ * migration 0007) — same shape and same wipe-on-change trigger behavior as
+ * PlacementReview, but tracked entirely separately: the same person can be
+ * both an AM and a TM with two independent confirmations. */
+export interface TalentManagerReview {
+  id: string;
+  userId: string;
+  userEmail: string;
+  verifiedAt: string;
+  placementCountAtVerification: number;
+  createdAt: string;
+}
+
+/** A descriptive roster tag (public.team_member_roles, migration 0007) —
+ * non-exclusive, a person may hold more than one row. Purely informational
+ * for the future invite flow; it never gates AM/TM data access itself (that
+ * stays 100% derived from ownerEmail / placement_talent_managers). */
+export interface TeamMemberRole {
+  id: string;
+  emailNormalized: string;
+  role: 'admin' | 'accountmanager' | 'talent_manager';
+  createdAt: string;
 }
 
 /** The future invite roster (public.team_members) — empty until Bernard

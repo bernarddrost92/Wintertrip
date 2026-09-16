@@ -9,6 +9,8 @@ export const TEMPLATE_SHEET_NAME = 'PLAATSINGEN';
 export const TEMPLATE_HEADERS = [
   'Accountmanager',
   'E-mail accountmanager',
+  'Talent Manager',
+  'E-mail Talent Manager',
   'Professional',
   'Klant',
   'DB per maand',
@@ -21,9 +23,11 @@ const EXPLANATION_ROWS = [
   ['1. Één centraal bestand voor het hele team — niet per accountmanager.'],
   ['2. Één plaatsing per regel.'],
   ['3. Accountmanager, E-mail accountmanager, Professional, Klant, Startdatum en Einddatum zijn verplicht.'],
-  ['4. Startdatum/Einddatum als datum (DD-MM-JJJJ) of Excel-datumcel.'],
-  ['5. Sla bestand op.'],
-  ['6. Upload bij TEAM PLACEMENT IMPORT (admin-only).'],
+  ['4. Talent Manager en E-mail Talent Manager zijn optioneel — leeg laten mag.'],
+  ['5. Meerdere Talent Managers op één plaatsing? Scheid met ";" in beide kolommen, in dezelfde volgorde.'],
+  ['6. Startdatum/Einddatum als datum (DD-MM-JJJJ) of Excel-datumcel.'],
+  ['7. Sla bestand op.'],
+  ['8. Upload bij TEAM PLACEMENT IMPORT (admin-only).'],
 ];
 
 /** Pure and testable — no DOM, no download. downloadTemplateWorkbook()

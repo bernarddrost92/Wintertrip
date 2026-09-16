@@ -7,10 +7,12 @@ import { AuthGate } from './AuthGate';
 import { GoldButton } from '../../components/GoldButton';
 import { useMissionHuntData } from './useMissionHuntData';
 import { MyPlacementsView } from './MyPlacementsView';
+import { MyProfessionalsView } from './MyProfessionalsView';
 import { FridayReviewView } from './FridayReviewView';
 import { TeamImportPanel } from './TeamImportPanel';
 import { PlacementDetailDrawer } from './PlacementDetailDrawer';
-import { canEditPlacement, isOwnPlacement } from '../../services/missionHuntPermissions';
+import { buildTalentManagerSummaries } from '../../services/missionHuntAggregate';
+import { canEditPlacement, canManageTalentManagerAssignments, isOwnPlacement } from '../../services/missionHuntPermissions';
 import type { TeamImportPreview } from '../../services/missionHuntImportPreview';
 import type { MissionHuntProfile } from '../../types/missionHunt';
 
@@ -67,8 +69,14 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
   const myPlacements = data.placements.filter((p) => isOwnPlacement(p, profile.userId, profile.emailNormalized));
   const myReview = data.placementReviews.find((r) => r.userId === profile.userId) ?? null;
 
+  const talentManagerSummaries = buildTalentManagerSummaries(data.placements, data.talentManagerLinks, data.profiles, data.talentManagerReviews);
+  const myTalentManagerSummary = talentManagerSummaries.find((s) => s.emailNormalized === profile.emailNormalized) ?? null;
+  const myTalentManagerReview = data.talentManagerReviews.find((r) => r.userId === profile.userId) ?? null;
+
   const selectedPlacement = selectedPlacementId ? data.placements.find((p) => p.id === selectedPlacementId) ?? null : null;
   const selectedEditable = selectedPlacement ? canEditPlacement(selectedPlacement, profile.userId, profile.emailNormalized, profile.role) : false;
+  const selectedTalentManagerLinks = selectedPlacement ? data.talentManagerLinks.filter((l) => l.projectId === selectedPlacement.id) : [];
+  const knownTalentManagerOptions = [...new Map(data.talentManagerLinks.map((l) => [l.talentManagerEmail, { email: l.talentManagerEmail, displayName: l.talentManagerDisplayName ?? l.talentManagerEmail }])).values()];
 
   async function handleImport(preview: TeamImportPreview) {
     return data.importTeamPlacements(preview);
@@ -110,23 +118,47 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
       {!data.loading && !data.error && (
         <div className="mt-6">
           {(!isAdmin || tab === 'my-placements') && (
-            <MyPlacementsView
-              displayName={profile.displayName}
-              placements={myPlacements}
-              isVerified={myReview !== null}
-              verifiedAt={myReview?.verifiedAt ?? null}
-              onAdd={async (input) => {
-                await data.addPlacement(input);
-              }}
-              onOpenPlacement={setSelectedPlacementId}
-              onVerify={async () => {
-                await data.submitVerification(myPlacements.length);
-              }}
-            />
+            <div className="flex flex-col gap-10">
+              <MyPlacementsView
+                displayName={profile.displayName}
+                placements={myPlacements}
+                isVerified={myReview !== null}
+                verifiedAt={myReview?.verifiedAt ?? null}
+                onAdd={async (input) => {
+                  await data.addPlacement(input);
+                }}
+                onOpenPlacement={setSelectedPlacementId}
+                onVerify={async () => {
+                  await data.submitVerification(myPlacements.length);
+                }}
+              />
+              {/* Additive: shown only once ≥1 placement is linked to me as a
+                  Talent Manager — never a new tab, so "My Placements" stays
+                  exactly what it always was for an AM-only user. */}
+              {myTalentManagerSummary && (
+                <MyProfessionalsView
+                  displayName={profile.displayName}
+                  summary={myTalentManagerSummary}
+                  isVerified={myTalentManagerReview !== null}
+                  verifiedAt={myTalentManagerReview?.verifiedAt ?? null}
+                  onOpenPlacement={setSelectedPlacementId}
+                  onVerify={async () => {
+                    await data.submitTalentManagerVerification(myTalentManagerSummary.counts.total);
+                  }}
+                />
+              )}
+            </div>
           )}
           {isAdmin && tab === 'team-import' && (
             <TeamImportPanel
-              existingPlacements={data.placements.map((p) => ({ id: p.id, fingerprint: p.fingerprint, ownerDisplayName: p.ownerDisplayName, hoursPerWeek: p.hoursPerWeek, monthlyDb: p.monthlyDb }))}
+              existingPlacements={data.placements.map((p) => ({
+                id: p.id,
+                fingerprint: p.fingerprint,
+                ownerDisplayName: p.ownerDisplayName,
+                hoursPerWeek: p.hoursPerWeek,
+                monthlyDb: p.monthlyDb,
+                talentManagerEmails: data.talentManagerLinks.filter((l) => l.projectId === p.id).map((l) => l.talentManagerEmail),
+              }))}
               onImport={handleImport}
             />
           )}
@@ -136,6 +168,8 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
               profiles={data.profiles}
               teamMembers={data.teamMembers}
               placementReviews={data.placementReviews}
+              talentManagerLinks={data.talentManagerLinks}
+              talentManagerReviews={data.talentManagerReviews}
               onOpenPlacement={setSelectedPlacementId}
             />
           )}
@@ -147,9 +181,13 @@ function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProf
           placement={selectedPlacement}
           editable={selectedEditable}
           canReassign={isAdmin}
+          talentManagerLinks={selectedTalentManagerLinks}
+          canManageTalentManagers={canManageTalentManagerAssignments(profile.role)}
+          knownTalentManagerOptions={knownTalentManagerOptions}
           onClose={() => setSelectedPlacementId(null)}
           onUpdateField={(field, value) => data.updatePlacementField(selectedPlacement.id, field, value)}
           onReassign={(ownerEmail, ownerDisplayName) => data.reassignPlacement(selectedPlacement.id, ownerEmail, ownerDisplayName)}
+          onUpdateTalentManagers={(emails, displayNames) => data.setPlacementTalentManagers(selectedPlacement.id, emails, displayNames)}
           onDelete={() => {
             data.deletePlacement(selectedPlacement.id);
             setSelectedPlacementId(null);

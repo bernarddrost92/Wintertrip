@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseTabSeparatedText, parseTeamImportRows } from './missionHuntExcelParse';
 
 const FULL_HEADER = ['Accountmanager', 'E-mail accountmanager', 'Professional', 'Klant', 'DB per maand', 'Uren per week', 'Startdatum', 'Einddatum'];
+const FULL_HEADER_WITH_TM = ['Accountmanager', 'E-mail accountmanager', 'Talent Manager', 'E-mail Talent Manager', 'Professional', 'Klant', 'DB per maand', 'Uren per week', 'Startdatum', 'Einddatum'];
 
 function fullRow(overrides: Partial<Record<string, string>> = {}): string[] {
   const base = {
@@ -16,6 +17,23 @@ function fullRow(overrides: Partial<Record<string, string>> = {}): string[] {
     ...overrides,
   };
   return [base.accountmanager, base.email, base.professional, base.klant, base.db, base.uren, base.start, base.eind];
+}
+
+function fullRowWithTm(overrides: Partial<Record<string, string>> = {}): string[] {
+  const base = {
+    accountmanager: 'Lisa',
+    email: 'lisa@maandag.com',
+    tm: '',
+    tmEmail: '',
+    professional: 'Ryan Dijkstra',
+    klant: 'Greijdanus',
+    db: '10',
+    uren: '24',
+    start: '2026-10-01',
+    eind: '2026-12-31',
+    ...overrides,
+  };
+  return [base.accountmanager, base.email, base.tm, base.tmEmail, base.professional, base.klant, base.db, base.uren, base.start, base.eind];
 }
 
 describe('parseTeamImportRows — header validation', () => {
@@ -64,6 +82,8 @@ describe('parseTeamImportRows — row extraction', () => {
             endDate: '2026-12-31',
             hoursPerWeek: 16.5,
             monthlyDb: 1250.5,
+            talentManagerEmails: [],
+            talentManagerDisplayNames: [],
           },
         },
       ]);
@@ -141,6 +161,69 @@ describe('parseTeamImportRows — row extraction', () => {
     const result = parseTeamImportRows([FULL_HEADER, fullRow({ db: 'onbekend' })]);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.rows[0]).toEqual({ rowNumber: 2, ok: false, reason: 'Ongeldige DB per maand' });
+  });
+});
+
+describe('parseTeamImportRows — Talent Manager columns', () => {
+  it('leaves talentManagerEmails/talentManagerDisplayNames empty when the columns are entirely absent from the header', () => {
+    const result = parseTeamImportRows([FULL_HEADER, fullRow()]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const [first] = result.rows;
+      expect(first.ok).toBe(true);
+      if (first.ok) {
+        expect(first.row.talentManagerEmails).toEqual([]);
+        expect(first.row.talentManagerDisplayNames).toEqual([]);
+      }
+    }
+  });
+
+  it('leaves an empty TM cell as a valid, TM-less row — never an error', () => {
+    const result = parseTeamImportRows([FULL_HEADER_WITH_TM, fullRowWithTm()]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const [first] = result.rows;
+      expect(first.ok).toBe(true);
+      if (first.ok) expect(first.row.talentManagerEmails).toEqual([]);
+    }
+  });
+
+  it('parses a single Talent Manager into a one-element array', () => {
+    const result = parseTeamImportRows([FULL_HEADER_WITH_TM, fullRowWithTm({ tm: 'Kim', tmEmail: 'kim.schuring@maandag.com' })]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const [first] = result.rows;
+      expect(first.ok).toBe(true);
+      if (first.ok) {
+        expect(first.row.talentManagerEmails).toEqual(['kim.schuring@maandag.com']);
+        expect(first.row.talentManagerDisplayNames).toEqual(['Kim']);
+      }
+    }
+  });
+
+  it('parses semicolon-separated multi-TM cells into parallel arrays, one placement row (never repeated per TM)', () => {
+    const result = parseTeamImportRows([
+      FULL_HEADER_WITH_TM,
+      fullRowWithTm({ tm: 'Kim ; Monique', tmEmail: 'kim.schuring@maandag.com ; monique.schulten@maandag.com' }),
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.rows).toHaveLength(1);
+      const [first] = result.rows;
+      expect(first.ok).toBe(true);
+      if (first.ok) {
+        expect(first.row.talentManagerEmails).toEqual(['kim.schuring@maandag.com', 'monique.schulten@maandag.com']);
+        expect(first.row.talentManagerDisplayNames).toEqual(['Kim', 'Monique']);
+      }
+    }
+  });
+
+  it('rejects a row with any malformed Talent Manager email rather than silently dropping it', () => {
+    const result = parseTeamImportRows([FULL_HEADER_WITH_TM, fullRowWithTm({ tm: 'Kim', tmEmail: 'not-an-email' })]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.rows[0]).toEqual({ rowNumber: 2, ok: false, reason: 'Ongeldig e-mailadres talent manager (not-an-email)' });
+    }
   });
 });
 

@@ -26,7 +26,7 @@ export interface NewImportRow {
   fingerprint: string;
 }
 
-export type ChangedField = 'ownerDisplayName' | 'hoursPerWeek' | 'monthlyDb';
+export type ChangedField = 'ownerDisplayName' | 'hoursPerWeek' | 'monthlyDb' | 'talentManagers';
 
 export interface ChangedImportRow {
   rowNumber: number;
@@ -52,6 +52,12 @@ export interface AccountManagerImportSummary {
   count: number;
 }
 
+export interface TalentManagerImportSummary {
+  displayName: string;
+  emailNormalized: string;
+  count: number;
+}
+
 export interface TeamImportPreview {
   totalFound: number;
   newRows: NewImportRow[];
@@ -59,6 +65,13 @@ export interface TeamImportPreview {
   unchangedRows: UnchangedImportRow[];
   errorRows: ImportRowError[];
   accountManagers: AccountManagerImportSummary[];
+  /** Distinct Talent Managers named anywhere in the file (TM columns may be
+   * empty on any given row — this only counts rows that actually named
+   * one). */
+  talentManagers: TalentManagerImportSummary[];
+  /** Total placement<->TM relations represented in the file — a placement
+   * with 2 TMs contributes 2 here while still counting as 1 placement. */
+  talentManagerRelationCount: number;
 }
 
 export interface ExistingPlacementForImport {
@@ -67,6 +80,9 @@ export interface ExistingPlacementForImport {
   ownerDisplayName: string | null;
   hoursPerWeek: number | null;
   monthlyDb: number | null;
+  /** Normalized emails of the TMs currently linked to this placement — used
+   * only to detect a CHANGED talent-manager assignment on re-import. */
+  talentManagerEmails: string[];
 }
 
 export type ParsedImportRow = { rowNumber: number } & ({ ok: true; row: TeamImportRow } | { ok: false; reason: string });
@@ -80,6 +96,8 @@ export function buildTeamImportPreview(parsedRows: ParsedImportRow[], existingPl
   const unchangedRows: UnchangedImportRow[] = [];
   const errorRows: ImportRowError[] = [];
   const accountManagerCounts = new Map<string, AccountManagerImportSummary>();
+  const talentManagerCounts = new Map<string, TalentManagerImportSummary>();
+  let talentManagerRelationCount = 0;
 
   for (const parsed of parsedRows) {
     if (!parsed.ok) {
@@ -98,6 +116,17 @@ export function buildTeamImportPreview(parsedRows: ParsedImportRow[], existingPl
       count: (existingAm?.count ?? 0) + 1,
     });
 
+    const rowTmEmailsNormalized = row.talentManagerEmails.map(normalizeEmail);
+    talentManagerRelationCount += rowTmEmailsNormalized.length;
+    rowTmEmailsNormalized.forEach((tmEmail, index) => {
+      const existingTm = talentManagerCounts.get(tmEmail);
+      talentManagerCounts.set(tmEmail, {
+        displayName: existingTm?.displayName ?? row.talentManagerDisplayNames[index] ?? tmEmail,
+        emailNormalized: tmEmail,
+        count: (existingTm?.count ?? 0) + 1,
+      });
+    });
+
     if (seenInBatch.has(fingerprint)) {
       unchangedRows.push({ rowNumber, row, fingerprint, existingId: seenInBatch.get(fingerprint) ?? null });
       continue;
@@ -114,6 +143,9 @@ export function buildTeamImportPreview(parsedRows: ParsedImportRow[], existingPl
     if ((existing.ownerDisplayName ?? '') !== row.ownerDisplayName) changedFields.push('ownerDisplayName');
     if ((existing.hoursPerWeek ?? null) !== (row.hoursPerWeek ?? null)) changedFields.push('hoursPerWeek');
     if ((existing.monthlyDb ?? null) !== (row.monthlyDb ?? null)) changedFields.push('monthlyDb');
+    const existingTmSorted = [...existing.talentManagerEmails].map(normalizeEmail).sort();
+    const rowTmSorted = [...rowTmEmailsNormalized].sort();
+    if (JSON.stringify(existingTmSorted) !== JSON.stringify(rowTmSorted)) changedFields.push('talentManagers');
 
     if (changedFields.length === 0) {
       unchangedRows.push({ rowNumber, row, fingerprint, existingId: existing.id });
@@ -130,5 +162,7 @@ export function buildTeamImportPreview(parsedRows: ParsedImportRow[], existingPl
     unchangedRows,
     errorRows,
     accountManagers: [...accountManagerCounts.values()].sort((a, b) => b.count - a.count),
+    talentManagers: [...talentManagerCounts.values()].sort((a, b) => b.count - a.count),
+    talentManagerRelationCount,
   };
 }

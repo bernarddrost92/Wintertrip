@@ -1,6 +1,6 @@
 import { normalizeEmail } from '../utils/normalizeEmail';
 import { classifyPlacement } from './missionHuntClassification';
-import type { MissionHuntPlacement, MissionHuntProfile, PlacementReview, TeamMember } from '../types/missionHunt';
+import type { MissionHuntPlacement, MissionHuntProfile, PlacementReview, TalentManagerLink, TalentManagerReview, TeamMember } from '../types/missionHunt';
 
 export interface OpportunityCounts {
   total: number;
@@ -90,5 +90,159 @@ export interface TeamCompletion {
 }
 
 export function teamCompletion(summaries: readonly AccountManagerSummary[]): TeamCompletion {
+  return { verifiedCount: summaries.filter((s) => s.isVerified).length, totalCount: summaries.length };
+}
+
+export interface TalentManagerAccountManagerGroup {
+  emailNormalized: string;
+  displayName: string;
+  placements: MissionHuntPlacement[];
+  counts: OpportunityCounts;
+}
+
+export interface TalentManagerSummary {
+  emailNormalized: string;
+  displayName: string;
+  /** A provisioned profile exists for this email — they have signed in at
+   * least once. */
+  hasLoggedIn: boolean;
+  /** Unique placements linked to this TM — never duplicated even though a
+   * placement may also be linked to other TMs. */
+  placements: MissionHuntPlacement[];
+  counts: OpportunityCounts;
+  /** The same linked placements, grouped by their Accountmanager — for the
+   * "grouped by AM" drilldown / cross-pollination view. */
+  accountManagers: TalentManagerAccountManagerGroup[];
+  isVerified: boolean;
+}
+
+/**
+ * Groups the UNIQUE set of placements linked to each Talent Manager via
+ * placement_talent_managers (migration 0007) — a placement linked to the
+ * same TM through only one relation row (the unique index on
+ * project_id+email guarantees that), so no de-duplication step is needed
+ * beyond simply collecting by project_id. Only people with at least one
+ * actual link appear here — unlike buildAccountManagerSummaries this does
+ * NOT union in the full team_members roster, since team_members carries no
+ * role information yet and every teamMember is not automatically a TM.
+ */
+export function buildTalentManagerSummaries(
+  placements: readonly MissionHuntPlacement[],
+  talentManagerLinks: readonly TalentManagerLink[],
+  profiles: readonly MissionHuntProfile[],
+  talentManagerReviews: readonly TalentManagerReview[],
+): TalentManagerSummary[] {
+  const placementById = new Map(placements.map((p) => [p.id, p]));
+  const profileByEmail = new Map(profiles.map((p) => [p.emailNormalized, p]));
+  const reviewedEmails = new Set(talentManagerReviews.map((r) => normalizeEmail(r.userEmail)));
+
+  // tmEmail -> unique placements (a Map keyed by placement id de-duplicates
+  // defensively even if the caller ever passes overlapping link rows).
+  const placementsByTm = new Map<string, Map<string, MissionHuntPlacement>>();
+  const displayNameByTm = new Map<string, string>();
+
+  for (const link of talentManagerLinks) {
+    const email = normalizeEmail(link.talentManagerEmail);
+    const placement = placementById.get(link.projectId);
+    if (!placement) continue; // stale link for a deleted placement — ignore.
+    if (!placementsByTm.has(email)) placementsByTm.set(email, new Map());
+    placementsByTm.get(email)!.set(placement.id, placement);
+    if (link.talentManagerDisplayName && !displayNameByTm.has(email)) displayNameByTm.set(email, link.talentManagerDisplayName);
+  }
+
+  const summaries: TalentManagerSummary[] = [];
+  for (const [email, placementMap] of placementsByTm) {
+    const linkedPlacements = [...placementMap.values()];
+    const profile = profileByEmail.get(email);
+
+    const byAm = new Map<string, { displayName: string; placements: MissionHuntPlacement[] }>();
+    for (const placement of linkedPlacements) {
+      const amEmail = normalizeEmail(placement.ownerEmail);
+      if (!byAm.has(amEmail)) {
+        const amProfile = profileByEmail.get(amEmail);
+        byAm.set(amEmail, { displayName: amProfile?.displayName ?? placement.ownerDisplayName ?? amEmail, placements: [] });
+      }
+      byAm.get(amEmail)!.placements.push(placement);
+    }
+
+    const accountManagers: TalentManagerAccountManagerGroup[] = [...byAm.entries()]
+      .map(([amEmail, group]) => ({ emailNormalized: amEmail, displayName: group.displayName, placements: group.placements, counts: countOpportunities(group.placements) }))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+    summaries.push({
+      emailNormalized: email,
+      displayName: profile?.displayName ?? displayNameByTm.get(email) ?? email,
+      hasLoggedIn: profile !== undefined,
+      placements: linkedPlacements,
+      counts: countOpportunities(linkedPlacements),
+      accountManagers,
+      isVerified: reviewedEmails.has(email),
+    });
+  }
+
+  return summaries.sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+export interface CrossIntelligenceEntry {
+  accountManagerEmail: string;
+  accountManagerDisplayName: string;
+  talentManagerEmail: string;
+  talentManagerDisplayName: string;
+  placements: MissionHuntPlacement[];
+  counts: OpportunityCounts;
+}
+
+/**
+ * The AM x TM insight matrix ("BERNARD x KIM: 4 gezamenlijke plaatsingen, 2
+ * kansen") — one entry per (AM, TM) pair that shares at least one real
+ * placement, derived purely from actual ownership + linkage, never inventing
+ * or double-scoring anything.
+ */
+export function buildCrossIntelligence(
+  placements: readonly MissionHuntPlacement[],
+  talentManagerLinks: readonly TalentManagerLink[],
+  profiles: readonly MissionHuntProfile[],
+): CrossIntelligenceEntry[] {
+  const placementById = new Map(placements.map((p) => [p.id, p]));
+  const profileByEmail = new Map(profiles.map((p) => [p.emailNormalized, p]));
+  const displayNameByTm = new Map<string, string>();
+  for (const link of talentManagerLinks) {
+    const email = normalizeEmail(link.talentManagerEmail);
+    if (link.talentManagerDisplayName && !displayNameByTm.has(email)) displayNameByTm.set(email, link.talentManagerDisplayName);
+  }
+
+  const pairs = new Map<string, { amEmail: string; tmEmail: string; placements: Map<string, MissionHuntPlacement> }>();
+
+  for (const link of talentManagerLinks) {
+    const placement = placementById.get(link.projectId);
+    if (!placement) continue;
+    const amEmail = normalizeEmail(placement.ownerEmail);
+    const tmEmail = normalizeEmail(link.talentManagerEmail);
+    const key = `${amEmail}::${tmEmail}`;
+    if (!pairs.has(key)) pairs.set(key, { amEmail, tmEmail, placements: new Map() });
+    pairs.get(key)!.placements.set(placement.id, placement);
+  }
+
+  const entries: CrossIntelligenceEntry[] = [...pairs.values()].map(({ amEmail, tmEmail, placements: pairPlacements }) => {
+    const pairPlacementList = [...pairPlacements.values()];
+    return {
+      accountManagerEmail: amEmail,
+      accountManagerDisplayName: profileByEmail.get(amEmail)?.displayName ?? pairPlacementList[0]?.ownerDisplayName ?? amEmail,
+      talentManagerEmail: tmEmail,
+      talentManagerDisplayName: profileByEmail.get(tmEmail)?.displayName ?? displayNameByTm.get(tmEmail) ?? tmEmail,
+      placements: pairPlacementList,
+      counts: countOpportunities(pairPlacementList),
+    };
+  });
+
+  return entries.sort((a, b) => b.placements.length - a.placements.length);
+}
+
+export interface TalentManagerTeamCompletion {
+  verifiedCount: number;
+  totalCount: number;
+}
+
+export function talentManagerTeamCompletion(summaries: readonly TalentManagerSummary[]): TalentManagerTeamCompletion {
   return { verifiedCount: summaries.filter((s) => s.isVerified).length, totalCount: summaries.length };
 }

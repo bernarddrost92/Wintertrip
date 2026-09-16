@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TeamImportPanel } from './TeamImportPanel';
 
 const FULL_HEADER = 'Accountmanager\tE-mail accountmanager\tProfessional\tKlant\tDB per maand\tUren per week\tStartdatum\tEinddatum';
+const FULL_HEADER_WITH_TM = 'Accountmanager\tE-mail accountmanager\tTalent Manager\tE-mail Talent Manager\tProfessional\tKlant\tDB per maand\tUren per week\tStartdatum\tEinddatum';
 
 async function pasteRows(user: ReturnType<typeof userEvent.setup>, text: string) {
   await user.click(screen.getByRole('button', { name: /paste from excel/i }));
@@ -52,7 +53,14 @@ describe('TeamImportPanel', () => {
     render(
       <TeamImportPanel
         existingPlacements={[
-          { id: 'existing-1', fingerprint: 'bernard.drost@maandag.com::ryan dijkstra::greijdanus::2026-10-01::2026-12-31', ownerDisplayName: 'Bernard', hoursPerWeek: 24, monthlyDb: 10 },
+          {
+            id: 'existing-1',
+            fingerprint: 'bernard.drost@maandag.com::ryan dijkstra::greijdanus::2026-10-01::2026-12-31',
+            ownerDisplayName: 'Bernard',
+            hoursPerWeek: 24,
+            monthlyDb: 10,
+            talentManagerEmails: [],
+          },
         ]}
         onImport={vi.fn()}
       />,
@@ -81,5 +89,33 @@ describe('TeamImportPanel', () => {
   it('the downloadable template exposes the exact required column headers', () => {
     render(<TeamImportPanel existingPlacements={[]} onImport={vi.fn()} />);
     expect(screen.getByRole('button', { name: /download excel template/i })).toBeInTheDocument();
+  });
+
+  it('shows Talent Manager and TM-relation counts in the preview when the file includes TM columns', async () => {
+    const user = userEvent.setup();
+    const text = [
+      FULL_HEADER_WITH_TM,
+      'Bernard\tbernard.drost@maandag.com\tKim\tkim.schuring@maandag.com\tRyan Dijkstra\tGreijdanus\t10\t24\t2026-10-01\t2026-12-31',
+      'Bernard\tbernard.drost@maandag.com\tKim ; Monique\tkim.schuring@maandag.com ; monique.schulten@maandag.com\tAndere Prof\tGreijdanus\t8\t20\t2026-09-01\t2026-11-30',
+    ].join('\n');
+
+    render(<TeamImportPanel existingPlacements={[]} onImport={vi.fn()} />);
+    await pasteRows(user, text);
+
+    expect(screen.getByText(/2 TALENT MANAGERS/)).toBeInTheDocument();
+    expect(screen.getByText(/3 TM-KOPPELINGEN/)).toBeInTheDocument();
+    expect(screen.getByText(/Kim — 2/)).toBeInTheDocument();
+    expect(screen.getByText(/Monique — 1/)).toBeInTheDocument();
+  });
+
+  it('a row with an empty TM cell still imports successfully — Talent Manager is optional', async () => {
+    const user = userEvent.setup();
+    const text = [FULL_HEADER_WITH_TM, 'Bernard\tbernard.drost@maandag.com\t\t\tRyan Dijkstra\tGreijdanus\t10\t24\t2026-10-01\t2026-12-31'].join('\n');
+
+    render(<TeamImportPanel existingPlacements={[]} onImport={vi.fn()} />);
+    await pasteRows(user, text);
+
+    expect(screen.getByText('0 FOUTEN')).toBeInTheDocument();
+    expect(screen.getByText('1 NIEUW')).toBeInTheDocument();
   });
 });

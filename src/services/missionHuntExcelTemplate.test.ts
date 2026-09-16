@@ -16,7 +16,18 @@ describe('buildTemplateWorkbook', () => {
     const sheet = workbook.Sheets[TEMPLATE_SHEET_NAME];
     const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 });
     expect(rows[0]).toEqual([...TEMPLATE_HEADERS]);
-    expect(TEMPLATE_HEADERS).toEqual(['Accountmanager', 'E-mail accountmanager', 'Professional', 'Klant', 'DB per maand', 'Uren per week', 'Startdatum', 'Einddatum']);
+    expect(TEMPLATE_HEADERS).toEqual([
+      'Accountmanager',
+      'E-mail accountmanager',
+      'Talent Manager',
+      'E-mail Talent Manager',
+      'Professional',
+      'Klant',
+      'DB per maand',
+      'Uren per week',
+      'Startdatum',
+      'Einddatum',
+    ]);
   });
 
   it('the UITLEG sheet carries short instruction lines', () => {
@@ -28,10 +39,11 @@ describe('buildTemplateWorkbook', () => {
   });
 
   it('the generated template headers are recognized by the import parser end-to-end', () => {
-    // Simulates: download the real template, fill in one row, re-upload it.
+    // Simulates: download the real template, fill in one row (including a
+    // Talent Manager), re-upload it.
     const workbook = buildTemplateWorkbook();
     const sheet = workbook.Sheets[TEMPLATE_SHEET_NAME];
-    XLSX.utils.sheet_add_aoa(sheet, [['Lisa', 'lisa@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '10', '24', '2026-10-01', '2026-12-31']], { origin: -1 });
+    XLSX.utils.sheet_add_aoa(sheet, [['Lisa', 'lisa@maandag.com', 'Kim', 'kim.schuring@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '10', '24', '2026-10-01', '2026-12-31']], { origin: -1 });
 
     const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
     const rows = readWorkbookRows(buffer);
@@ -45,6 +57,7 @@ describe('buildTemplateWorkbook', () => {
       if (first.ok) {
         expect(first.row.ownerDisplayName).toBe('Lisa');
         expect(first.row.hoursPerWeek).toBe(24);
+        expect(first.row.talentManagerEmails).toEqual(['kim.schuring@maandag.com']);
       }
     }
   });

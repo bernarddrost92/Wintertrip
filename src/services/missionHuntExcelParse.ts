@@ -4,7 +4,17 @@ import type { ParsedImportRow } from './missionHuntImportPreview';
 import type { TeamImportRow } from '../types/missionHunt';
 
 /** Canonical field keys, in template-column order. */
-type TemplateField = 'ownerDisplayName' | 'ownerEmail' | 'professionalName' | 'clientName' | 'monthlyDb' | 'hoursPerWeek' | 'startDate' | 'endDate';
+type TemplateField =
+  | 'ownerDisplayName'
+  | 'ownerEmail'
+  | 'talentManagerDisplayName'
+  | 'talentManagerEmail'
+  | 'professionalName'
+  | 'clientName'
+  | 'monthlyDb'
+  | 'hoursPerWeek'
+  | 'startDate'
+  | 'endDate';
 
 /**
  * The exact template headers (see missionHuntExcelTemplate.ts) plus common
@@ -24,6 +34,12 @@ const HEADER_TO_FIELD: Record<string, TemplateField> = {
   'e-mail': 'ownerEmail',
   'e-mailadres': 'ownerEmail',
   emailadres: 'ownerEmail',
+  'talent manager': 'talentManagerDisplayName',
+  talentmanager: 'talentManagerDisplayName',
+  tm: 'talentManagerDisplayName',
+  'e-mail talent manager': 'talentManagerEmail',
+  'email talent manager': 'talentManagerEmail',
+  'e-mailadres talent manager': 'talentManagerEmail',
   professional: 'professionalName',
   klant: 'clientName',
   client: 'clientName',
@@ -52,6 +68,17 @@ const REQUIRED_HEADER_LABEL: Record<'ownerDisplayName' | 'ownerEmail' | 'profess
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Multi-TM columns use ';' to separate values within one cell (Option B —
+ * one placement row stays one row, never repeated per TM). Empty segments
+ * from stray separators/whitespace are dropped, and an entirely empty cell
+ * yields an empty list — a placement with no TM is valid. */
+function splitSemicolonList(text: string): string[] {
+  return text
+    .split(';')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+}
 
 function normalizeHeader(value: unknown): string {
   return String(value ?? '')
@@ -145,6 +172,8 @@ export function parseTeamImportRows(aoa: unknown[][]): ParseTeamImportResult {
 
     const ownerDisplayName = cellToText(cells.ownerDisplayName);
     const ownerEmail = cellToText(cells.ownerEmail);
+    const talentManagerNamesRaw = cellToText(cells.talentManagerDisplayName);
+    const talentManagerEmailsRaw = cellToText(cells.talentManagerEmail);
     const professionalName = cellToText(cells.professionalName);
     const clientName = cellToText(cells.clientName);
     const startDate = parseDateCell(cells.startDate);
@@ -201,6 +230,14 @@ export function parseTeamImportRows(aoa: unknown[][]): ParseTeamImportResult {
       return;
     }
 
+    const talentManagerEmails = splitSemicolonList(talentManagerEmailsRaw);
+    const invalidTmEmail = talentManagerEmails.find((email) => !EMAIL_PATTERN.test(email));
+    if (invalidTmEmail) {
+      rows.push({ rowNumber, ok: false, reason: `Ongeldig e-mailadres talent manager (${invalidTmEmail})` });
+      return;
+    }
+    const talentManagerDisplayNames = splitSemicolonList(talentManagerNamesRaw);
+
     const row: TeamImportRow = {
       ownerEmail,
       ownerDisplayName,
@@ -210,6 +247,8 @@ export function parseTeamImportRows(aoa: unknown[][]): ParseTeamImportResult {
       endDate,
       hoursPerWeek: hours.value,
       monthlyDb: db.value,
+      talentManagerEmails,
+      talentManagerDisplayNames,
     };
     rows.push({ rowNumber, ok: true, row });
   });

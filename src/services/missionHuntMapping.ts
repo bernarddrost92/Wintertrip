@@ -1,6 +1,16 @@
 import { normalizeEmail } from '../utils/normalizeEmail';
 import { buildPlacementFingerprint } from './missionHuntFingerprint';
-import type { MissionHuntPlacement, MissionHuntProfile, NewPlacementInput, PlacementReview, TeamImportRow, TeamMember } from '../types/missionHunt';
+import type {
+  MissionHuntPlacement,
+  MissionHuntProfile,
+  NewPlacementInput,
+  PlacementReview,
+  TalentManagerLink,
+  TalentManagerReview,
+  TeamImportRow,
+  TeamMember,
+  TeamMemberRole,
+} from '../types/missionHunt';
 
 /** Supabase (snake_case, per the SQL migrations) <-> app (camelCase) shape
  * conversion — isolated here so nothing else in the app needs to know the
@@ -50,6 +60,31 @@ export interface PlacementReviewRow {
   user_email: string;
   verified_at: string;
   placement_count_at_verification: number;
+  created_at: string;
+}
+
+export interface TalentManagerLinkRow {
+  id: string;
+  project_id: string;
+  talent_manager_email: string;
+  talent_manager_id: string | null;
+  talent_manager_display_name: string | null;
+  created_at: string;
+}
+
+export interface TalentManagerReviewRow {
+  id: string;
+  user_id: string;
+  user_email: string;
+  verified_at: string;
+  placement_count_at_verification: number;
+  created_at: string;
+}
+
+export interface TeamMemberRoleRow {
+  id: string;
+  email_normalized: string;
+  role: 'admin' | 'accountmanager' | 'talent_manager';
   created_at: string;
 }
 
@@ -103,6 +138,48 @@ export function placementReviewRowToPlacementReview(row: PlacementReviewRow): Pl
     placementCountAtVerification: row.placement_count_at_verification,
     createdAt: row.created_at,
   };
+}
+
+export function talentManagerLinkRowToTalentManagerLink(row: TalentManagerLinkRow): TalentManagerLink {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    talentManagerEmail: row.talent_manager_email,
+    talentManagerId: row.talent_manager_id,
+    talentManagerDisplayName: row.talent_manager_display_name,
+    createdAt: row.created_at,
+  };
+}
+
+export function talentManagerReviewRowToTalentManagerReview(row: TalentManagerReviewRow): TalentManagerReview {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    userEmail: row.user_email,
+    verifiedAt: row.verified_at,
+    placementCountAtVerification: row.placement_count_at_verification,
+    createdAt: row.created_at,
+  };
+}
+
+export function teamMemberRoleRowToTeamMemberRole(row: TeamMemberRoleRow): TeamMemberRole {
+  return {
+    id: row.id,
+    emailNormalized: row.email_normalized,
+    role: row.role,
+    createdAt: row.created_at,
+  };
+}
+
+/** Builds the insert rows linking a placement to its Talent Managers —
+ * admin-only write (migration 0007's RLS). One row per TM email; the caller
+ * is responsible for not inserting duplicates already present. */
+export function talentManagerEmailsToInsertRows(projectId: string, emails: string[], displayNames: string[]) {
+  return emails.map((email, index) => ({
+    project_id: projectId,
+    talent_manager_email: normalizeEmail(email),
+    talent_manager_display_name: displayNames[index] ?? null,
+  }));
 }
 
 /** Builds the insert row for "+ Plaatsing toevoegen" — the signed-in user

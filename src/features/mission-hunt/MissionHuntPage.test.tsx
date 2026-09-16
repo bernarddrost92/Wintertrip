@@ -17,10 +17,17 @@ vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseCl
  * actually calls — enough to drive MissionHuntAuthProvider/useMissionHuntData
  * through a real render without a live Supabase project. */
 function buildFakeSupabaseClient(
-  tables: { profiles: unknown[]; projects: unknown[]; team_members?: unknown[]; placement_reviews?: unknown[] },
+  tables: {
+    profiles: unknown[];
+    projects: unknown[];
+    team_members?: unknown[];
+    placement_reviews?: unknown[];
+    placement_talent_managers?: unknown[];
+    talent_manager_reviews?: unknown[];
+  },
   options: { getSessionNeverResolves?: boolean; profileFetchThrows?: boolean } = {},
 ) {
-  function from(table: 'profiles' | 'projects' | 'team_members' | 'placement_reviews') {
+  function from(table: 'profiles' | 'projects' | 'team_members' | 'placement_reviews' | 'placement_talent_managers' | 'talent_manager_reviews') {
     const rows = tables[table] ?? [];
     const builder = {
       select: () => builder,
@@ -186,6 +193,8 @@ describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches an
       }
       if (table === 'team_members') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
       if (table === 'placement_reviews') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [...reviewsTable], error: null }) }) };
+      if (table === 'placement_talent_managers') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
+      if (table === 'talent_manager_reviews') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
       throw new Error(`unexpected table ${table}`);
     }
 

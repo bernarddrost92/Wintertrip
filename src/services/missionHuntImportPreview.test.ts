@@ -13,8 +13,14 @@ function importRow(overrides: Partial<TeamImportRow> = {}): TeamImportRow {
     endDate: '2026-12-31',
     hoursPerWeek: 24,
     monthlyDb: 10,
+    talentManagerEmails: [],
+    talentManagerDisplayNames: [],
     ...overrides,
   };
+}
+
+function existingPlacement(overrides: Partial<ExistingPlacementForImport> = {}): ExistingPlacementForImport {
+  return { id: 'existing-1', fingerprint: 'fp', ownerDisplayName: 'Lisa', hoursPerWeek: 24, monthlyDb: 10, talentManagerEmails: [], ...overrides };
 }
 
 function ok(rowNumber: number, row: TeamImportRow): ParsedImportRow {
@@ -38,7 +44,7 @@ describe('buildTeamImportPreview', () => {
   it('classifies a row matching an existing fingerprint with identical fields as UNCHANGED', () => {
     const row = importRow();
     const fingerprint = buildPlacementFingerprint(row.ownerEmail, row.professionalName, row.clientName, row.startDate, row.endDate);
-    const existing: ExistingPlacementForImport[] = [{ id: 'existing-1', fingerprint, ownerDisplayName: row.ownerDisplayName, hoursPerWeek: row.hoursPerWeek, monthlyDb: row.monthlyDb }];
+    const existing: ExistingPlacementForImport[] = [existingPlacement({ fingerprint, ownerDisplayName: row.ownerDisplayName, hoursPerWeek: row.hoursPerWeek, monthlyDb: row.monthlyDb })];
 
     const preview = buildTeamImportPreview([ok(2, row)], existing);
     expect(preview.newRows).toHaveLength(0);
@@ -50,7 +56,7 @@ describe('buildTeamImportPreview', () => {
   it('classifies a fingerprint match with different hours/DB as CHANGED, naming the changed fields', () => {
     const row = importRow({ hoursPerWeek: 32, monthlyDb: 15 });
     const fingerprint = buildPlacementFingerprint(row.ownerEmail, row.professionalName, row.clientName, row.startDate, row.endDate);
-    const existing: ExistingPlacementForImport[] = [{ id: 'existing-1', fingerprint, ownerDisplayName: row.ownerDisplayName, hoursPerWeek: 24, monthlyDb: 10 }];
+    const existing: ExistingPlacementForImport[] = [existingPlacement({ fingerprint, ownerDisplayName: row.ownerDisplayName, hoursPerWeek: 24, monthlyDb: 10 })];
 
     const preview = buildTeamImportPreview([ok(2, row)], existing);
     expect(preview.changedRows).toHaveLength(1);
@@ -61,7 +67,7 @@ describe('buildTeamImportPreview', () => {
   it('a changed accountmanager display name (same person/placement) is CHANGED, not a new placement', () => {
     const row = importRow({ ownerDisplayName: 'Lisa de Vries' });
     const fingerprint = buildPlacementFingerprint(row.ownerEmail, row.professionalName, row.clientName, row.startDate, row.endDate);
-    const existing: ExistingPlacementForImport[] = [{ id: 'existing-1', fingerprint, ownerDisplayName: 'Lisa', hoursPerWeek: row.hoursPerWeek, monthlyDb: row.monthlyDb }];
+    const existing: ExistingPlacementForImport[] = [existingPlacement({ fingerprint, ownerDisplayName: 'Lisa', hoursPerWeek: row.hoursPerWeek, monthlyDb: row.monthlyDb })];
 
     const preview = buildTeamImportPreview([ok(2, row)], existing);
     expect(preview.changedRows).toHaveLength(1);
@@ -70,17 +76,50 @@ describe('buildTeamImportPreview', () => {
 
   it('a changed professional/client/date is a different fingerprint entirely — NEW, not CHANGED (never guesses a rename)', () => {
     const existing: ExistingPlacementForImport[] = [
-      {
-        id: 'existing-1',
+      existingPlacement({
         fingerprint: buildPlacementFingerprint('lisa@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31'),
         ownerDisplayName: 'Lisa',
         hoursPerWeek: 24,
         monthlyDb: 10,
-      },
+      }),
     ];
     const preview = buildTeamImportPreview([ok(2, importRow({ clientName: 'Nieuwe Klant' }))], existing);
     expect(preview.newRows).toHaveLength(1);
     expect(preview.changedRows).toHaveLength(0);
+  });
+
+  it('a changed Talent Manager assignment (same placement identity) is CHANGED, naming talentManagers', () => {
+    const row = importRow({ talentManagerEmails: ['kim@maandag.com'], talentManagerDisplayNames: ['Kim'] });
+    const fingerprint = buildPlacementFingerprint(row.ownerEmail, row.professionalName, row.clientName, row.startDate, row.endDate);
+    const existing: ExistingPlacementForImport[] = [existingPlacement({ fingerprint, talentManagerEmails: [] })];
+
+    const preview = buildTeamImportPreview([ok(2, row)], existing);
+    expect(preview.changedRows).toHaveLength(1);
+    expect(preview.changedRows[0].changedFields).toEqual(['talentManagers']);
+  });
+
+  it('an unchanged Talent Manager set (same emails, different order) is UNCHANGED', () => {
+    const row = importRow({ talentManagerEmails: ['monique@maandag.com', 'kim@maandag.com'] });
+    const fingerprint = buildPlacementFingerprint(row.ownerEmail, row.professionalName, row.clientName, row.startDate, row.endDate);
+    const existing: ExistingPlacementForImport[] = [existingPlacement({ fingerprint, talentManagerEmails: ['kim@maandag.com', 'monique@maandag.com'] })];
+
+    const preview = buildTeamImportPreview([ok(2, row)], existing);
+    expect(preview.unchangedRows).toHaveLength(1);
+  });
+
+  it('summarizes recognized Talent Managers by normalized email, counting one relation per TM per row', () => {
+    const preview = buildTeamImportPreview(
+      [
+        ok(2, importRow({ talentManagerEmails: ['Kim@Maandag.com'], talentManagerDisplayNames: ['Kim'] })),
+        ok(3, importRow({ clientName: 'Andere Klant', talentManagerEmails: ['kim@maandag.com', 'monique@maandag.com'], talentManagerDisplayNames: ['Kim', 'Monique'] })),
+      ],
+      [],
+    );
+    expect(preview.talentManagers).toEqual([
+      { displayName: 'Kim', emailNormalized: 'kim@maandag.com', count: 2 },
+      { displayName: 'Monique', emailNormalized: 'monique@maandag.com', count: 1 },
+    ]);
+    expect(preview.talentManagerRelationCount).toBe(3);
   });
 
   it('dedupes identical rows within the same import batch (duplicate rows in one file)', () => {
@@ -100,6 +139,7 @@ describe('buildTeamImportPreview', () => {
       ownerDisplayName: r.row.ownerDisplayName,
       hoursPerWeek: r.row.hoursPerWeek,
       monthlyDb: r.row.monthlyDb,
+      talentManagerEmails: r.row.talentManagerEmails,
     }));
 
     const secondPass = buildTeamImportPreview(rows, existingAfterFirstImport);
