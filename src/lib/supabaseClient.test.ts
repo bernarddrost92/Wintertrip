@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const { createClientMock } = vi.hoisted(() => ({
+  createClientMock: vi.fn((_url: string, _key: string, _options: { auth: Record<string, boolean> }) => ({ auth: {} })),
+}));
+vi.mock('@supabase/supabase-js', () => ({ createClient: createClientMock }));
+
 /**
  * Regression coverage for a real production incident: VITE_SUPABASE_URL was
  * set to a Supabase secret key (sb_secret_...) instead of the project URL —
@@ -59,5 +64,33 @@ describe('isSupabaseConfigured — rejects garbage config, not just missing conf
   it('URL set but key missing: not configured', async () => {
     const { isSupabaseConfigured } = await loadWithEnv('https://example-project-ref.supabase.co', undefined);
     expect(isSupabaseConfigured()).toBe(false);
+  });
+});
+
+describe('getSupabaseClient — session persistence config and singleton', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    createClientMock.mockClear();
+  });
+
+  it('createClient is called with persistSession/autoRefreshToken/detectSessionInUrl all true — the whole "stay signed in" contract rests on this', async () => {
+    const { getSupabaseClient } = await loadWithEnv('https://example-project-ref.supabase.co', 'sb_publishable_abc123');
+    getSupabaseClient();
+
+    expect(createClientMock).toHaveBeenCalledTimes(1);
+    const [, , options] = createClientMock.mock.calls[0];
+    expect(options.auth).toEqual({ autoRefreshToken: true, persistSession: true, detectSessionInUrl: true });
+  });
+
+  it('is a singleton — every caller across the app (Mission Hunt auth, League Check\'s session hook, a remount after navigating away and back) shares one client and one in-memory session, never re-creating it', async () => {
+    const { getSupabaseClient } = await loadWithEnv('https://example-project-ref.supabase.co', 'sb_publishable_abc123');
+
+    const first = getSupabaseClient();
+    const second = getSupabaseClient();
+    const third = getSupabaseClient();
+
+    expect(second).toBe(first);
+    expect(third).toBe(first);
+    expect(createClientMock).toHaveBeenCalledTimes(1);
   });
 });

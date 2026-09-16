@@ -112,6 +112,19 @@ describe('App — mission gate / intro / home flow (access already granted)', ()
     expect(screen.getByRole('button', { name: /authorize/i })).toBeInTheDocument();
     expect(screen.queryByText('Missie #1')).not.toBeInTheDocument();
   });
+
+  it('RESET ACCESS never touches a persisted Mission Hunt (Supabase) session — the two gates are independent', async () => {
+    const SUPABASE_SESSION_KEY = 'sb-example-project-ref-auth-token';
+    localStorage.setItem(SUPABASE_SESSION_KEY, JSON.stringify({ access_token: 'x', refresh_token: 'y' }));
+    sessionStorage.setItem('ws27-intro-seen', '1');
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /Reset Access/i }));
+
+    expect(hasAccess()).toBe(false);
+    expect(localStorage.getItem(SUPABASE_SESSION_KEY)).not.toBeNull();
+  });
 });
 
 describe('App — /mission-updates direct route (via the 404.html redirect param)', () => {

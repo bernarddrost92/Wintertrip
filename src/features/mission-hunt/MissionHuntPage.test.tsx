@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MissionHuntPage } from './MissionHuntPage';
@@ -41,14 +41,25 @@ function buildFakeSupabaseClient(
     return builder;
   }
 
+  // Captures the callback MissionHuntAuthProvider subscribes with, so a test
+  // can simulate a real onAuthStateChange event (e.g. a revoked/expired
+  // refresh token firing with session: null) exactly as supabase-js would.
+  let authStateCallback: ((event: string, session: unknown) => void) | null = null;
+
   return {
     auth: {
       getSession: () => (options.getSessionNeverResolves ? new Promise(() => {}) : Promise.resolve({ data: { session: mockAuthState.session } })),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
-      signInWithOtp: async () => ({ error: null }),
-      signOut: async () => {
+      onAuthStateChange: vi.fn((cb: (event: string, session: unknown) => void) => {
+        authStateCallback = cb;
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      }),
+      signInWithOtp: vi.fn(async () => ({ error: null })),
+      signOut: vi.fn(async () => {
         mockAuthState.session = null;
-      },
+      }),
+      /** Test-only helper: fires the captured onAuthStateChange callback,
+       * simulating a real supabase-js event. */
+      __emitAuthStateChange: (event: string, session: unknown) => authStateCallback?.(event, session),
     },
     from,
   };
@@ -81,6 +92,117 @@ describe('MissionHuntPage — auth guard', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
     expect(screen.queryByText(/voor vrijdag/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/team check/i)).not.toBeInTheDocument();
+    // The "remembered on this device" copy — sets expectations without
+    // promising a permanent login.
+    expect(screen.getByText(/eerste keer op dit apparaat/i)).toBeInTheDocument();
+    expect(screen.getByText(/daarna onthouden we je login op dit apparaat/i)).toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — session persistence ("remember this device")', () => {
+  function fakeClientWithLisa() {
+    return buildFakeSupabaseClient({
+      profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Lisa', email_normalized: 'lisa@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
+      projects: [],
+    });
+  }
+
+  it('a persisted session on mount skips AGENT LOGIN entirely — no signInWithOtp call, straight to My Placements', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    const client = fakeClientWithLisa();
+    getSupabaseClient.mockReturnValue(client);
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: /agent login/i })).not.toBeInTheDocument();
+    expect(client.auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it('a full remount (page refresh, or App.tsx unmounting Mission Hunt when navigating to Calculator and back) restores the same session without a new magic link', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    const client = fakeClientWithLisa();
+    getSupabaseClient.mockReturnValue(client);
+
+    const { unmount } = render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+    unmount();
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: /agent login/i })).not.toBeInTheDocument();
+    expect(client.auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it('a mid-session auth-state change to null (an expired/revoked refresh token) falls back cleanly to the login screen — no crash', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    const client = fakeClientWithLisa();
+    getSupabaseClient.mockReturnValue(client);
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+
+    act(() => {
+      client.auth.__emitAuthStateChange('TOKEN_REFRESH_FAILED', null);
+    });
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    expect(screen.queryByText('Lisa')).not.toBeInTheDocument();
+  });
+
+  it('explicit UITLOGGEN calls supabase.auth.signOut() and returns to the login screen', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    const client = fakeClientWithLisa();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: /uitloggen/i }));
+
+    expect(client.auth.signOut).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+  });
+
+  it('after explicit logout, Mission Hunt requires login again — no leftover session lets it skip straight back in', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    const client = fakeClientWithLisa();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    const { unmount } = render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /uitloggen/i }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    unmount();
+
+    // A fresh mount (e.g. navigating back into Mission Hunt) must not
+    // silently restore the old session — mockAuthState.session was cleared
+    // by the fake's signOut, exactly like a real supabase-js signOut clears
+    // the persisted localStorage session.
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    expect(screen.queryByText('Lisa')).not.toBeInTheDocument();
+  });
+
+  it('a malformed/expired session (getSession rejects) falls back cleanly to an error state, never a crash or an infinite loading spinner', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    const client = fakeClientWithLisa();
+    client.auth.getSession = () => Promise.reject(new Error('refresh_token_not_found'));
+    getSupabaseClient.mockReturnValue(client);
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   });
 });
 

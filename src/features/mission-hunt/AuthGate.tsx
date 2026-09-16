@@ -51,6 +51,10 @@ export function AuthGate() {
           {sending ? 'Versturen…' : 'Stuur inloglink'}
         </GoldButton>
       </form>
+
+      <p className="mt-6 text-center text-xs text-ink-muted">
+        Eerste keer op dit apparaat? Je ontvangt een inloglink per mail. Daarna onthouden we je login op dit apparaat.
+      </p>
     </div>
   );
 }
