@@ -69,13 +69,6 @@ jobs:
 
           echo "SUPABASE URL CONFIGURED: $([ -n "$URL" ] && echo yes || echo no) (raw length ${#RAW_URL}, trimmed length ${#URL})"
           echo "SUPABASE KEY CONFIGURED: $([ -n "$KEY" ] && echo yes || echo no) (raw length ${#RAW_KEY}, trimmed length ${#KEY})"
-          # TEMPORARY diagnostic: a hex dump doesn't contain the secret as a
-          # literal substring, so GitHub's log masking won't redact it, and
-          # it pinpoints invisible/non-ASCII characters (smart quotes,
-          # NBSP, zero-width space) that a plain length check can't. The
-          # project URL itself isn't sensitive — it ships to every browser
-          # — so this is safe either way. Remove once the mismatch is found.
-          echo "URL hex dump:"; printf '%s' "$URL" | od -An -tx1c
 
           MISSING=0
           if [ -z "$URL" ]; then
