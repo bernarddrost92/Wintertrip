@@ -17,6 +17,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Bound to the same "github-pages" environment the deploy job uses: if
+    # VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY were ever configured as
+    # environment secrets (rather than repository secrets), only a job bound
+    # to that environment can read them — this is what silently produced a
+    # Supabase-disabled production build in the past (run #30) despite the
+    # secrets existing. Harmless if they're repository secrets instead.
+    environment:
+      name: github-pages
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,12 +47,51 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Verify Supabase build config
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          # Presence/shape only — never echoes a secret value. A build that
+          # silently ships with Mission Hunt/League Check Intelligence
+          # disabled is worse than a build that fails loudly here.
+          if [ -n "$VITE_SUPABASE_URL" ]; then
+            echo "SUPABASE URL CONFIGURED: yes"
+          else
+            echo "SUPABASE URL CONFIGURED: no"
+          fi
+          if [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "SUPABASE KEY CONFIGURED: yes"
+          else
+            echo "SUPABASE KEY CONFIGURED: no"
+          fi
+
+          MISSING=0
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::error::VITE_SUPABASE_URL is not set for this build (repository or 'github-pages' environment secret)."
+            MISSING=1
+          elif ! printf '%s' "$VITE_SUPABASE_URL" | grep -qE '^https://[A-Za-z0-9-]+\.supabase\.co/?$'; then
+            echo "::warning::VITE_SUPABASE_URL is set but doesn't look like https://<ref>.supabase.co — double-check the value."
+          fi
+          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::VITE_SUPABASE_ANON_KEY is not set for this build (repository or 'github-pages' environment secret)."
+            MISSING=1
+          elif ! printf '%s' "$VITE_SUPABASE_ANON_KEY" | grep -qE '^(sb_publishable_|eyJ)'; then
+            echo "::warning::VITE_SUPABASE_ANON_KEY is set but doesn't match a known publishable/anon key prefix — double-check the value."
+          fi
+
+          if [ "$MISSING" -eq 1 ]; then
+            echo "::error::Supabase is not configured for this build. Failing rather than silently deploying Mission Hunt/League Check Intelligence disabled. See MISSION_HUNT_SETUP.md."
+            exit 1
+          fi
+
       - name: Build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
-          # Mission Hunt backend — see MISSION_HUNT_SETUP.md. Both optional:
-          # unset repo secrets simply build Mission Hunt in its "SETUP
-          # REQUIRED" state, same as a clean local checkout.
+          # Mission Hunt + League Check Intelligence backend — see
+          # MISSION_HUNT_SETUP.md. The preflight step above already failed
+          # the build if either is missing, so by this point both are known
+          # to be set.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build

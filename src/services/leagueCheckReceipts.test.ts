@@ -107,22 +107,35 @@ describe('fetchLeagueCheckReceiptStats — returns null instead of throwing when
     expect(getSupabaseClient).not.toHaveBeenCalled();
   });
 
-  it('a query error: returns null rather than throwing', async () => {
+  it('an RPC error: returns null rather than throwing', async () => {
     isSupabaseConfigured.mockReturnValue(true);
     getSupabaseClient.mockReturnValue({
-      from: () => ({ select: async () => ({ data: null, error: new Error('boom') }) }),
+      rpc: () => ({ single: async () => ({ data: null, error: new Error('boom') }) }),
     });
     const result = await fetchLeagueCheckReceiptStats();
     expect(result).toBeNull();
   });
 
-  it('a successful query: aggregates the returned rows', async () => {
+  it('a successful RPC call: maps the aggregate row, never fetches raw rows', async () => {
     isSupabaseConfigured.mockReturnValue(true);
-    getSupabaseClient.mockReturnValue({
-      from: () => ({ select: async () => ({ data: [row(6), row(3)], error: null }) }),
+    const rpc = vi.fn().mockReturnValue({
+      single: async () => ({
+        data: { receipt_count: 2, completed_checks: 9, max_checks: 12, approved_count: 1, open_count: 1, completion_percentage: 75 },
+        error: null,
+      }),
     });
+    getSupabaseClient.mockReturnValue({ rpc });
     const result = await fetchLeagueCheckReceiptStats();
-    expect(result).toEqual(computeLeagueCheckReceiptStats([row(6), row(3)]));
+    expect(rpc).toHaveBeenCalledWith('get_league_check_stats');
+    expect(result).toEqual({
+      totalReceipts: 2,
+      completedChecks: 9,
+      maxChecks: 12,
+      approvedCount: 1,
+      openCount: 1,
+      openChecks: 3,
+      completionPercentage: 75,
+    });
   });
 });
 

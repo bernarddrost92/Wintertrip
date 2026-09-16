@@ -1,8 +1,11 @@
 /**
  * League Check Intelligence — a pure quality/control indicator, never a
- * league score. Reads/writes the league_check_receipts table (see
- * supabase/migrations/0002_league_check_receipts.sql), the single source of
- * truth: no second local counter, no mock data.
+ * league score. Writes go straight to the league_check_receipts table;
+ * reads go through the get_league_check_stats() aggregate RPC (see
+ * supabase/migrations/0003_league_check_stats_rpc_and_profile_hardening.sql)
+ * — the table's raw rows have no SELECT policy at all, so this RPC is the
+ * only read path, and it is the single source of truth: no second local
+ * counter, no mock data.
  */
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabaseClient';
 import { LEAGUE_CHECK_ITEMS } from '../data/leagueCheckItems';
@@ -12,6 +15,17 @@ export const TOTAL_CHECKS_PER_RECEIPT = LEAGUE_CHECK_ITEMS.length;
 export interface LeagueCheckReceiptRow {
   checked_count: number;
   total_checks: number;
+}
+
+/** Shape returned by the get_league_check_stats() RPC — aggregate totals
+ * only, never created_by/id/timestamps. */
+interface LeagueCheckStatsRpcRow {
+  receipt_count: number;
+  completed_checks: number;
+  max_checks: number;
+  approved_count: number;
+  open_count: number;
+  completion_percentage: number;
 }
 
 export interface LeagueCheckReceiptStats {
@@ -42,20 +56,34 @@ export function computeLeagueCheckReceiptStats(rows: LeagueCheckReceiptRow[]): L
   return { totalReceipts, completedChecks, maxChecks, approvedCount, openCount, openChecks, completionPercentage };
 }
 
+function mapRpcRowToStats(row: LeagueCheckStatsRpcRow): LeagueCheckReceiptStats {
+  return {
+    totalReceipts: row.receipt_count,
+    completedChecks: row.completed_checks,
+    maxChecks: row.max_checks,
+    approvedCount: row.approved_count,
+    openCount: row.open_count,
+    openChecks: row.max_checks - row.completed_checks,
+    completionPercentage: row.completion_percentage,
+  };
+}
+
 /**
- * Team-wide read — deliberately allowed without a signed-in Supabase user
- * (see the migration's public SELECT policy): the Calculator's compact
- * strip must work for every visitor, not only Mission Hunt-authenticated
- * ones. Returns null when Supabase isn't configured or the read fails, so
- * the caller can render an "unavailable" state instead of a fabricated one.
+ * Team-wide read via the get_league_check_stats() RPC — deliberately
+ * grant-executable without a signed-in Supabase user (see the migration):
+ * the Calculator's compact strip must work for every visitor, not only
+ * Mission Hunt-authenticated ones. The RPC returns aggregates only, never
+ * raw rows. Returns null when Supabase isn't configured or the call fails,
+ * so the caller can render an "unavailable" state instead of a fabricated
+ * one.
  */
 export async function fetchLeagueCheckReceiptStats(): Promise<LeagueCheckReceiptStats | null> {
   if (!isSupabaseConfigured()) return null;
   try {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from('league_check_receipts').select('checked_count, total_checks');
+    const { data, error } = await supabase.rpc('get_league_check_stats').single<LeagueCheckStatsRpcRow>();
     if (error || !data) return null;
-    return computeLeagueCheckReceiptStats(data as LeagueCheckReceiptRow[]);
+    return mapRpcRowToStats(data);
   } catch {
     return null;
   }
