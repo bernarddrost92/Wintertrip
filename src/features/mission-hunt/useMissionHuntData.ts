@@ -96,6 +96,23 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
     refresh();
   }, [refresh]);
 
+  /** Any insert/update/delete on projects fires migration 0006's trigger,
+   * which may silently delete someone's placement_reviews row server-side
+   * (the current user's own, or — for a reassignment/import — a
+   * colleague's). Local state must re-sync after every such write, or
+   * ALLES KLOPT can keep showing GECONTROLEERD in the UI after the DB has
+   * already invalidated it. */
+  const refreshPlacementReviews = useCallback(async () => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.from('placement_reviews').select('*');
+      if (error || !data) return;
+      setState((prev) => ({ ...prev, placementReviews: (data as PlacementReviewRow[]).map(placementReviewRowToPlacementReview) }));
+    } catch {
+      // best-effort — a stale local review is corrected on the next full refresh() anyway.
+    }
+  }, []);
+
   function addPlacement(input: NewPlacementInput): Promise<WriteResult> {
     return safeCall(async () => {
       const supabase = getSupabaseClient();
@@ -103,6 +120,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
       const { data, error } = await supabase.from('projects').insert(insertRow).select().single();
       if (error || !data) return { ok: false, error: GENERIC_ERROR };
       setState((prev) => ({ ...prev, placements: [...prev.placements, placementRowToPlacement(data as PlacementRow)] }));
+      await refreshPlacementReviews();
       return { ok: true };
     });
   }
@@ -135,6 +153,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
         setState((prev) => ({ ...prev, placements: prev.placements.map((p) => (p.id === updated.id ? updated : p)) }));
       }
 
+      await refreshPlacementReviews();
       return { ok: true, newCount: preview.newRows.length, changedCount: preview.changedRows.length };
     });
   }
@@ -151,6 +170,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
       if (error || !data) return { ok: false, error: GENERIC_ERROR };
       const updated = placementRowToPlacement(data as PlacementRow);
       setState((prev) => ({ ...prev, placements: prev.placements.map((p) => (p.id === placementId ? updated : p)) }));
+      await refreshPlacementReviews();
       return { ok: true };
     });
   }
@@ -169,6 +189,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
       if (error || !data) return { ok: false, error: GENERIC_ERROR };
       const updated = placementRowToPlacement(data as PlacementRow);
       setState((prev) => ({ ...prev, placements: prev.placements.map((p) => (p.id === placementId ? updated : p)) }));
+      await refreshPlacementReviews();
       return { ok: true };
     });
   }
@@ -179,6 +200,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
       const { error } = await supabase.from('projects').delete().eq('id', placementId);
       if (error) return { ok: false, error: GENERIC_ERROR };
       setState((prev) => ({ ...prev, placements: prev.placements.filter((p) => p.id !== placementId) }));
+      await refreshPlacementReviews();
       return { ok: true };
     });
   }

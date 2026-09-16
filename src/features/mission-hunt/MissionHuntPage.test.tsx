@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MissionHuntPage } from './MissionHuntPage';
 
@@ -126,6 +127,89 @@ describe('MissionHuntPage — loading state renders', () => {
     render(<MissionHuntPage />);
 
     expect(screen.getByText(/authenticating agent/i)).toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches and clears the confirmation', () => {
+  it('the ALLES KLOPT banner disappears once the server-side trigger has invalidated it, without a full page reload', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+
+    const placementRow = {
+      id: 'pl-1',
+      owner_id: 'user-1',
+      owner_email: 'bernard.drost@maandag.com',
+      owner_display_name: 'Bernard',
+      professional_name: 'Test Professional',
+      client_name: 'Test Klant',
+      start_date: '2026-10-01',
+      end_date: '2026-12-31',
+      hours_per_week: 24,
+      monthly_vcdb: 10,
+      note: null,
+      fingerprint: 'fp-1',
+      created_at: '2026-09-01T00:00:00Z',
+      updated_at: '2026-09-01T00:00:00Z',
+    };
+    // Mutable — the fake DB's placement_reviews table. The mocked update()
+    // below simulates the real invalidation trigger by clearing this the
+    // instant the placement is edited, exactly like migration 0006 does.
+    const reviewsTable: unknown[] = [
+      { id: 'r-1', user_id: 'user-1', user_email: 'bernard.drost@maandag.com', verified_at: '2026-09-16T13:42:00Z', placement_count_at_verification: 1, created_at: 'x' },
+    ];
+
+    function from(table: string) {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data: { id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: 'x' }, error: null }) }),
+            then: (resolve: (v: unknown) => void) =>
+              resolve({ data: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: 'x' }], error: null }),
+          }),
+        };
+      }
+      if (table === 'projects') {
+        return {
+          select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [placementRow], error: null }) }),
+          update: (patch: Record<string, unknown>) => ({
+            eq: () => ({
+              select: () => ({
+                single: async () => {
+                  Object.assign(placementRow, patch);
+                  reviewsTable.length = 0; // the real trigger deletes Bernard's review row.
+                  return { data: { ...placementRow }, error: null };
+                },
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === 'team_members') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
+      if (table === 'placement_reviews') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [...reviewsTable], error: null }) }) };
+      throw new Error(`unexpected table ${table}`);
+    }
+
+    getSupabaseClient.mockReturnValue({
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: mockAuthState.session } }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      },
+      from,
+    });
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText(/gecontroleerd/i)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /alles klopt/i })).not.toBeInTheDocument();
+
+    await userEvent.setup().click(screen.getByText('Test Professional'));
+    const hoursField = await screen.findByLabelText(/uren per week/i);
+    await userEvent.setup().clear(hoursField);
+    await userEvent.setup().type(hoursField, '30');
+    await userEvent.setup().tab();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /alles klopt/i })).toBeInTheDocument());
+    expect(screen.queryByText(/gecontroleerd/i)).not.toBeInTheDocument();
   });
 });
 
