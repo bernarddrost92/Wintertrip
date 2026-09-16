@@ -124,6 +124,13 @@ export function MissionHuntAuthProvider({ children }: { children: ReactNode }) {
         options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
       });
       if (error) {
+        // A rate limit is never account-specific (it's a shared, project-wide
+        // email-sending quota) — saying so plainly can't be used to enumerate
+        // who has an account, unlike every other failure here, which still
+        // gets the deliberately generic message below.
+        if (error.code === 'over_email_send_rate_limit') {
+          return { ok: false, error: 'Even geduld: er zijn zojuist al veel inlogpogingen geweest. Probeer het over een paar minuten opnieuw.' };
+        }
         // Never surface Supabase's raw error text (can leak implementation
         // detail) — a calm, generic message either way, so the invite-only
         // nature of Mission Hunt isn't used to enumerate who has an account.
