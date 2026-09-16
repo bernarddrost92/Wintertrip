@@ -153,7 +153,7 @@ export default function App() {
                             <p className="px-4 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Loading project intelligence…</p>
                           }
                         >
-                          <MissionHuntPage onNavigateToCalculator={() => handleNavigate('calculator')} />
+                          <MissionHuntPage />
                         </Suspense>
                       </MissionHuntErrorBoundary>
                     )}

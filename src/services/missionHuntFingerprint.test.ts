@@ -1,36 +1,46 @@
 import { describe, expect, it } from 'vitest';
-import { buildProjectFingerprint } from './missionHuntFingerprint';
+import { buildPlacementFingerprint } from './missionHuntFingerprint';
 
-describe('buildProjectFingerprint', () => {
+describe('buildPlacementFingerprint', () => {
   it('is stable for identical inputs', () => {
-    const a = buildProjectFingerprint('owner-1', 'De Meerwaarde', 'Han', 'docent Nederlands');
-    const b = buildProjectFingerprint('owner-1', 'De Meerwaarde', 'Han', 'docent Nederlands');
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
     expect(a).toBe(b);
   });
 
-  it('is case- and whitespace-insensitive (a re-typed duplicate still matches)', () => {
-    const a = buildProjectFingerprint('owner-1', 'De Meerwaarde', 'Han', 'docent Nederlands');
-    const b = buildProjectFingerprint('owner-1', '  de meerwaarde  ', 'HAN', 'Docent   Nederlands');
+  it('is case- and whitespace-insensitive on email/professional/client (a re-typed duplicate still matches)', () => {
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('Bernard.Drost@Maandag.com', '  ryan dijkstra  ', 'GREIJDANUS', '2026-10-01', '2026-12-31');
     expect(a).toBe(b);
   });
 
-  it('treats a missing professional the same as an empty string', () => {
-    const a = buildProjectFingerprint('owner-1', 'Greijdanus', 'Ryan', null);
-    const b = buildProjectFingerprint('owner-1', 'Greijdanus', 'Ryan', undefined);
-    const c = buildProjectFingerprint('owner-1', 'Greijdanus', 'Ryan', '');
-    expect(a).toBe(b);
-    expect(b).toBe(c);
-  });
-
-  it('differs across owners for the same project/client/professional', () => {
-    const a = buildProjectFingerprint('owner-1', 'Greijdanus', 'Ryan', 'Economie');
-    const b = buildProjectFingerprint('owner-2', 'Greijdanus', 'Ryan', 'Economie');
+  it('differs across owner emails for the same professional/client/dates', () => {
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('lisa@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
     expect(a).not.toBe(b);
   });
 
-  it('differs when the professional differs (same project/client, different placement)', () => {
-    const a = buildProjectFingerprint('owner-1', 'Greijdanus', 'Ryan', 'Economie');
-    const b = buildProjectFingerprint('owner-1', 'Greijdanus', 'Ryan', 'Wiskunde');
+  it('differs when the professional differs', () => {
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('bernard.drost@maandag.com', 'Someone Else', 'Greijdanus', '2026-10-01', '2026-12-31');
+    expect(a).not.toBe(b);
+  });
+
+  it('differs when the client differs', () => {
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Andere Klant', '2026-10-01', '2026-12-31');
+    expect(a).not.toBe(b);
+  });
+
+  it('differs when the start date differs', () => {
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-11-01', '2026-12-31');
+    expect(a).not.toBe(b);
+  });
+
+  it('differs when the end date differs', () => {
+    const a = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2026-12-31');
+    const b = buildPlacementFingerprint('bernard.drost@maandag.com', 'Ryan Dijkstra', 'Greijdanus', '2026-10-01', '2027-01-15');
     expect(a).not.toBe(b);
   });
 });

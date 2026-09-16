@@ -1,33 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { completionPercent, filterProjectsByStatus, summarizeAgent, summarizeTeam, teamTotals } from './missionHuntAggregate';
-import type { MissionHuntProfile, MissionHuntProject, ProjectStatus } from '../types/missionHunt';
+import { buildAccountManagerSummaries, countOpportunities, teamCompletion } from './missionHuntAggregate';
+import type { MissionHuntPlacement, MissionHuntProfile, PlacementReview, TeamMember } from '../types/missionHunt';
 
-function profile(overrides: Partial<MissionHuntProfile> = {}): MissionHuntProfile {
+function placement(overrides: Partial<MissionHuntPlacement> = {}): MissionHuntPlacement {
   return {
-    id: 'p-1',
-    userId: 'user-1',
-    displayName: 'Bernard',
-    role: 'member',
-    active: true,
-    createdAt: '2026-09-01T00:00:00Z',
-    ...overrides,
-  };
-}
-
-function project(ownerId: string, status: ProjectStatus, overrides: Partial<MissionHuntProject> = {}): MissionHuntProject {
-  return {
-    id: `proj-${Math.random()}`,
-    ownerId,
-    projectName: 'Project X',
-    clientName: 'Client X',
-    professionalName: null,
-    startDate: null,
-    endDate: null,
-    hoursPerWeek: null,
-    monthlyVcdb: null,
+    id: `pl-${Math.random()}`,
+    ownerId: null,
+    ownerEmail: 'lisa@maandag.com',
+    ownerDisplayName: 'Lisa',
+    professionalName: 'Ryan Dijkstra',
+    clientName: 'Greijdanus',
+    startDate: '2026-06-01',
+    endDate: '2028-06-30', // grey by default (outside both windows)
+    hoursPerWeek: 24,
+    monthlyDb: 10,
     note: null,
-    status,
-    opportunityTypes: [],
     fingerprint: 'fp',
     createdAt: '2026-09-01T00:00:00Z',
     updatedAt: '2026-09-01T00:00:00Z',
@@ -35,76 +22,93 @@ function project(ownerId: string, status: ProjectStatus, overrides: Partial<Miss
   };
 }
 
-describe('completionPercent', () => {
-  it('is 100 for zero projects (nothing to review is complete review)', () => {
-    expect(completionPercent({ total: 0, opportunity: 0, investigate: 0, noAction: 0, unreviewed: 0 })).toBe(100);
-  });
+function profile(overrides: Partial<MissionHuntProfile> = {}): MissionHuntProfile {
+  return {
+    id: 'p-1',
+    userId: 'user-1',
+    displayName: 'Bernard',
+    emailNormalized: 'bernard.drost@maandag.com',
+    role: 'admin',
+    active: true,
+    createdAt: '2026-09-01T00:00:00Z',
+    ...overrides,
+  };
+}
 
-  it('rounds the reviewed fraction', () => {
-    expect(completionPercent({ total: 4, opportunity: 1, investigate: 1, noAction: 1, unreviewed: 1 })).toBe(75);
-  });
-
-  it('is 0 when everything is still unreviewed', () => {
-    expect(completionPercent({ total: 3, opportunity: 0, investigate: 0, noAction: 0, unreviewed: 3 })).toBe(0);
-  });
-});
-
-describe('summarizeAgent', () => {
-  it('counts only that agent\'s own projects, and flags completion exactly at zero unreviewed', () => {
-    const bernard = profile({ userId: 'user-1', displayName: 'Bernard' });
-    const projects = [
-      project('user-1', 'opportunity'),
-      project('user-1', 'investigate'),
-      project('user-2', 'unreviewed'), // a colleague's project — must not count for Bernard
+describe('countOpportunities', () => {
+  it('counts double placements in both verleng and timing, plus their own double bucket', () => {
+    const placements = [
+      placement({ startDate: '2026-10-01', endDate: '2026-12-31' }), // double
+      placement({ startDate: '2026-06-01', endDate: '2026-12-31' }), // verleng only
+      placement({ startDate: '2026-10-01', endDate: '2028-06-30' }), // timing only
+      placement({ startDate: '2026-06-01', endDate: '2028-06-30' }), // grey
     ];
-
-    const summary = summarizeAgent(bernard, projects);
-    expect(summary.counts.total).toBe(2);
-    expect(summary.counts.opportunity).toBe(1);
-    expect(summary.counts.investigate).toBe(1);
-    expect(summary.counts.unreviewed).toBe(0);
-    expect(summary.isComplete).toBe(true);
-    expect(summary.reviewPercent).toBe(100);
+    const counts = countOpportunities(placements);
+    expect(counts).toEqual({ total: 4, verleng: 2, timing: 2, double: 1, grey: 1 });
   });
 
-  it('is not complete while any project is unreviewed, even at a rounded 99%+', () => {
-    const jurgen = profile({ userId: 'user-2', displayName: 'Jurgen' });
-    const projects = Array.from({ length: 99 }, () => project('user-2', 'opportunity')).concat([project('user-2', 'unreviewed')]);
-    const summary = summarizeAgent(jurgen, projects);
-    expect(summary.reviewPercent).toBe(99);
-    expect(summary.isComplete).toBe(false);
+  it('is all-zero for an empty list except total', () => {
+    expect(countOpportunities([])).toEqual({ total: 0, verleng: 0, timing: 0, double: 0, grey: 0 });
   });
 });
 
-describe('summarizeTeam', () => {
-  it('produces one summary per profile, independent of project array order', () => {
-    const profiles = [profile({ userId: 'u1', displayName: 'Bernard' }), profile({ userId: 'u2', displayName: 'Jurgen' })];
-    const projects = [project('u2', 'opportunity'), project('u1', 'no_action')];
-    const summaries = summarizeTeam(profiles, projects);
+describe('buildAccountManagerSummaries', () => {
+  it('groups placements by normalized owner email, independent of ownerId being set', () => {
+    const placements = [
+      placement({ ownerId: 'user-1', ownerEmail: 'bernard.drost@maandag.com', ownerDisplayName: 'Bernard' }),
+      placement({ ownerId: null, ownerEmail: 'Bernard.Drost@Maandag.com', ownerDisplayName: 'Bernard' }),
+      placement({ ownerId: null, ownerEmail: 'lisa@maandag.com', ownerDisplayName: 'Lisa' }),
+    ];
+    const summaries = buildAccountManagerSummaries(placements, [], [], []);
     expect(summaries).toHaveLength(2);
-    expect(summaries[0].profile.displayName).toBe('Bernard');
-    expect(summaries[0].counts.noAction).toBe(1);
-    expect(summaries[1].profile.displayName).toBe('Jurgen');
-    expect(summaries[1].counts.opportunity).toBe(1);
+    const bernard = summaries.find((s) => s.emailNormalized === 'bernard.drost@maandag.com')!;
+    expect(bernard.placements).toHaveLength(2);
+  });
+
+  it('prefers a logged-in profile\'s display name over the placement-captured one, and flags hasLoggedIn', () => {
+    const placements = [placement({ ownerEmail: 'bernard.drost@maandag.com', ownerDisplayName: 'B. Drost (import)' })];
+    const profiles = [profile({ displayName: 'Bernard', emailNormalized: 'bernard.drost@maandag.com' })];
+    const [summary] = buildAccountManagerSummaries(placements, profiles, [], []);
+    expect(summary.displayName).toBe('Bernard');
+    expect(summary.hasLoggedIn).toBe(true);
+  });
+
+  it('falls back to the placement-captured display name when nobody has logged in yet', () => {
+    const placements = [placement({ ownerEmail: 'lisa@maandag.com', ownerDisplayName: 'Lisa' })];
+    const [summary] = buildAccountManagerSummaries(placements, [], [], []);
+    expect(summary.displayName).toBe('Lisa');
+    expect(summary.hasLoggedIn).toBe(false);
+  });
+
+  it('includes an active team_member with zero placements (roster readiness)', () => {
+    const teamMembers: TeamMember[] = [{ id: 't-1', displayName: 'Marco', emailNormalized: 'marco@maandag.com', active: true, createdAt: '2026-09-01T00:00:00Z' }];
+    const summaries = buildAccountManagerSummaries([], [], teamMembers, []);
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].displayName).toBe('Marco');
+    expect(summaries[0].placements).toHaveLength(0);
+  });
+
+  it('marks isVerified true only when a placement_review exists for that normalized email', () => {
+    const placements = [placement({ ownerEmail: 'bernard.drost@maandag.com' }), placement({ ownerEmail: 'lisa@maandag.com' })];
+    const reviews: PlacementReview[] = [
+      { id: 'r-1', userId: 'user-1', userEmail: 'Bernard.Drost@Maandag.com', verifiedAt: '2026-09-16T13:42:00Z', placementCountAtVerification: 1, createdAt: '2026-09-16T13:42:00Z' },
+    ];
+    const summaries = buildAccountManagerSummaries(placements, [], [], reviews);
+    const bernard = summaries.find((s) => s.emailNormalized === 'bernard.drost@maandag.com')!;
+    const lisa = summaries.find((s) => s.emailNormalized === 'lisa@maandag.com')!;
+    expect(bernard.isVerified).toBe(true);
+    expect(lisa.isVerified).toBe(false);
   });
 });
 
-describe('teamTotals', () => {
-  it('aggregates across every project regardless of owner', () => {
-    const projects = [project('u1', 'opportunity'), project('u2', 'opportunity'), project('u1', 'investigate'), project('u2', 'unreviewed')];
-    const totals = teamTotals(projects);
-    expect(totals).toEqual({ total: 4, opportunity: 2, investigate: 1, noAction: 0, unreviewed: 1 });
-  });
-});
-
-describe('filterProjectsByStatus', () => {
-  it('"all" returns every project unfiltered', () => {
-    const projects = [project('u1', 'opportunity'), project('u1', 'no_action')];
-    expect(filterProjectsByStatus(projects, 'all')).toHaveLength(2);
-  });
-
-  it('a specific status returns only matching projects', () => {
-    const projects = [project('u1', 'opportunity'), project('u1', 'no_action'), project('u1', 'opportunity')];
-    expect(filterProjectsByStatus(projects, 'opportunity')).toHaveLength(2);
+describe('teamCompletion', () => {
+  it('counts how many of the tracked accountmanagers are verified', () => {
+    const summaries = buildAccountManagerSummaries(
+      [placement({ ownerEmail: 'bernard.drost@maandag.com' }), placement({ ownerEmail: 'lisa@maandag.com' }), placement({ ownerEmail: 'marco@maandag.com' })],
+      [],
+      [],
+      [{ id: 'r-1', userId: 'u-1', userEmail: 'bernard.drost@maandag.com', verifiedAt: 'x', placementCountAtVerification: 1, createdAt: 'x' }],
+    );
+    expect(teamCompletion(summaries)).toEqual({ verifiedCount: 1, totalCount: 3 });
   });
 });

@@ -6,29 +6,27 @@ import { useMissionHuntAuth } from './missionHuntAuthContext';
 import { AuthGate } from './AuthGate';
 import { GoldButton } from '../../components/GoldButton';
 import { useMissionHuntData } from './useMissionHuntData';
-import { MyProjectsView } from './MyProjectsView';
-import { TeamDashboardView } from './TeamDashboardView';
-import { ProjectDetailDrawer } from './ProjectDetailDrawer';
-import { canEditProject } from '../../services/missionHuntPermissions';
-import type { ImportPreview } from '../../services/missionHuntImportPreview';
+import { MyPlacementsView } from './MyPlacementsView';
+import { FridayReviewView } from './FridayReviewView';
+import { TeamImportPanel } from './TeamImportPanel';
+import { PlacementDetailDrawer } from './PlacementDetailDrawer';
+import { canEditPlacement, isOwnPlacement } from '../../services/missionHuntPermissions';
+import type { TeamImportPreview } from '../../services/missionHuntImportPreview';
+import type { MissionHuntProfile } from '../../types/missionHunt';
 
-interface MissionHuntPageProps {
-  onNavigateToCalculator: () => void;
-}
+type Tab = 'my-placements' | 'team-import' | 'friday-review';
 
-type Tab = 'my-projects' | 'team-dashboard';
-
-export function MissionHuntPage({ onNavigateToCalculator }: MissionHuntPageProps) {
+export function MissionHuntPage() {
   if (!isSupabaseConfigured()) return <SetupRequiredNotice />;
 
   return (
     <MissionHuntAuthProvider>
-      <MissionHuntShell onNavigateToCalculator={onNavigateToCalculator} />
+      <MissionHuntShell />
     </MissionHuntAuthProvider>
   );
 }
 
-function MissionHuntShell({ onNavigateToCalculator }: MissionHuntPageProps) {
+function MissionHuntShell() {
   const { status, profile, errorMessage, signOut, retry } = useMissionHuntAuth();
 
   if (status === 'loading') {
@@ -57,28 +55,23 @@ function MissionHuntShell({ onNavigateToCalculator }: MissionHuntPageProps) {
     return <AuthGate />;
   }
 
-  return <MissionHuntDashboard profile={profile} onSignOut={signOut} onNavigateToCalculator={onNavigateToCalculator} />;
+  return <MissionHuntDashboard profile={profile} onSignOut={signOut} />;
 }
 
-function MissionHuntDashboard({
-  profile,
-  onSignOut,
-  onNavigateToCalculator,
-}: {
-  profile: NonNullable<ReturnType<typeof useMissionHuntAuth>['profile']>;
-  onSignOut: () => void;
-  onNavigateToCalculator: () => void;
-}) {
-  const data = useMissionHuntData(profile.userId);
-  const [tab, setTab] = useState<Tab>('my-projects');
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+function MissionHuntDashboard({ profile, onSignOut }: { profile: MissionHuntProfile; onSignOut: () => void }) {
+  const data = useMissionHuntData(profile);
+  const isAdmin = profile.role === 'admin';
+  const [tab, setTab] = useState<Tab>('my-placements');
+  const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
 
-  const ownProjects = data.projects.filter((p) => p.ownerId === profile.userId);
-  const selectedProject = selectedProjectId ? data.projects.find((p) => p.id === selectedProjectId) ?? null : null;
-  const selectedProjectOwner = selectedProject ? data.profiles.find((p) => p.userId === selectedProject.ownerId) : null;
+  const myPlacements = data.placements.filter((p) => isOwnPlacement(p, profile.userId, profile.emailNormalized));
+  const myReview = data.placementReviews.find((r) => r.userId === profile.userId) ?? null;
 
-  async function handleImport(preview: ImportPreview) {
-    return data.importProjects(preview.newRows);
+  const selectedPlacement = selectedPlacementId ? data.placements.find((p) => p.id === selectedPlacementId) ?? null : null;
+  const selectedEditable = selectedPlacement ? canEditPlacement(selectedPlacement, profile.userId, profile.emailNormalized, profile.role) : false;
+
+  async function handleImport(preview: TeamImportPreview) {
+    return data.importTeamPlacements(preview);
   }
 
   return (
@@ -93,10 +86,16 @@ function MissionHuntDashboard({
         </button>
       </div>
 
-      <div className="mt-6 flex gap-1 border-b border-white/10">
-        <TabButton label="My Projects" active={tab === 'my-projects'} onClick={() => setTab('my-projects')} />
-        <TabButton label="Team Dashboard" active={tab === 'team-dashboard'} onClick={() => setTab('team-dashboard')} />
-      </div>
+      {/* Admin gets tabs (My Placements / Team Placement Import / Friday
+          Review); a normal member never sees a tab bar at all — they land
+          directly on My Placements and stay there. */}
+      {isAdmin && (
+        <div className="mt-6 flex gap-1 border-b border-white/10">
+          <TabButton label="My Placements" active={tab === 'my-placements'} onClick={() => setTab('my-placements')} />
+          <TabButton label="Team Placement Import" active={tab === 'team-import'} onClick={() => setTab('team-import')} />
+          <TabButton label="Friday Review" active={tab === 'friday-review'} onClick={() => setTab('friday-review')} />
+        </div>
+      )}
 
       {data.loading && <p className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Loading project intelligence…</p>}
       {data.error && (
@@ -110,45 +109,51 @@ function MissionHuntDashboard({
 
       {!data.loading && !data.error && (
         <div className="mt-6">
-          {tab === 'my-projects' ? (
-            <MyProjectsView
-              profile={profile}
-              projects={ownProjects}
-              existingFingerprints={data.existingFingerprints()}
+          {(!isAdmin || tab === 'my-placements') && (
+            <MyPlacementsView
+              displayName={profile.displayName}
+              placements={myPlacements}
+              isVerified={myReview !== null}
+              verifiedAt={myReview?.verifiedAt ?? null}
               onAdd={async (input) => {
-                await data.addProject(input);
+                await data.addPlacement(input);
               }}
-              onImport={handleImport}
-              onStatusChange={data.updateProjectStatus}
-              onOpenProject={setSelectedProjectId}
+              onOpenPlacement={setSelectedPlacementId}
+              onVerify={async () => {
+                await data.submitVerification(myPlacements.length);
+              }}
             />
-          ) : (
-            <TeamDashboardView
+          )}
+          {isAdmin && tab === 'team-import' && (
+            <TeamImportPanel
+              existingPlacements={data.placements.map((p) => ({ id: p.id, fingerprint: p.fingerprint, ownerDisplayName: p.ownerDisplayName, hoursPerWeek: p.hoursPerWeek, monthlyDb: p.monthlyDb }))}
+              onImport={handleImport}
+            />
+          )}
+          {isAdmin && tab === 'friday-review' && (
+            <FridayReviewView
+              placements={data.placements}
               profiles={data.profiles}
-              projects={data.projects}
-              currentUserId={profile.userId}
-              isAdmin={profile.role === 'admin'}
-              onStatusChange={data.updateProjectStatus}
-              onOpenProject={setSelectedProjectId}
+              teamMembers={data.teamMembers}
+              placementReviews={data.placementReviews}
+              onOpenPlacement={setSelectedPlacementId}
             />
           )}
         </div>
       )}
 
-      {selectedProject && (
-        <ProjectDetailDrawer
-          project={selectedProject}
-          ownerName={selectedProjectOwner?.displayName ?? '—'}
-          editable={canEditProject(selectedProject, profile.userId, profile.role)}
-          onClose={() => setSelectedProjectId(null)}
-          onUpdateField={(field, value) => data.updateProjectFields(selectedProject.id, { [field]: value })}
-          onUpdateStatus={(status) => data.updateProjectStatus(selectedProject.id, status)}
-          onUpdateOpportunityTypes={(types) => data.updateProjectOpportunityTypes(selectedProject.id, types)}
+      {selectedPlacement && (
+        <PlacementDetailDrawer
+          placement={selectedPlacement}
+          editable={selectedEditable}
+          canReassign={isAdmin}
+          onClose={() => setSelectedPlacementId(null)}
+          onUpdateField={(field, value) => data.updatePlacementField(selectedPlacement.id, field, value)}
+          onReassign={(ownerEmail, ownerDisplayName) => data.reassignPlacement(selectedPlacement.id, ownerEmail, ownerDisplayName)}
           onDelete={() => {
-            data.deleteProject(selectedProject.id);
-            setSelectedProjectId(null);
+            data.deletePlacement(selectedPlacement.id);
+            setSelectedPlacementId(null);
           }}
-          onCalculateOpportunity={onNavigateToCalculator}
         />
       )}
     </div>

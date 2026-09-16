@@ -16,11 +16,11 @@ vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseCl
  * actually calls — enough to drive MissionHuntAuthProvider/useMissionHuntData
  * through a real render without a live Supabase project. */
 function buildFakeSupabaseClient(
-  tables: { profiles: unknown[]; projects: unknown[] },
+  tables: { profiles: unknown[]; projects: unknown[]; team_members?: unknown[]; placement_reviews?: unknown[] },
   options: { getSessionNeverResolves?: boolean; profileFetchThrows?: boolean } = {},
 ) {
-  function from(table: 'profiles' | 'projects') {
-    const rows = tables[table];
+  function from(table: 'profiles' | 'projects' | 'team_members' | 'placement_reviews') {
+    const rows = tables[table] ?? [];
     const builder = {
       select: () => builder,
       eq: (_col: string, _value: string) => builder,
@@ -53,7 +53,7 @@ describe('MissionHuntPage — setup required', () => {
 
   it('shows SETUP REQUIRED and never attempts to connect when Supabase env vars are unset', () => {
     isSupabaseConfigured.mockReturnValue(false);
-    render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+    render(<MissionHuntPage />);
 
     expect(screen.getByText(/setup required/i)).toBeInTheDocument();
     expect(getSupabaseClient).not.toHaveBeenCalled();
@@ -67,31 +67,53 @@ describe('MissionHuntPage — auth guard', () => {
     getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }));
   });
 
-  it('an unauthenticated visitor sees the login gate, never Mission Hunt project data', async () => {
-    render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+  it('an unauthenticated visitor sees the login gate, never Mission Hunt placement data', async () => {
+    render(<MissionHuntPage />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    expect(screen.queryByText(/my projects/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/team mission hunt/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/voor vrijdag/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/team check/i)).not.toBeInTheDocument();
   });
 });
 
-describe('MissionHuntPage — signed-in flow', () => {
-  it('a signed-in, provisioned user reaches My Projects with their own profile', async () => {
+describe('MissionHuntPage — signed-in flow, member', () => {
+  it('a signed-in member lands directly on My Placements with no tab bar at all', async () => {
     isSupabaseConfigured.mockReturnValue(true);
     mockAuthState.session = { user: { id: 'user-1' } };
     getSupabaseClient.mockReturnValue(
       buildFakeSupabaseClient({
-        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
+        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Lisa', email_normalized: 'lisa@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
         projects: [],
       }),
     );
 
-    render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+    expect(screen.getByText(/voor vrijdag/i)).toBeInTheDocument();
+    // A normal member never sees an admin/team tab bar at all.
+    expect(screen.queryByRole('button', { name: /team placement import/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /friday review/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — signed-in flow, admin', () => {
+  it('Bernard (admin) sees all three tabs: My Placements, Team Placement Import, Friday Review', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = { user: { id: 'user-1' } };
+    getSupabaseClient.mockReturnValue(
+      buildFakeSupabaseClient({
+        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: '2026-09-01T00:00:00Z' }],
+        projects: [],
+      }),
+    );
+
+    render(<MissionHuntPage />);
 
     await waitFor(() => expect(screen.getByText('Bernard')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /my projects/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /team dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^my placements$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /team placement import/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /friday review/i })).toBeInTheDocument();
   });
 });
 
@@ -101,7 +123,7 @@ describe('MissionHuntPage — loading state renders', () => {
     mockAuthState.session = null;
     getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }, { getSessionNeverResolves: true }));
 
-    render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+    render(<MissionHuntPage />);
 
     expect(screen.getByText(/authenticating agent/i)).toBeInTheDocument();
   });
@@ -113,7 +135,7 @@ describe('MissionHuntPage — profile fetch error renders a safe error state', (
     mockAuthState.session = { user: { id: 'user-1' } };
     getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }, { profileFetchThrows: true }));
 
-    const { container } = render(<MissionHuntPage onNavigateToCalculator={vi.fn()} />);
+    const { container } = render(<MissionHuntPage />);
 
     await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();

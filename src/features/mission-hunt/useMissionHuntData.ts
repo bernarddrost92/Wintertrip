@@ -1,26 +1,45 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseClient } from '../../lib/supabaseClient';
-import { buildProjectFingerprint } from '../../services/missionHuntFingerprint';
+import { normalizeEmail } from '../../utils/normalizeEmail';
 import {
-  newProjectToInsertRow,
+  newPlacementToInsertRow,
+  placementReviewRowToPlacementReview,
+  placementRowToPlacement,
   profileRowToProfile,
-  projectRowToProject,
+  teamImportRowToInsertRow,
+  teamMemberRowToTeamMember,
+  type PlacementRow,
+  type PlacementReviewRow,
   type ProfileRow,
-  type ProjectRow,
+  type TeamMemberRow,
 } from '../../services/missionHuntMapping';
-import type { MissionHuntProfile, MissionHuntProject, NewProjectInput, OpportunityType, ProjectStatus } from '../../types/missionHunt';
+import { countOpportunities } from '../../services/missionHuntAggregate';
+import type { TeamImportPreview } from '../../services/missionHuntImportPreview';
+import type { MissionHuntPlacement, MissionHuntProfile, NewPlacementInput, PlacementFieldUpdate, PlacementReview, TeamMember } from '../../types/missionHunt';
 
 interface MissionHuntDataState {
   loading: boolean;
   error: string | null;
   profiles: MissionHuntProfile[];
-  projects: MissionHuntProject[];
+  placements: MissionHuntPlacement[];
+  teamMembers: TeamMember[];
+  placementReviews: PlacementReview[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type WriteResult<T = {}> = ({ ok: true } & T) | { ok: false; error: string };
 
 const GENERIC_ERROR = 'Er ging iets mis. Probeer het opnieuw.';
+
+const FIELD_TO_COLUMN: Record<keyof PlacementFieldUpdate, string> = {
+  professionalName: 'professional_name',
+  clientName: 'client_name',
+  startDate: 'start_date',
+  endDate: 'end_date',
+  hoursPerWeek: 'hours_per_week',
+  monthlyDb: 'monthly_vcdb',
+  note: 'note',
+};
 
 /** Every write below goes through this — a genuinely thrown/rejected
  * Supabase call (network down, unexpected shape) is caught here exactly
@@ -35,22 +54,27 @@ async function safeCall<T>(fn: () => Promise<WriteResult<T>>): Promise<WriteResu
 }
 
 /**
- * Owns every read/write Mission Hunt makes against Supabase. RLS is the real
- * security boundary (see the migration) — this hook just gives the UI a
- * plain, typed surface on top of it and keeps local state in sync after
- * each write, so nothing here needs a full page reload to see its own
- * change.
+ * Owns every read/write Mission Hunt makes against Supabase. RLS is the
+ * real security boundary (see migration 0006) — this hook just gives the
+ * UI a plain, typed surface on top of it and keeps local state in sync
+ * after each write, so nothing here needs a full page reload to see its
+ * own change.
  */
-export function useMissionHuntData(currentUserId: string) {
-  const [state, setState] = useState<MissionHuntDataState>({ loading: true, error: null, profiles: [], projects: [] });
+export function useMissionHuntData(profile: MissionHuntProfile) {
+  const [state, setState] = useState<MissionHuntDataState>({ loading: true, error: null, profiles: [], placements: [], teamMembers: [], placementReviews: [] });
 
   const refresh = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const supabase = getSupabaseClient();
-      const [profilesRes, projectsRes] = await Promise.all([supabase.from('profiles').select('*'), supabase.from('projects').select('*')]);
+      const [profilesRes, placementsRes, teamMembersRes, reviewsRes] = await Promise.all([
+        supabase.from('profiles').select('*'),
+        supabase.from('projects').select('*'),
+        supabase.from('team_members').select('*'),
+        supabase.from('placement_reviews').select('*'),
+      ]);
 
-      if (profilesRes.error || projectsRes.error) {
+      if (profilesRes.error || placementsRes.error || teamMembersRes.error || reviewsRes.error) {
         setState((prev) => ({ ...prev, loading: false, error: GENERIC_ERROR }));
         return;
       }
@@ -59,7 +83,9 @@ export function useMissionHuntData(currentUserId: string) {
         loading: false,
         error: null,
         profiles: (profilesRes.data as ProfileRow[]).map(profileRowToProfile),
-        projects: (projectsRes.data as ProjectRow[]).map(projectRowToProject),
+        placements: (placementsRes.data as PlacementRow[]).map(placementRowToPlacement),
+        teamMembers: (teamMembersRes.data as TeamMemberRow[]).map(teamMemberRowToTeamMember),
+        placementReviews: (reviewsRes.data as PlacementReviewRow[]).map(placementReviewRowToPlacementReview),
       });
     } catch {
       setState((prev) => ({ ...prev, loading: false, error: GENERIC_ERROR }));
@@ -70,88 +96,111 @@ export function useMissionHuntData(currentUserId: string) {
     refresh();
   }, [refresh]);
 
-  const existingFingerprints = useCallback(() => new Set(state.projects.filter((p) => p.ownerId === currentUserId).map((p) => p.fingerprint)), [
-    state.projects,
-    currentUserId,
-  ]);
-
-  function addProject(input: NewProjectInput): Promise<WriteResult> {
+  function addPlacement(input: NewPlacementInput): Promise<WriteResult> {
     return safeCall(async () => {
-      const fingerprint = buildProjectFingerprint(currentUserId, input.projectName, input.clientName, input.professionalName);
       const supabase = getSupabaseClient();
-      const { data, error } = await supabase.from('projects').insert(newProjectToInsertRow(currentUserId, input, fingerprint)).select().single();
+      const insertRow = newPlacementToInsertRow(profile.userId, profile.emailNormalized, profile.displayName, input);
+      const { data, error } = await supabase.from('projects').insert(insertRow).select().single();
       if (error || !data) return { ok: false, error: GENERIC_ERROR };
-      setState((prev) => ({ ...prev, projects: [...prev.projects, projectRowToProject(data as ProjectRow)] }));
+      setState((prev) => ({ ...prev, placements: [...prev.placements, placementRowToPlacement(data as PlacementRow)] }));
       return { ok: true };
     });
   }
 
-  /** Bulk-imports rows already filtered down to "new" by the caller (see
-   * missionHuntImportPreview.ts) — duplicates are never sent here at all,
-   * rather than relying only on the database's unique constraint to reject
-   * them after the fact. */
-  function importProjects(rows: { input: NewProjectInput; fingerprint: string }[]): Promise<WriteResult<{ count: number }>> {
-    return safeCall(async () => {
-      if (rows.length === 0) return { ok: true, count: 0 };
+  /** Writes only the NEW and CHANGED rows a Team Placement Import preview
+   * classified — UNCHANGED and ERROR rows are never sent, so an unaffected
+   * owner's ALLES KLOPT confirmation is never touched (see migration
+   * 0006's invalidation trigger). */
+  function importTeamPlacements(preview: TeamImportPreview): Promise<WriteResult<{ newCount: number; changedCount: number }>> {
+    return safeCall<{ newCount: number; changedCount: number }>(async () => {
       const supabase = getSupabaseClient();
-      const insertRows = rows.map(({ input, fingerprint }) => newProjectToInsertRow(currentUserId, input, fingerprint));
-      const { data, error } = await supabase.from('projects').insert(insertRows).select();
-      if (error || !data) return { ok: false, error: GENERIC_ERROR };
-      const inserted = (data as ProjectRow[]).map(projectRowToProject);
-      setState((prev) => ({ ...prev, projects: [...prev.projects, ...inserted] }));
-      return { ok: true, count: inserted.length };
+
+      if (preview.newRows.length > 0) {
+        const insertRows = preview.newRows.map(({ row, fingerprint }) => teamImportRowToInsertRow(row, fingerprint));
+        const { data, error } = await supabase.from('projects').insert(insertRows).select();
+        if (error || !data) return { ok: false, error: GENERIC_ERROR };
+        const inserted = (data as PlacementRow[]).map(placementRowToPlacement);
+        setState((prev) => ({ ...prev, placements: [...prev.placements, ...inserted] }));
+      }
+
+      for (const changed of preview.changedRows) {
+        const { data, error } = await supabase
+          .from('projects')
+          .update({ owner_display_name: changed.row.ownerDisplayName, hours_per_week: changed.row.hoursPerWeek, monthly_vcdb: changed.row.monthlyDb })
+          .eq('id', changed.existingId)
+          .select()
+          .single();
+        if (error || !data) return { ok: false, error: GENERIC_ERROR };
+        const updated = placementRowToPlacement(data as PlacementRow);
+        setState((prev) => ({ ...prev, placements: prev.placements.map((p) => (p.id === updated.id ? updated : p)) }));
+      }
+
+      return { ok: true, newCount: preview.newRows.length, changedCount: preview.changedRows.length };
     });
   }
 
-  function updateProjectStatus(projectId: string, status: ProjectStatus): Promise<WriteResult> {
+  function updatePlacementField(placementId: string, field: keyof PlacementFieldUpdate, value: string | number | null): Promise<WriteResult> {
     return safeCall(async () => {
       const supabase = getSupabaseClient();
-      const { data, error } = await supabase.from('projects').update({ status }).eq('id', projectId).select().single();
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ [FIELD_TO_COLUMN[field]]: value })
+        .eq('id', placementId)
+        .select()
+        .single();
       if (error || !data) return { ok: false, error: GENERIC_ERROR };
-      const updated = projectRowToProject(data as ProjectRow);
-      setState((prev) => ({ ...prev, projects: prev.projects.map((p) => (p.id === projectId ? updated : p)) }));
+      const updated = placementRowToPlacement(data as PlacementRow);
+      setState((prev) => ({ ...prev, placements: prev.placements.map((p) => (p.id === placementId ? updated : p)) }));
       return { ok: true };
     });
   }
 
-  function updateProjectOpportunityTypes(projectId: string, opportunityTypes: OpportunityType[]): Promise<WriteResult> {
+  /** Admin-only: reassigning always clears owner_id — the new owner claims
+   * it themselves the next time they touch it (see the RLS policy). */
+  function reassignPlacement(placementId: string, ownerEmail: string, ownerDisplayName: string): Promise<WriteResult> {
     return safeCall(async () => {
       const supabase = getSupabaseClient();
-      const { data, error } = await supabase.from('projects').update({ opportunity_types: opportunityTypes }).eq('id', projectId).select().single();
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ owner_id: null, owner_email: normalizeEmail(ownerEmail), owner_display_name: ownerDisplayName || null })
+        .eq('id', placementId)
+        .select()
+        .single();
       if (error || !data) return { ok: false, error: GENERIC_ERROR };
-      const updated = projectRowToProject(data as ProjectRow);
-      setState((prev) => ({ ...prev, projects: prev.projects.map((p) => (p.id === projectId ? updated : p)) }));
+      const updated = placementRowToPlacement(data as PlacementRow);
+      setState((prev) => ({ ...prev, placements: prev.placements.map((p) => (p.id === placementId ? updated : p)) }));
       return { ok: true };
     });
   }
 
-  function updateProjectFields(projectId: string, fields: Partial<NewProjectInput>): Promise<WriteResult> {
+  function deletePlacement(placementId: string): Promise<WriteResult> {
     return safeCall(async () => {
       const supabase = getSupabaseClient();
-      const patch: Record<string, unknown> = {};
-      if (fields.projectName !== undefined) patch.project_name = fields.projectName;
-      if (fields.clientName !== undefined) patch.client_name = fields.clientName;
-      if (fields.professionalName !== undefined) patch.professional_name = fields.professionalName;
-      if (fields.startDate !== undefined) patch.start_date = fields.startDate;
-      if (fields.endDate !== undefined) patch.end_date = fields.endDate;
-      if (fields.hoursPerWeek !== undefined) patch.hours_per_week = fields.hoursPerWeek;
-      if (fields.monthlyVcdb !== undefined) patch.monthly_vcdb = fields.monthlyVcdb;
-      if (fields.note !== undefined) patch.note = fields.note;
-
-      const { data, error } = await supabase.from('projects').update(patch).eq('id', projectId).select().single();
-      if (error || !data) return { ok: false, error: GENERIC_ERROR };
-      const updated = projectRowToProject(data as ProjectRow);
-      setState((prev) => ({ ...prev, projects: prev.projects.map((p) => (p.id === projectId ? updated : p)) }));
-      return { ok: true };
-    });
-  }
-
-  function deleteProject(projectId: string): Promise<WriteResult> {
-    return safeCall(async () => {
-      const supabase = getSupabaseClient();
-      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      const { error } = await supabase.from('projects').delete().eq('id', placementId);
       if (error) return { ok: false, error: GENERIC_ERROR };
-      setState((prev) => ({ ...prev, projects: prev.projects.filter((p) => p.id !== projectId) }));
+      setState((prev) => ({ ...prev, placements: prev.placements.filter((p) => p.id !== placementId) }));
+      return { ok: true };
+    });
+  }
+
+  /** ALLES KLOPT — upserts by user_id (not id, which is always freshly
+   * random) so re-confirming updates the same row rather than piling up
+   * duplicates; the unique(user_id) constraint is exactly what onConflict
+   * targets here. */
+  function submitVerification(myPlacementCount: number): Promise<WriteResult> {
+    return safeCall(async () => {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from('placement_reviews')
+        .upsert(
+          { user_id: profile.userId, user_email: profile.emailNormalized, verified_at: new Date().toISOString(), placement_count_at_verification: myPlacementCount },
+          { onConflict: 'user_id' },
+        )
+        .select()
+        .single();
+      if (error || !data) return { ok: false, error: GENERIC_ERROR };
+      const updated = placementReviewRowToPlacementReview(data as PlacementReviewRow);
+      setState((prev) => ({ ...prev, placementReviews: [...prev.placementReviews.filter((r) => r.userId !== updated.userId), updated] }));
       return { ok: true };
     });
   }
@@ -159,12 +208,12 @@ export function useMissionHuntData(currentUserId: string) {
   return {
     ...state,
     refresh,
-    existingFingerprints,
-    addProject,
-    importProjects,
-    updateProjectStatus,
-    updateProjectOpportunityTypes,
-    updateProjectFields,
-    deleteProject,
+    addPlacement,
+    importTeamPlacements,
+    updatePlacementField,
+    reassignPlacement,
+    deletePlacement,
+    submitVerification,
+    countOpportunities,
   };
 }

@@ -1,31 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { filterProjectsByStatus } from '../../services/missionHuntAggregate';
-import { ProjectRow } from './ProjectRow';
-import { StatusFilterBar } from './StatusFilterBar';
-import type { AgentSummary } from '../../services/missionHuntAggregate';
-import type { MissionHuntProject, ProjectStatus } from '../../types/missionHunt';
+import { classifyPlacement } from '../../services/missionHuntClassification';
+import { placementMatchesFilter, type PlacementFilter } from '../../services/missionHuntOpportunity';
+import { PlacementRow } from './PlacementRow';
+import { PlacementFilterBar } from './PlacementFilterBar';
+import type { AccountManagerSummary } from '../../services/missionHuntAggregate';
 
-interface AgentDrawerProps {
-  summary: AgentSummary;
-  ownProjects: MissionHuntProject[];
-  editable: boolean;
-  initialFilter?: ProjectStatus | 'all';
+interface AccountManagerDrawerProps {
+  summary: AccountManagerSummary;
+  initialFilter?: PlacementFilter;
   onClose: () => void;
-  onStatusChange: (projectId: string, status: ProjectStatus) => void;
-  onOpenProject: (projectId: string) => void;
+  onOpenPlacement: (placementId: string) => void;
   onNext?: () => void;
   onPrevious?: () => void;
 }
 
 /**
- * Only reachable by clicking a person on the Team Dashboard — this is where
- * that person's actual project list lives. Next/Previous lets the Friday
- * meeting move person to person without closing and reopening (spec section
- * 26), and the status filter starts at ALL every time it opens fresh.
+ * Only reachable by clicking a person on Friday Review — this is where
+ * that person's actual placement list lives. Next/Previous lets the
+ * Friday meeting move person to person without closing and reopening.
  */
-export function AgentDrawer({ summary, ownProjects, editable, initialFilter = 'all', onClose, onStatusChange, onOpenProject, onNext, onPrevious }: AgentDrawerProps) {
-  const [filter, setFilter] = useState<ProjectStatus | 'all'>(initialFilter);
+export function AccountManagerDrawer({ summary, initialFilter = 'all-opportunities', onClose, onOpenPlacement, onNext, onPrevious }: AccountManagerDrawerProps) {
+  const [filter, setFilter] = useState<PlacementFilter>(initialFilter);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -44,13 +40,13 @@ export function AgentDrawer({ summary, ownProjects, editable, initialFilter = 'a
     if (event.target === event.currentTarget) onClose();
   }
 
-  const projects = filterProjectsByStatus(ownProjects, filter);
+  const placements = summary.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate), filter));
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Projecten van ${summary.profile.displayName}`}
+      aria-label={`Plaatsingen van ${summary.displayName}`}
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-mission-void/92 px-3 py-6 backdrop-blur-sm sm:items-center sm:px-6"
       onClick={handleBackdropClick}
     >
@@ -64,9 +60,9 @@ export function AgentDrawer({ summary, ownProjects, editable, initialFilter = 'a
             )}
             <div className="min-w-0">
               <p className="label-classified text-gold/70">Team Zwolle</p>
-              <p className="truncate font-display text-lg font-bold uppercase tracking-wide text-ink">{summary.profile.displayName}</p>
+              <p className="truncate font-display text-lg font-bold uppercase tracking-wide text-ink">{summary.displayName}</p>
               <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-muted">
-                {summary.counts.total} PROJECTS · {summary.reviewPercent}% REVIEWED
+                {summary.counts.total} PLAATSINGEN · {summary.isVerified ? 'GECONTROLEERD' : 'NOG CONTROLEREN'}
               </p>
             </div>
             {onNext && (
@@ -87,16 +83,14 @@ export function AgentDrawer({ summary, ownProjects, editable, initialFilter = 'a
         </div>
 
         <div className="border-b border-white/8 px-4 py-3 sm:px-6">
-          <StatusFilterBar value={filter} onChange={setFilter} />
+          <PlacementFilterBar value={filter} onChange={setFilter} />
         </div>
 
         <div className="overflow-y-auto px-4 py-2 sm:px-6">
-          {projects.length === 0 ? (
-            <p className="py-6 text-center text-sm text-ink-muted">Geen projecten met deze status.</p>
+          {placements.length === 0 ? (
+            <p className="py-6 text-center text-sm text-ink-muted">Geen plaatsingen met deze kans.</p>
           ) : (
-            projects.map((project) => (
-              <ProjectRow key={project.id} project={project} editable={editable} onStatusChange={(status) => onStatusChange(project.id, status)} onOpen={() => onOpenProject(project.id)} />
-            ))
+            placements.map((placement) => <PlacementRow key={placement.id} placement={placement} onOpen={() => onOpenPlacement(placement.id)} />)
           )}
         </div>
       </div>

@@ -1,61 +1,94 @@
-import type { MissionHuntProfile, MissionHuntProject, ProjectStatus } from '../types/missionHunt';
+import { normalizeEmail } from '../utils/normalizeEmail';
+import { classifyPlacement } from './missionHuntClassification';
+import type { MissionHuntPlacement, MissionHuntProfile, PlacementReview, TeamMember } from '../types/missionHunt';
 
-export interface StatusCounts {
+export interface OpportunityCounts {
   total: number;
-  opportunity: number;
-  investigate: number;
-  noAction: number;
-  unreviewed: number;
+  /** VERLENGKANS — includes placements that are also DOUBLE. */
+  verleng: number;
+  /** TIMINGKANS — includes placements that are also DOUBLE. */
+  timing: number;
+  double: number;
+  grey: number;
 }
 
-function countByStatus(projects: MissionHuntProject[]): StatusCounts {
-  const counts: StatusCounts = { total: projects.length, opportunity: 0, investigate: 0, noAction: 0, unreviewed: 0 };
-  for (const project of projects) {
-    if (project.status === 'opportunity') counts.opportunity += 1;
-    else if (project.status === 'investigate') counts.investigate += 1;
-    else if (project.status === 'no_action') counts.noAction += 1;
-    else counts.unreviewed += 1;
+export function countOpportunities(placements: readonly MissionHuntPlacement[]): OpportunityCounts {
+  const counts: OpportunityCounts = { total: placements.length, verleng: 0, timing: 0, double: 0, grey: 0 };
+  for (const placement of placements) {
+    const classification = classifyPlacement(placement.startDate, placement.endDate);
+    if (classification.isExtension) counts.verleng += 1;
+    if (classification.isTiming) counts.timing += 1;
+    if (classification.isDouble) counts.double += 1;
+    if (classification.isGrey) counts.grey += 1;
   }
   return counts;
 }
 
-/** 100 for a person/team with zero projects — nothing to review is complete
- * review, not a division-by-zero placeholder. */
-export function completionPercent(counts: StatusCounts): number {
-  if (counts.total === 0) return 100;
-  const reviewed = counts.total - counts.unreviewed;
-  return Math.round((reviewed / counts.total) * 100);
+export interface AccountManagerSummary {
+  emailNormalized: string;
+  displayName: string;
+  /** A provisioned profile exists for this email — they have signed in at
+   * least once. Drives Friday Review's "not yet logged in" status. */
+  hasLoggedIn: boolean;
+  placements: MissionHuntPlacement[];
+  counts: OpportunityCounts;
+  /** A current (never stale — the DB trigger deletes it the instant the
+   * underlying placement set changes) ALLES KLOPT confirmation exists. */
+  isVerified: boolean;
 }
 
-export interface AgentSummary {
-  profile: MissionHuntProfile;
-  counts: StatusCounts;
-  reviewPercent: number;
-  isComplete: boolean;
+/**
+ * Groups every placement by its (normalized) owner email — not ownerId,
+ * since an unclaimed central-import placement has none yet — unioned with
+ * every active team_members row so a person with zero placements still
+ * shows up once the roster is populated (team_members is empty today; this
+ * is what makes that future-safe rather than requiring a code change).
+ */
+export function buildAccountManagerSummaries(
+  placements: readonly MissionHuntPlacement[],
+  profiles: readonly MissionHuntProfile[],
+  teamMembers: readonly TeamMember[],
+  placementReviews: readonly PlacementReview[],
+): AccountManagerSummary[] {
+  const profileByEmail = new Map(profiles.map((p) => [p.emailNormalized, p]));
+  const reviewedEmails = new Set(placementReviews.map((r) => normalizeEmail(r.userEmail)));
+
+  const placementsByEmail = new Map<string, MissionHuntPlacement[]>();
+  const displayNameByEmail = new Map<string, string>();
+
+  for (const placement of placements) {
+    const email = normalizeEmail(placement.ownerEmail);
+    if (!placementsByEmail.has(email)) placementsByEmail.set(email, []);
+    placementsByEmail.get(email)!.push(placement);
+    if (placement.ownerDisplayName && !displayNameByEmail.has(email)) displayNameByEmail.set(email, placement.ownerDisplayName);
+  }
+
+  for (const member of teamMembers) {
+    if (!placementsByEmail.has(member.emailNormalized)) placementsByEmail.set(member.emailNormalized, []);
+    if (!displayNameByEmail.has(member.emailNormalized)) displayNameByEmail.set(member.emailNormalized, member.displayName);
+  }
+
+  const summaries: AccountManagerSummary[] = [];
+  for (const [email, ownPlacements] of placementsByEmail) {
+    const profile = profileByEmail.get(email);
+    summaries.push({
+      emailNormalized: email,
+      displayName: profile?.displayName ?? displayNameByEmail.get(email) ?? email,
+      hasLoggedIn: profile !== undefined,
+      placements: ownPlacements,
+      counts: countOpportunities(ownPlacements),
+      isVerified: reviewedEmails.has(email),
+    });
+  }
+
+  return summaries.sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-/** Homework is "done" only at 100% review — a rounded 99% must never read as
- * finished, so this checks the unrounded unreviewed count, not the percent. */
-export function summarizeAgent(profile: MissionHuntProfile, projects: MissionHuntProject[]): AgentSummary {
-  const ownProjects = projects.filter((p) => p.ownerId === profile.userId);
-  const counts = countByStatus(ownProjects);
-  return {
-    profile,
-    counts,
-    reviewPercent: completionPercent(counts),
-    isComplete: counts.unreviewed === 0,
-  };
+export interface TeamCompletion {
+  verifiedCount: number;
+  totalCount: number;
 }
 
-export function summarizeTeam(profiles: MissionHuntProfile[], projects: MissionHuntProject[]): AgentSummary[] {
-  return profiles.map((profile) => summarizeAgent(profile, projects));
-}
-
-export function teamTotals(projects: MissionHuntProject[]): StatusCounts {
-  return countByStatus(projects);
-}
-
-export function filterProjectsByStatus(projects: MissionHuntProject[], status: ProjectStatus | 'all'): MissionHuntProject[] {
-  if (status === 'all') return projects;
-  return projects.filter((p) => p.status === status);
+export function teamCompletion(summaries: readonly AccountManagerSummary[]): TeamCompletion {
+  return { verifiedCount: summaries.filter((s) => s.isVerified).length, totalCount: summaries.length };
 }
