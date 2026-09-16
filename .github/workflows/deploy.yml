@@ -71,10 +71,21 @@ jobs:
             echo "::error::VITE_SUPABASE_URL is not set for this build (repository or 'github-pages' environment secret)."
             MISSING=1
           elif ! printf '%s' "$VITE_SUPABASE_URL" | grep -qE '^https://[A-Za-z0-9-]+\.supabase\.co/?$'; then
-            echo "::warning::VITE_SUPABASE_URL is set but doesn't look like https://<ref>.supabase.co — double-check the value."
+            # Hard fail, not a warning: this field must be a URL. A key
+            # pasted into this field would otherwise ship straight to the
+            # browser bundle — this exact mistake shipped a live sb_secret_
+            # key to production once already (see git history around the
+            # deploy.yml preflight step).
+            echo "::error::VITE_SUPABASE_URL does not look like https://<ref>.supabase.co — got a value that doesn't match. If this is actually an API key (sb_publishable_/sb_secret_/eyJ...), it's in the wrong secret slot and must be fixed before this can build."
+            MISSING=1
           fi
           if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
             echo "::error::VITE_SUPABASE_ANON_KEY is not set for this build (repository or 'github-pages' environment secret)."
+            MISSING=1
+          elif printf '%s' "$VITE_SUPABASE_ANON_KEY" | grep -qE '^sb_secret_'; then
+            # A secret key must never be used as the client-side anon key —
+            # it bypasses RLS entirely. Hard fail rather than ship it.
+            echo "::error::VITE_SUPABASE_ANON_KEY looks like a Supabase SECRET key (sb_secret_...), not a publishable/anon key. Never use a secret key client-side — fix the secret value before this can build."
             MISSING=1
           elif ! printf '%s' "$VITE_SUPABASE_ANON_KEY" | grep -qE '^(sb_publishable_|eyJ)'; then
             echo "::warning::VITE_SUPABASE_ANON_KEY is set but doesn't match a known publishable/anon key prefix — double-check the value."
