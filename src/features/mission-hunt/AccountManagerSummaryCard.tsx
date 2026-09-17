@@ -35,6 +35,7 @@ export function AccountManagerSummaryCard({ summary, onClick }: AccountManagerSu
         <span className="text-ink">{counts.total} plaatsingen</span>
         <span className="text-gold">{counts.verleng} verlengkansen</span>
         <span className="text-status-go">{counts.timing} timingkansen</span>
+        <span className="text-sky-400">{counts.urenkans} urenkansen</span>
         {counts.double > 0 && <span className="text-red-400">{counts.double} double</span>}
       </div>
 

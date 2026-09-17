@@ -70,10 +70,11 @@ export function FridayReviewView({ placements, profiles, teamMembers, placementR
     <div className="flex flex-col gap-6">
       <div>
         <p className="label-classified text-gold/70">Team Zwolle</p>
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
           <TotalTile label="Plaatsingen" value={totals.total} />
           <TotalTile label="Verlengkansen" value={totals.verleng} tone="text-gold" />
           <TotalTile label="Timingkansen" value={totals.timing} tone="text-status-go" />
+          <TotalTile label="Urenkansen" value={totals.urenkans} tone="text-sky-400" />
           <TotalTile label="Double Opportunities" value={totals.double} tone="text-red-400" />
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -85,6 +86,24 @@ export function FridayReviewView({ placements, profiles, teamMembers, placementR
           </div>
         </div>
       </div>
+
+      {/* UREN & INSCHIETKANSEN — for now this surfaces the automatically
+          detected URENKANSEN (existing placements below 32 hours/week).
+          Named and structured so a future, separately-sourced INSCHIETKANS
+          (a new commercial opportunity before a placement is final) can
+          join this same section later without any rework — we never invent
+          that data ourselves. */}
+      <section className="border border-sky-400/25 bg-mission-raised p-4">
+        <p className="label-classified text-sky-400/80">Uren & Inschietkansen</p>
+        <p className="mt-1.5 text-sm text-ink-muted">Waar zit nog ruimte om uren op te hogen of een nieuwe inzet slimmer in te schieten?</p>
+        <button
+          type="button"
+          onClick={() => setFilter('urenkans')}
+          className="mt-3 inline-flex items-center gap-2 border border-sky-400/30 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.1em] text-sky-400 transition-colors duration-150 hover:bg-sky-400/10"
+        >
+          {totals.urenkans} URENKANSEN — bekijk plaatsingen
+        </button>
+      </section>
 
       <PlacementFilterBar value={filter} onChange={setFilter} />
 

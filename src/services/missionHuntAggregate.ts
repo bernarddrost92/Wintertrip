@@ -9,16 +9,21 @@ export interface OpportunityCounts {
   /** TIMINGKANS — includes placements that are also DOUBLE. */
   timing: number;
   double: number;
+  /** URENKANS — FTE < 0.8, additive with any of the above; never
+   * double-counted since this is computed once per unique placement, same
+   * as every other bucket here. */
+  urenkans: number;
   grey: number;
 }
 
 export function countOpportunities(placements: readonly MissionHuntPlacement[]): OpportunityCounts {
-  const counts: OpportunityCounts = { total: placements.length, verleng: 0, timing: 0, double: 0, grey: 0 };
+  const counts: OpportunityCounts = { total: placements.length, verleng: 0, timing: 0, double: 0, urenkans: 0, grey: 0 };
   for (const placement of placements) {
-    const classification = classifyPlacement(placement.startDate, placement.endDate);
+    const classification = classifyPlacement(placement.startDate, placement.endDate, placement.hoursPerWeek);
     if (classification.isExtension) counts.verleng += 1;
     if (classification.isTiming) counts.timing += 1;
     if (classification.isDouble) counts.double += 1;
+    if (classification.isUrenkans) counts.urenkans += 1;
     if (classification.isGrey) counts.grey += 1;
   }
   return counts;

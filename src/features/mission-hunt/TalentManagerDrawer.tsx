@@ -42,7 +42,7 @@ export function TalentManagerDrawer({ summary, initialFilter = 'all-opportunitie
   }
 
   const groups = summary.accountManagers
-    .map((group) => ({ ...group, placements: group.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate), filter)) }))
+    .map((group) => ({ ...group, placements: group.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek), filter)) }))
     .filter((group) => group.placements.length > 0);
 
   return (

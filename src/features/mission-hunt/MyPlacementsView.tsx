@@ -31,7 +31,7 @@ export function MyPlacementsView({ displayName, placements, isVerified, verified
   const [verifying, setVerifying] = useState(false);
 
   const counts = countOpportunities(placements);
-  const visible = placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate), filter));
+  const visible = placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek), filter));
 
   async function handleVerify() {
     setVerifying(true);
@@ -50,10 +50,11 @@ export function MyPlacementsView({ displayName, placements, isVerified, verified
 
       <div>
         <p className="font-display text-2xl font-bold uppercase tracking-wide text-ink">{displayName}</p>
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatTile label="Plaatsingen" value={counts.total} />
           <StatTile label="Verlengkansen" value={counts.verleng} tone="text-gold" />
           <StatTile label="Timingkansen" value={counts.timing} tone="text-status-go" />
+          <StatTile label="Urenkansen" value={counts.urenkans} tone="text-sky-400" />
           <StatTile label="Double Opportunity" value={counts.double} tone="text-red-400" />
           <StatTile label="Geen directe kans" value={counts.grey} />
         </div>

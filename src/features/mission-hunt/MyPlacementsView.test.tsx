@@ -24,6 +24,12 @@ function placement(overrides: Partial<MissionHuntPlacement> = {}): MissionHuntPl
   };
 }
 
+/** "URENKANS" also labels the (always-rendered) PlacementFilterBar chip, so
+ * every badge-presence assertion must exclude that button. */
+function urenkansBadges() {
+  return screen.getAllByText('URENKANS').filter((el) => el.tagName !== 'BUTTON');
+}
+
 describe('MyPlacementsView', () => {
   it('shows the VOOR VRIJDAG homework block and stat counts', () => {
     const placements = [placement(), placement({ startDate: '2026-06-01', endDate: '2028-06-30' })];
@@ -76,6 +82,31 @@ describe('MyPlacementsView', () => {
     await user.click(screen.getByRole('button', { name: 'DOUBLE' }));
     expect(screen.getByText('Ryan Dijkstra')).toBeInTheDocument();
     expect(screen.queryByText('Grey Persoon')).not.toBeInTheDocument();
+  });
+
+  it('shows the URENKANSEN summary counter tile', () => {
+    const placements = [placement({ hoursPerWeek: 0.4 }), placement({ hoursPerWeek: 1.0, startDate: '2026-06-01', endDate: '2028-06-30' })];
+    render(<MyPlacementsView displayName="Bernard" placements={placements} isVerified={false} verifiedAt={null} onAdd={vi.fn()} onOpenPlacement={vi.fn()} onVerify={vi.fn()} />);
+
+    const urenkansenLabel = screen.getByText('Urenkansen');
+    expect(urenkansenLabel.previousElementSibling).toHaveTextContent('1');
+  });
+
+  it('shows the URENKANS badge and calculated weekly hours for a placement below 32 hours/week, alongside its other badges', () => {
+    const placements = [placement({ hoursPerWeek: 0.4 })]; // also timing+extension (double) by default dates
+    render(<MyPlacementsView displayName="Bernard" placements={placements} isVerified={false} verifiedAt={null} onAdd={vi.fn()} onOpenPlacement={vi.fn()} onVerify={vi.fn()} />);
+
+    // "URENKANS" also labels the (always-rendered) filter chip, so scope to
+    // the actual badge span, not the filter bar button.
+    expect(urenkansBadges()).toHaveLength(1);
+    expect(screen.getByText('0.4 FTE · 16 UUR')).toBeInTheDocument();
+    // Additive — the double-opportunity badges from the dates are still there too.
+    expect(screen.getByText('DOUBLE OPPORTUNITY')).toBeInTheDocument();
+  });
+
+  it('does not show a URENKANS badge for a placement at or above 0.8 FTE', () => {
+    render(<MyPlacementsView displayName="Bernard" placements={[placement({ hoursPerWeek: 0.8 })]} isVerified={false} verifiedAt={null} onAdd={vi.fn()} onOpenPlacement={vi.fn()} onVerify={vi.fn()} />);
+    expect(urenkansBadges()).toHaveLength(0);
   });
 
   it('opening the add form and filling required fields enables submit, and calls onAdd with owner never asked', async () => {

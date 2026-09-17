@@ -1,4 +1,4 @@
-import { classifyPlacement } from '../../services/missionHuntClassification';
+import { calculatedWeeklyHours, classifyPlacement } from '../../services/missionHuntClassification';
 import { badgesForClassification } from '../../services/missionHuntOpportunity';
 import { formatIsoDateNl } from '../../utils/dates';
 import type { MissionHuntPlacement } from '../../types/missionHunt';
@@ -16,8 +16,9 @@ interface PlacementRowProps {
  * is no separate status control to tap around anymore.
  */
 export function PlacementRow({ placement, onOpen }: PlacementRowProps) {
-  const classification = classifyPlacement(placement.startDate, placement.endDate);
+  const classification = classifyPlacement(placement.startDate, placement.endDate, placement.hoursPerWeek);
   const badges = badgesForClassification(classification);
+  const weeklyHours = calculatedWeeklyHours(placement.hoursPerWeek);
   const metaParts = [
     placement.clientName,
     placement.monthlyDb !== null ? `${placement.monthlyDb} DB` : null,
@@ -37,6 +38,11 @@ export function PlacementRow({ placement, onOpen }: PlacementRowProps) {
           )}
         </div>
       </div>
+      {classification.isUrenkans && placement.hoursPerWeek !== null && (
+        <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-sky-400">
+          {placement.hoursPerWeek} FTE · {weeklyHours} UUR
+        </p>
+      )}
       {badges.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {badges.map((badge) => (

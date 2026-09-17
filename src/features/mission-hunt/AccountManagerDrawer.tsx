@@ -40,7 +40,7 @@ export function AccountManagerDrawer({ summary, initialFilter = 'all-opportuniti
     if (event.target === event.currentTarget) onClose();
   }
 
-  const placements = summary.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate), filter));
+  const placements = summary.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek), filter));
 
   return (
     <div

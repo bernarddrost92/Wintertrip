@@ -27,7 +27,7 @@ export function MyProfessionalsView({ displayName, summary, isVerified, verified
   const [filter, setFilter] = useState<PlacementFilter>('all-placements');
   const [verifying, setVerifying] = useState(false);
 
-  const counts = summary?.counts ?? { total: 0, verleng: 0, timing: 0, double: 0, grey: 0 };
+  const counts = summary?.counts ?? { total: 0, verleng: 0, timing: 0, double: 0, urenkans: 0, grey: 0 };
   const accountManagers = summary?.accountManagers ?? [];
 
   async function handleVerify() {
@@ -37,7 +37,7 @@ export function MyProfessionalsView({ displayName, summary, isVerified, verified
   }
 
   const groups = accountManagers
-    .map((group) => ({ ...group, placements: group.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate), filter)) }))
+    .map((group) => ({ ...group, placements: group.placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek), filter)) }))
     .filter((group) => group.placements.length > 0);
 
   return (

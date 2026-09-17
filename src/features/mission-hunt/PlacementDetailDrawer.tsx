@@ -52,7 +52,7 @@ export function PlacementDetailDrawer({
 }: PlacementDetailDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const classification = classifyPlacement(placement.startDate, placement.endDate);
+  const classification = classifyPlacement(placement.startDate, placement.endDate, placement.hoursPerWeek);
   const badges = badgesForClassification(classification);
 
   useEffect(() => {

@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { classifyPlacement } from './missionHuntClassification';
-import { badgesForClassification, DOUBLE_BADGE, GREY_BADGE, placementMatchesFilter, TIMING_BADGE, VERLENG_BADGE } from './missionHuntOpportunity';
+import {
+  badgesForClassification,
+  DOUBLE_BADGE,
+  GREY_BADGE,
+  placementMatchesFilter,
+  TIMING_BADGE,
+  URENKANS_BADGE,
+  VERLENG_BADGE,
+} from './missionHuntOpportunity';
 
 describe('placementMatchesFilter', () => {
   const double = classifyPlacement('2026-10-01', '2026-12-31');
   const verlengOnly = classifyPlacement('2026-06-01', '2026-12-31');
   const timingOnly = classifyPlacement('2026-10-01', '2028-06-30');
   const grey = classifyPlacement('2026-06-01', '2028-06-30');
+  const urenkansOnly = classifyPlacement('2026-06-01', '2028-06-30', 0.4);
 
   it('all-placements matches everything', () => {
     expect(placementMatchesFilter(grey, 'all-placements')).toBe(true);
@@ -39,6 +48,12 @@ describe('placementMatchesFilter', () => {
     expect(placementMatchesFilter(grey, 'grey')).toBe(true);
     expect(placementMatchesFilter(double, 'grey')).toBe(false);
   });
+
+  it('urenkans only matches placements with FTE < 0.8, independent of timing/extension', () => {
+    expect(placementMatchesFilter(urenkansOnly, 'urenkans')).toBe(true);
+    expect(placementMatchesFilter(grey, 'urenkans')).toBe(false);
+    expect(placementMatchesFilter(double, 'urenkans')).toBe(false);
+  });
 });
 
 describe('badgesForClassification', () => {
@@ -49,6 +64,26 @@ describe('badgesForClassification', () => {
 
   it('a grey placement gets exactly the grey badge', () => {
     const classification = classifyPlacement('2026-06-01', '2028-06-30');
+    expect(badgesForClassification(classification)).toEqual([GREY_BADGE]);
+  });
+
+  it('URENKANS is additive alongside VERLENGKANS — never replacing it', () => {
+    const classification = classifyPlacement('2026-06-01', '2026-12-31', 0.4);
+    expect(badgesForClassification(classification)).toEqual([URENKANS_BADGE, VERLENG_BADGE]);
+  });
+
+  it('URENKANS is additive alongside TIMINGKANS', () => {
+    const classification = classifyPlacement('2026-10-01', '2028-06-30', 0.7);
+    expect(badgesForClassification(classification)).toEqual([TIMING_BADGE, URENKANS_BADGE]);
+  });
+
+  it('URENKANS is additive alongside a DOUBLE OPPORTUNITY', () => {
+    const classification = classifyPlacement('2026-10-01', '2026-12-31', 0.79);
+    expect(badgesForClassification(classification)).toEqual([TIMING_BADGE, URENKANS_BADGE, VERLENG_BADGE, DOUBLE_BADGE]);
+  });
+
+  it('a placement at exactly 0.8 FTE gets no URENKANS badge', () => {
+    const classification = classifyPlacement('2026-06-01', '2028-06-30', 0.8);
     expect(badgesForClassification(classification)).toEqual([GREY_BADGE]);
   });
 });

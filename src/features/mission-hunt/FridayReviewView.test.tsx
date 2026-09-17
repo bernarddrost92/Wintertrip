@@ -124,4 +124,46 @@ describe('FridayReviewView', () => {
 
     expect(screen.getByText(/tm check/i)).toHaveTextContent('TM CHECK: 1 / 1 TALENT MANAGERS GECONTROLEERD');
   });
+
+  it('shows a team-wide URENKANSEN total, counting unique placements with FTE < 0.8', () => {
+    const placements = [
+      placement({ hoursPerWeek: 0.4 }), // urenkans
+      placement({ ownerEmail: 'lisa@maandag.com', ownerDisplayName: 'Lisa', hoursPerWeek: 0.9 }), // not urenkans
+    ];
+    renderView({ placements });
+
+    const urenkansenLabel = screen.getByText('Urenkansen');
+    expect(urenkansenLabel.previousElementSibling).toHaveTextContent('1');
+  });
+
+  it('shows the URENKANSEN count on an accountmanager\'s own card', () => {
+    const placements = [placement({ hoursPerWeek: 0.4 }), placement({ hoursPerWeek: 0.7 }), placement({ hoursPerWeek: 1.0 })];
+    renderView({ placements });
+
+    expect(screen.getByText('2 urenkansen')).toBeInTheDocument();
+  });
+
+  it('renders the UREN & INSCHIETKANSEN section with the real URENKANSEN count', () => {
+    const placements = [placement({ hoursPerWeek: 0.4 }), placement({ hoursPerWeek: 1.0 })];
+    renderView({ placements });
+
+    expect(screen.getByText('Uren & Inschietkansen')).toBeInTheDocument();
+    expect(screen.getByText(/waar zit nog ruimte/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /bekijk plaatsingen/i })).toBeInTheDocument();
+  });
+
+  it('clicking the UREN & INSCHIETKANSEN count filters the next-opened AM drawer to URENKANS placements only', async () => {
+    const user = userEvent.setup();
+    const placements = [
+      placement({ id: 'p1', professionalName: 'Onder 32 uur', hoursPerWeek: 0.4 }),
+      placement({ id: 'p2', professionalName: 'Voltijd', hoursPerWeek: 1.0 }),
+    ];
+    renderView({ placements });
+
+    await user.click(screen.getByRole('button', { name: /bekijk plaatsingen/i }));
+    await user.click(screen.getByText('Bernard'));
+
+    expect(screen.getByText('Onder 32 uur')).toBeInTheDocument();
+    expect(screen.queryByText('Voltijd')).not.toBeInTheDocument();
+  });
 });

@@ -30,6 +30,34 @@ export function isDoubleOpportunity(startDate: IsoDate, endDate: IsoDate): boole
   return isTimingOpportunity(startDate) && isExtensionOpportunity(endDate);
 }
 
+/** 1.0 FTE is assumed to be a full 40-hour week — used only to derive
+ * URENKANS and a placement's calculated weekly hours for display, never to
+ * rewrite the stored FTE itself. */
+const FULL_TIME_HOURS_PER_WEEK = 40;
+
+/** URENKANS threshold: strictly less than 0.8 FTE (32 hours). 0.8 itself is
+ * NOT an opportunity — the comparison is deliberately `<`, never `<=`. */
+const URENKANS_FTE_THRESHOLD = 0.8;
+
+/** URENKANS: this placement is contracted for less than 32 hours/week and
+ * may have commercial room to grow. Purely a signal — it never implies the
+ * hours will actually increase, and it never touches the stored FTE/DB/
+ * contract/dates itself.
+ *
+ * `null` and `0` (or negative) FTE are never classified as an opportunity —
+ * missing or invalid FTE data must not produce a false URENKANS. */
+export function isUrenkansOpportunity(fte: number | null): boolean {
+  if (fte === null || fte <= 0) return false;
+  return fte < URENKANS_FTE_THRESHOLD;
+}
+
+/** Rounded weekly hours for display only (e.g. "16 UUR") — derived from the
+ * stored FTE, never persisted anywhere. */
+export function calculatedWeeklyHours(fte: number | null): number | null {
+  if (fte === null) return null;
+  return Math.round(fte * FULL_TIME_HOURS_PER_WEEK);
+}
+
 export interface PlacementClassification {
   isTiming: boolean;
   isExtension: boolean;
@@ -37,9 +65,13 @@ export interface PlacementClassification {
   isDouble: boolean;
   /** Neither — GEEN DIRECTE GAME-KANS. Still shown, never hidden. */
   isGrey: boolean;
+  /** Additive — a placement can be VERLENGKANS/TIMINGKANS/DOUBLE/GEEN
+   * DIRECTE GAME-KANS *and* URENKANS at the same time; this never replaces
+   * any of the other four. */
+  isUrenkans: boolean;
 }
 
-export function classifyPlacement(startDate: IsoDate, endDate: IsoDate): PlacementClassification {
+export function classifyPlacement(startDate: IsoDate, endDate: IsoDate, hoursPerWeek: number | null = null): PlacementClassification {
   const timing = isTimingOpportunity(startDate);
   const extension = isExtensionOpportunity(endDate);
   return {
@@ -47,6 +79,7 @@ export function classifyPlacement(startDate: IsoDate, endDate: IsoDate): Placeme
     isExtension: extension,
     isDouble: timing && extension,
     isGrey: !timing && !extension,
+    isUrenkans: isUrenkansOpportunity(hoursPerWeek),
   };
 }
 

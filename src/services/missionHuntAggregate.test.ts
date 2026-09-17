@@ -44,11 +44,23 @@ describe('countOpportunities', () => {
       placement({ startDate: '2026-06-01', endDate: '2028-06-30' }), // grey
     ];
     const counts = countOpportunities(placements);
-    expect(counts).toEqual({ total: 4, verleng: 2, timing: 2, double: 1, grey: 1 });
+    expect(counts).toEqual({ total: 4, verleng: 2, timing: 2, double: 1, urenkans: 0, grey: 1 });
   });
 
   it('is all-zero for an empty list except total', () => {
-    expect(countOpportunities([])).toEqual({ total: 0, verleng: 0, timing: 0, double: 0, grey: 0 });
+    expect(countOpportunities([])).toEqual({ total: 0, verleng: 0, timing: 0, double: 0, urenkans: 0, grey: 0 });
+  });
+
+  it('counts URENKANS additively — a placement can land in urenkans plus another bucket, without inflating verleng/timing/double', () => {
+    const placements = [
+      placement({ startDate: '2026-10-01', endDate: '2026-12-31', hoursPerWeek: 0.79 }), // double + urenkans
+      placement({ startDate: '2026-06-01', endDate: '2026-12-31', hoursPerWeek: 0.4 }), // verleng + urenkans
+      placement({ startDate: '2026-06-01', endDate: '2028-06-30', hoursPerWeek: 0.7 }), // grey + urenkans
+      placement({ startDate: '2026-06-01', endDate: '2028-06-30', hoursPerWeek: 1.0 }), // grey only
+      placement({ startDate: '2026-06-01', endDate: '2028-06-30', hoursPerWeek: null }), // grey only, null FTE never counts
+    ];
+    const counts = countOpportunities(placements);
+    expect(counts).toEqual({ total: 5, verleng: 2, timing: 1, double: 1, urenkans: 3, grey: 3 });
   });
 });
 
