@@ -1,13 +1,13 @@
-import { Lock, RotateCcw } from 'lucide-react';
+import { LogOut, RotateCcw } from 'lucide-react';
 import { useMemo } from 'react';
 import { pickOneLiner } from '../data/oneLiners';
 
 interface FooterProps {
   onReplayIntro: () => void;
-  onResetAccess: () => void;
+  onLogout: () => void;
 }
 
-export function Footer({ onReplayIntro, onResetAccess }: FooterProps) {
+export function Footer({ onReplayIntro, onLogout }: FooterProps) {
   const tagline = useMemo(() => pickOneLiner(new Date().getDay()), []);
 
   return (
@@ -28,11 +28,11 @@ export function Footer({ onReplayIntro, onResetAccess }: FooterProps) {
         <span className="h-3 w-px bg-white/10" aria-hidden />
         <button
           type="button"
-          onClick={onResetAccess}
+          onClick={onLogout}
           className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-ink-dim transition-colors duration-150 hover:text-gold"
         >
-          <Lock size={11} aria-hidden />
-          Reset Access
+          <LogOut size={11} aria-hidden />
+          Uitloggen
         </button>
       </div>
     </footer>

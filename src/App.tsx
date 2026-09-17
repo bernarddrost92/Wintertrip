@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { AccessGate } from './features/access/AccessGate';
-import { hasAccess, resetAccess } from './features/access/accessStorage';
+import { signOutTeamZwolle, useSupabaseAuthSession } from './features/access/teamZwolleAuth';
+import { isSupabaseConfigured } from './lib/supabaseClient';
 import { CommandFrame } from './components/CommandFrame';
 import { ControlRoomEnvironment } from './components/ControlRoomEnvironment';
 import { Footer } from './components/Footer';
@@ -45,24 +46,31 @@ const TRANSITION_MS = 650;
  *
  * Two independent gates sit in front of the app, outermost first:
  *
- * 1. The Access Gate (device-scoped, localStorage) — a simple client-side
- *    password check keeping casual visitors out of the public GitHub Pages
- *    URL. Entered once per device; nothing else renders until it clears.
+ * 1. The Access Gate — real Supabase Auth now (see features/access/
+ *    teamZwolleAuth.ts): one shared Team Zwolle password signs everyone
+ *    into the same technical Supabase account, producing a real, persistent
+ *    session (not a localStorage flag). Nothing else renders until a valid
+ *    session exists. Every protected table's RLS now only allows the
+ *    `authenticated` role — see migration 0010 — so there is no route left
+ *    where the app can reach that data without this gate having cleared.
  * 2. The existing session-scoped Mission Gate/intro flow (sessionStorage,
  *    untouched by this): a first-time visitor clears ACCEPT MISSION,
  *    watches the intro once, then always lands on the Mission Homepage. A
  *    refresh within the same session skips straight back to "ready".
  *
- * Resetting access (Footer's RESET ACCESS) only clears the outer gate — the
- * inner intro/session state is left exactly as it was.
+ * UITLOGGEN (Footer) ends the shared Supabase session and returns to the
+ * Access Gate — it never touches the inner intro/session state, and it is
+ * a completely different action from Mission Hunt's own WISSEL PERSOON
+ * (which only clears the locally selected WIE BEN JIJ? person and leaves
+ * this Supabase session untouched).
  */
 export default function App() {
-  const [accessGranted, setAccessGranted] = useState(() => hasAccess());
+  const { loading: authLoading, session } = useSupabaseAuthSession();
   const [gatePhase, setGatePhase] = useState<GatePhase>(() => (hasSeenIntro() ? 'ready' : 'gate'));
   // A bookmarked/shared /mission-updates link survives GitHub Pages' lack of
   // server-side routing via public/404.html + this restore — see
   // utils/deepLink.ts. Still fully gated: this only ever picks which view
-  // renders once accessGranted/gatePhase actually clear it to render at all.
+  // renders once the auth session/gatePhase actually clear it to render at all.
   const [view, setView] = useState<AppView>(() => {
     const deepLinkView = readDeepLinkView();
     if (deepLinkView) clearDeepLinkParam();
@@ -84,9 +92,8 @@ export default function App() {
     window.location.href = `${import.meta.env.BASE_URL}?redirect=mission-hunt`;
   }
 
-  function handleResetAccess() {
-    resetAccess();
-    setAccessGranted(false);
+  function handleLogout() {
+    void signOutTeamZwolle();
   }
 
   function handleGateAccept() {
@@ -122,8 +129,18 @@ export default function App() {
         <div className="relative min-h-screen overflow-x-hidden bg-mission-void">
           <ControlRoomEnvironment />
 
-          {!accessGranted ? (
-            <AccessGate onAuthorized={() => setAccessGranted(true)} />
+          {!isSupabaseConfigured() ? (
+            <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-4 text-center">
+              <p className="label-classified text-gold/70">007 — Operatie Wintertrip 2027</p>
+              <p className="font-display text-xl font-bold uppercase tracking-wide text-ink">Setup Required</p>
+              <p className="max-w-sm text-sm text-ink-muted">Supabase is not configured for this build — the shared Team Zwolle access gate cannot be reached.</p>
+            </div>
+          ) : authLoading ? (
+            <div className="flex min-h-screen items-center justify-center">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Verifying access…</p>
+            </div>
+          ) : !session ? (
+            <AccessGate />
           ) : (
             <>
               {gatePhase === 'gate' && <MissionGate onAccept={handleGateAccept} />}
@@ -158,7 +175,7 @@ export default function App() {
                       </MissionHuntErrorBoundary>
                     )}
                   </main>
-                  <Footer onReplayIntro={handleReplayIntro} onResetAccess={handleResetAccess} />
+                  <Footer onReplayIntro={handleReplayIntro} onLogout={handleLogout} />
                 </div>
               )}
 

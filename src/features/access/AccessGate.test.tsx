@@ -1,58 +1,93 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { AccessGate } from './AccessGate';
-import { hasAccess } from './accessStorage';
+
+const { isSupabaseConfigured, getSupabaseClient, signInWithPassword } = vi.hoisted(() => ({
+  isSupabaseConfigured: vi.fn(),
+  getSupabaseClient: vi.fn(),
+  signInWithPassword: vi.fn(),
+}));
+
+vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseClient }));
 
 describe('AccessGate', () => {
-  it('A. is shown with no stored access — the code input and AUTHORIZE are visible', () => {
-    render(<AccessGate onAuthorized={vi.fn()} />);
-    expect(screen.getByLabelText(/enter access code/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /authorize/i })).toBeInTheDocument();
+  beforeEach(() => {
+    isSupabaseConfigured.mockReturnValue(true);
+    getSupabaseClient.mockReturnValue({ auth: { signInWithPassword } });
+    signInWithPassword.mockReset();
   });
 
-  it('B. the exact code "Zwolle" grants access, persists it, and calls onAuthorized', async () => {
-    const user = userEvent.setup();
-    const onAuthorized = vi.fn();
-    render(<AccessGate onAuthorized={onAuthorized} />);
-
-    await user.type(screen.getByLabelText(/enter access code/i), 'Zwolle');
-    await user.click(screen.getByRole('button', { name: /authorize/i }));
-
-    expect(onAuthorized).toHaveBeenCalledTimes(1);
-    expect(hasAccess()).toBe(true);
+  it('shows the shared password screen — no technical email visible anywhere', () => {
+    render(<AccessGate />);
+    expect(screen.getByLabelText(/wachtwoord/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /enter mission/i })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/teamzwolle@wintertrip\.internal/i);
+    expect(document.body.textContent?.toLowerCase()).not.toContain('supabase');
   });
 
-  it('Enter submits the form, not just clicking Authorize', async () => {
+  it('a correct password calls signInWithPassword with the fixed technical email — never asking the user for one', async () => {
+    signInWithPassword.mockResolvedValue({ data: { session: { access_token: 'x' } }, error: null });
     const user = userEvent.setup();
-    const onAuthorized = vi.fn();
-    render(<AccessGate onAuthorized={onAuthorized} />);
+    render(<AccessGate />);
 
-    await user.type(screen.getByLabelText(/enter access code/i), 'Zwolle{Enter}');
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'the-real-shared-password{Enter}');
 
-    expect(onAuthorized).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(signInWithPassword).toHaveBeenCalledWith({ email: 'teamzwolle@wintertrip.internal', password: 'the-real-shared-password' }));
   });
 
-  it('C. a wrong password shows Access Denied and never authorizes', async () => {
+  it('shows a loading state while the sign-in request is in flight', async () => {
+    let resolveSignIn: (v: { data: { session: null }; error: null }) => void = () => {};
+    signInWithPassword.mockReturnValue(new Promise((resolve) => { resolveSignIn = resolve; }));
     const user = userEvent.setup();
-    const onAuthorized = vi.fn();
-    render(<AccessGate onAuthorized={onAuthorized} />);
+    render(<AccessGate />);
 
-    await user.type(screen.getByLabelText(/enter access code/i), 'zwolle{Enter}');
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'anything{Enter}');
 
-    expect(await screen.findByText(/access denied/i)).toBeInTheDocument();
-    expect(onAuthorized).not.toHaveBeenCalled();
-    expect(hasAccess()).toBe(false);
+    expect(screen.getByRole('button', { name: /verifying/i })).toBeDisabled();
+
+    resolveSignIn({ data: { session: null }, error: null });
   });
 
-  it('rejects an all-caps variant — the check is case-sensitive', async () => {
+  it('a wrong password shows TOEGANG GEWEIGERD and clears the field — never exposing the raw Supabase error', async () => {
+    signInWithPassword.mockResolvedValue({ data: { session: null }, error: { message: 'Invalid login credentials', status: 400 } });
     const user = userEvent.setup();
-    const onAuthorized = vi.fn();
-    render(<AccessGate onAuthorized={onAuthorized} />);
+    render(<AccessGate />);
 
-    await user.type(screen.getByLabelText(/enter access code/i), 'ZWOLLE{Enter}');
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'wrong-password{Enter}');
 
-    expect(await screen.findByText(/access denied/i)).toBeInTheDocument();
-    expect(onAuthorized).not.toHaveBeenCalled();
+    expect(await screen.findByText(/toegang geweigerd/i)).toBeInTheDocument();
+    expect(screen.getByText(/controleer het wachtwoord/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/wachtwoord/i)).toHaveValue('');
+    expect(document.body.textContent).not.toMatch(/invalid login credentials/i);
+  });
+
+  it('a network/other failure shows VERBINDING MISLUKT, distinct from a wrong password', async () => {
+    signInWithPassword.mockRejectedValue(new Error('fetch failed'));
+    const user = userEvent.setup();
+    render(<AccessGate />);
+
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'anything{Enter}');
+
+    expect(await screen.findByText(/verbinding mislukt/i)).toBeInTheDocument();
+    expect(screen.queryByText(/toegang geweigerd/i)).not.toBeInTheDocument();
+  });
+
+  it('typing again after a denial clears the error state', async () => {
+    signInWithPassword.mockResolvedValue({ data: { session: null }, error: { message: 'Invalid login credentials' } });
+    const user = userEvent.setup();
+    render(<AccessGate />);
+
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'wrong{Enter}');
+    expect(await screen.findByText(/toegang geweigerd/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'x');
+    expect(screen.queryByText(/toegang geweigerd/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveClass('opacity-0');
+  });
+
+  it('the password field is masked', () => {
+    render(<AccessGate />);
+    expect(screen.getByLabelText(/wachtwoord/i)).toHaveAttribute('type', 'password');
   });
 });
