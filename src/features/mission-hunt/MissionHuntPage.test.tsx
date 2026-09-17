@@ -1,84 +1,59 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MissionHuntPage } from './MissionHuntPage';
+import { setSelectedPersonId, getSelectedPersonId } from './personStorage';
 
-const { isSupabaseConfigured, getSupabaseClient, mockAuthState } = vi.hoisted(() => {
-  return {
-    isSupabaseConfigured: vi.fn(),
-    getSupabaseClient: vi.fn(),
-    mockAuthState: { session: null as null | { user: { id: string } } },
-  };
-});
+const { isSupabaseConfigured, getSupabaseClient } = vi.hoisted(() => ({
+  isSupabaseConfigured: vi.fn(),
+  getSupabaseClient: vi.fn(),
+}));
 
 vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseClient }));
 
-/** Broad enough to let individual tests reassign signInWithOtp/verifyOtp
- * with whatever error code/message they want to simulate. */
-type FakeAuthError = { code: string; message: string } | null;
-
 /** Minimal fake of the subset of supabase-js's query builder this feature
- * actually calls — enough to drive MissionHuntAuthProvider/useMissionHuntData
- * through a real render without a live Supabase project. */
-function buildFakeSupabaseClient(
-  tables: {
-    profiles: unknown[];
-    projects: unknown[];
-    team_members?: unknown[];
-    placement_reviews?: unknown[];
-    placement_talent_managers?: unknown[];
-    talent_manager_reviews?: unknown[];
-  },
-  options: { getSessionNeverResolves?: boolean; profileFetchThrows?: boolean } = {},
-) {
+ * actually calls — enough to drive useMissionHuntRoster/useMissionHuntData
+ * through a real render without a live Supabase project. Mission Hunt
+ * never touches supabase.auth anymore — there is no personal session, so
+ * this fake exposes only `.from()`. */
+function buildFakeSupabaseClient(tables: {
+  profiles: unknown[];
+  projects: unknown[];
+  team_members?: unknown[];
+  placement_reviews?: unknown[];
+  placement_talent_managers?: unknown[];
+  talent_manager_reviews?: unknown[];
+}) {
   function from(table: 'profiles' | 'projects' | 'team_members' | 'placement_reviews' | 'placement_talent_managers' | 'talent_manager_reviews') {
     const rows = tables[table] ?? [];
     const builder = {
       select: () => builder,
       eq: (_col: string, _value: string) => builder,
-      maybeSingle: async () => {
-        if (options.profileFetchThrows) throw new Error('network down');
-        return { data: rows[0] ?? null, error: null };
-      },
+      order: () => builder,
+      maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
       then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
     };
     return builder;
   }
+  return { from };
+}
 
-  // Captures the callback MissionHuntAuthProvider subscribes with, so a test
-  // can simulate a real onAuthStateChange event (e.g. a revoked/expired
-  // refresh token firing with session: null) exactly as supabase-js would.
-  let authStateCallback: ((event: string, session: unknown) => void) | null = null;
+const PROFILES = [
+  { id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: '2026-09-01T00:00:00Z' },
+  { id: 'p2', user_id: 'user-2', display_name: 'Lisa', email_normalized: 'lisa@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' },
+  { id: 'p3', user_id: 'user-3', display_name: 'Jordan', email_normalized: 'jordan@maandag.com', role: 'manager', active: true, created_at: '2026-09-01T00:00:00Z' },
+  { id: 'p4', user_id: 'user-4', display_name: 'Marre', email_normalized: 'marre@maandag.com', role: 'office_manager', active: true, created_at: '2026-09-01T00:00:00Z' },
+  { id: 'p5', user_id: 'user-5', display_name: 'Maureen B', email_normalized: 'maureen.bokkers@maandag.com', role: 'hr', active: true, created_at: '2026-09-01T00:00:00Z' },
+  { id: 'p6', user_id: 'user-6', display_name: 'Kim', email_normalized: 'kim.schuring@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' },
+];
 
-  return {
-    auth: {
-      getSession: () => (options.getSessionNeverResolves ? new Promise(() => {}) : Promise.resolve({ data: { session: mockAuthState.session } })),
-      onAuthStateChange: vi.fn((cb: (event: string, session: unknown) => void) => {
-        authStateCallback = cb;
-        return { data: { subscription: { unsubscribe: vi.fn() } } };
-      }),
-      signInWithOtp: vi.fn(async (): Promise<{ error: FakeAuthError }> => ({ error: null })),
-      verifyOtp: vi.fn(async (): Promise<{ error: FakeAuthError }> => {
-        mockAuthState.session = { user: { id: 'user-1' } };
-        authStateCallback?.('SIGNED_IN', mockAuthState.session);
-        return { error: null };
-      }),
-      signOut: vi.fn(async () => {
-        mockAuthState.session = null;
-      }),
-      /** Test-only helper: fires the captured onAuthStateChange callback,
-       * simulating a real supabase-js event. */
-      __emitAuthStateChange: (event: string, session: unknown) => authStateCallback?.(event, session),
-    },
-    from,
-  };
+async function selectPerson(user: ReturnType<typeof userEvent.setup>, displayName: string) {
+  await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
+  await user.click(screen.getByRole('button', { name: new RegExp(`^${displayName}$`) }));
+  await user.click(screen.getByRole('button', { name: /doorgaan/i }));
 }
 
 describe('MissionHuntPage — setup required', () => {
-  beforeEach(() => {
-    mockAuthState.session = null;
-  });
-
   it('shows SETUP REQUIRED and never attempts to connect when Supabase env vars are unset', () => {
     isSupabaseConfigured.mockReturnValue(false);
     render(<MissionHuntPage />);
@@ -88,53 +63,67 @@ describe('MissionHuntPage — setup required', () => {
   });
 });
 
-describe('MissionHuntPage — auth guard', () => {
+describe('MissionHuntPage — WIE BEN JIJ? gate', () => {
   beforeEach(() => {
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = null;
-    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }));
+    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: PROFILES, projects: [] }));
   });
 
-  it('an unauthenticated visitor sees the login gate, never Mission Hunt placement data', async () => {
+  it('3. a first visit (nothing remembered on this device) shows WIE BEN JIJ? with the real roster, never placement data', async () => {
     render(<MissionHuntPage />);
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Bernard' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Lisa' })).toBeInTheDocument();
     expect(screen.queryByText(/voor vrijdag/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/team check/i)).not.toBeInTheDocument();
-    // The "remembered on this device" copy — sets expectations without
-    // promising a permanent login.
-    expect(screen.getByText(/eerste keer op dit apparaat/i)).toBeInTheDocument();
-    expect(screen.getByText(/na het inloggen onthouden we je op dit apparaat/i)).toBeInTheDocument();
+  });
+
+  it('the search field narrows the roster by name', async () => {
+    const user = userEvent.setup();
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText(/zoek je naam/i), 'lis');
+
+    expect(screen.getByRole('button', { name: 'Lisa' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Bernard' })).not.toBeInTheDocument();
+  });
+
+  it('DOORGAAN is disabled until a name is picked', async () => {
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
+
+    expect(screen.getByRole('button', { name: /doorgaan/i })).toBeDisabled();
+  });
+
+  it('4. selecting a name and clicking DOORGAAN opens that person\'s dashboard, and remembers the choice on this device', async () => {
+    const user = userEvent.setup();
+    render(<MissionHuntPage />);
+
+    await selectPerson(user, 'Lisa');
+
+    await waitFor(() => expect(screen.getByText(/current agent/i)).toBeInTheDocument());
+    expect(screen.getAllByText('Lisa').length).toBeGreaterThan(0);
+    expect(getSelectedPersonId()).toBe('p2');
   });
 });
 
-describe('MissionHuntPage — session persistence ("remember this device")', () => {
-  function fakeClientWithLisa() {
-    return buildFakeSupabaseClient({
-      profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Lisa', email_normalized: 'lisa@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
-      projects: [],
-    });
-  }
-
-  it('a persisted session on mount skips AGENT LOGIN entirely — no signInWithOtp call, straight to My Placements', async () => {
+describe('MissionHuntPage — remembered person on this device', () => {
+  beforeEach(() => {
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    const client = fakeClientWithLisa();
-    getSupabaseClient.mockReturnValue(client);
+    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: PROFILES, projects: [] }));
+  });
 
+  it('5. a remembered person skips WIE BEN JIJ? entirely and opens straight into their dashboard', async () => {
+    setSelectedPersonId('p2');
     render(<MissionHuntPage />);
 
     await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
-    expect(screen.queryByRole('heading', { name: /agent login/i })).not.toBeInTheDocument();
-    expect(client.auth.signInWithOtp).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading', { name: /wie ben jij/i })).not.toBeInTheDocument();
   });
 
-  it('a full remount (page refresh, or App.tsx unmounting Mission Hunt when navigating to Calculator and back) restores the same session without a new magic link', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    const client = fakeClientWithLisa();
-    getSupabaseClient.mockReturnValue(client);
-
+  it('a full remount (page refresh, or App.tsx unmounting Mission Hunt when navigating to Calculator and back) restores the same remembered person', async () => {
+    setSelectedPersonId('p2');
     const { unmount } = render(<MissionHuntPage />);
     await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
     unmount();
@@ -142,86 +131,43 @@ describe('MissionHuntPage — session persistence ("remember this device")', () 
     render(<MissionHuntPage />);
 
     await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
-    expect(screen.queryByRole('heading', { name: /agent login/i })).not.toBeInTheDocument();
-    expect(client.auth.signInWithOtp).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading', { name: /wie ben jij/i })).not.toBeInTheDocument();
   });
 
-  it('a mid-session auth-state change to null (an expired/revoked refresh token) falls back cleanly to the login screen — no crash', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    const client = fakeClientWithLisa();
-    getSupabaseClient.mockReturnValue(client);
-
+  it('6. WISSEL PERSOON returns to WIE BEN JIJ? and forgets the remembered person', async () => {
+    setSelectedPersonId('p2');
+    const user = userEvent.setup();
     render(<MissionHuntPage />);
     await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
 
-    act(() => {
-      client.auth.__emitAuthStateChange('TOKEN_REFRESH_FAILED', null);
-    });
+    await user.click(screen.getByRole('button', { name: /wissel persoon/i }));
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    expect(screen.queryByText('Lisa')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
+    expect(getSelectedPersonId()).toBeNull();
   });
 
-  it('explicit UITLOGGEN calls supabase.auth.signOut() and returns to the login screen', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    const client = fakeClientWithLisa();
-    getSupabaseClient.mockReturnValue(client);
+  it('after WISSEL PERSOON, a fresh mount requires selecting a name again — no leftover selection lets it skip straight back in', async () => {
+    setSelectedPersonId('p2');
     const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
-
-    await user.click(screen.getByRole('button', { name: /uitloggen/i }));
-
-    expect(client.auth.signOut).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-  });
-
-  it('after explicit logout, Mission Hunt requires login again — no leftover session lets it skip straight back in', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    const client = fakeClientWithLisa();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
     const { unmount } = render(<MissionHuntPage />);
     await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /uitloggen/i }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /wissel persoon/i }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
     unmount();
 
-    // A fresh mount (e.g. navigating back into Mission Hunt) must not
-    // silently restore the old session — mockAuthState.session was cleared
-    // by the fake's signOut, exactly like a real supabase-js signOut clears
-    // the persisted localStorage session.
     render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    expect(screen.queryByText('Lisa')).not.toBeInTheDocument();
-  });
-
-  it('a malformed/expired session (getSession rejects) falls back cleanly to an error state, never a crash or an infinite loading spinner', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    const client = fakeClientWithLisa();
-    client.auth.getSession = () => Promise.reject(new Error('refresh_token_not_found'));
-    getSupabaseClient.mockReturnValue(client);
-
-    render(<MissionHuntPage />);
-
-    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /wie ben jij/i })).toBeInTheDocument());
+    expect(screen.queryByText(/current agent/i)).not.toBeInTheDocument();
   });
 });
 
-describe('MissionHuntPage — signed-in flow, member', () => {
-  it('a signed-in member lands directly on My Placements with no tab bar at all', async () => {
+describe('MissionHuntPage — signed-in flow, member (AM)', () => {
+  it('7. a member lands on My Placements by default, with the full tab bar also available', async () => {
+    setSelectedPersonId('p2');
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
     getSupabaseClient.mockReturnValue(
       buildFakeSupabaseClient({
-        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Lisa', email_normalized: 'lisa@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
+        profiles: PROFILES,
         projects: [],
       }),
     );
@@ -230,88 +176,108 @@ describe('MissionHuntPage — signed-in flow, member', () => {
 
     await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
     expect(screen.getByText(/voor vrijdag/i)).toBeInTheDocument();
-    // A normal member never sees an admin/team tab bar at all.
-    expect(screen.queryByRole('button', { name: /team placement import/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /friday review/i })).not.toBeInTheDocument();
-  });
-});
-
-describe('MissionHuntPage — signed-in flow, admin', () => {
-  it('Bernard (admin) sees all three tabs: My Placements, Team Placement Import, Friday Review', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    getSupabaseClient.mockReturnValue(
-      buildFakeSupabaseClient({
-        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: '2026-09-01T00:00:00Z' }],
-        projects: [],
-      }),
-    );
-
-    render(<MissionHuntPage />);
-
-    await waitFor(() => expect(screen.getByText('Bernard')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /^my placements$/i })).toBeInTheDocument();
+    // Everyone gets the tab bar now — roles only pick the default tab.
     expect(screen.getByRole('button', { name: /team placement import/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /friday review/i })).toBeInTheDocument();
   });
 });
 
-describe('MissionHuntPage — signed-in flow, manager/office_manager', () => {
+describe('MissionHuntPage — signed-in flow, admin/manager/office_manager/hr all default to Friday Review', () => {
   it.each([
-    ['manager', 'Jordan'],
-    ['office_manager', 'Marre'],
-  ])('%s gets the same three operational tabs as admin', async (role, name) => {
+    ['p1', 'Bernard'],
+    ['p3', 'Jordan'],
+    ['p4', 'Marre'],
+    ['p5', 'Maureen B'],
+  ])('%s (%s) lands on Friday Review by default and can still reach My Placements / Team Placement Import', async (personId) => {
+    setSelectedPersonId(personId);
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    getSupabaseClient.mockReturnValue(
-      buildFakeSupabaseClient({
-        profiles: [{ id: 'p1', user_id: 'user-1', display_name: name, email_normalized: `${name.toLowerCase()}@maandag.com`, role, active: true, created_at: '2026-09-01T00:00:00Z' }],
-        projects: [],
-      }),
-    );
-
-    render(<MissionHuntPage />);
-
-    await waitFor(() => expect(screen.getByText(name)).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /^my placements$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /team placement import/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /friday review/i })).toBeInTheDocument();
-  });
-});
-
-describe('MissionHuntPage — signed-in flow, hr', () => {
-  it('hr lands directly on the read-only Friday Review overview, with no tab bar and no My Placements/add affordance', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    getSupabaseClient.mockReturnValue(
-      buildFakeSupabaseClient({
-        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Maureen B', email_normalized: 'maureen.bokkers@maandag.com', role: 'hr', active: true, created_at: '2026-09-01T00:00:00Z' }],
-        projects: [],
-      }),
-    );
+    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: PROFILES, projects: [] }));
+    const user = userEvent.setup();
 
     render(<MissionHuntPage />);
 
     await waitFor(() => expect(screen.getByText(/team zwolle/i)).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /^my placements$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /team placement import/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /friday review/i })).not.toBeInTheDocument();
-    expect(screen.queryByText(/voor vrijdag/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /plaatsing toevoegen/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^my placements$/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^my placements$/i }));
+    expect(screen.getByText(/voor vrijdag/i)).toBeInTheDocument();
   });
 });
 
-describe('MissionHuntPage — a single AM+TM login exposes both perspectives without duplicating team totals', () => {
-  it('shows the AM\'s own placement in My Placements AND a colleague\'s TM-linked placement in My Professionals, as two distinct, non-overlapping counts', async () => {
+describe('MissionHuntPage — everyone may edit: no personal write restrictions', () => {
+  it("8. a plain member can reassign and manage Talent Managers on a colleague's placement — no admin bypass needed", async () => {
+    setSelectedPersonId('p2'); // Lisa, a plain member
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
     getSupabaseClient.mockReturnValue(
       buildFakeSupabaseClient({
-        profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Kim', email_normalized: 'kim.schuring@maandag.com', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' }],
+        profiles: PROFILES,
+        projects: [
+          {
+            id: 'colleague-placement',
+            owner_id: 'user-1',
+            owner_email: 'bernard.drost@maandag.com',
+            owner_display_name: 'Bernard',
+            professional_name: 'Ryan Dijkstra',
+            client_name: 'Greijdanus',
+            start_date: '2026-10-01',
+            end_date: '2026-12-31',
+            hours_per_week: 24,
+            monthly_vcdb: 10,
+            note: null,
+            fingerprint: 'fp-1',
+            created_at: 'x',
+            updated_at: 'x',
+          },
+        ],
+      }),
+    );
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+
+    // The colleague's placement isn't in "My Placements" — reach it via
+    // Friday Review's drilldown instead.
+    await user.click(screen.getByRole('button', { name: /friday review/i }));
+    await user.click(await screen.findByText('Bernard'));
+    await user.click(await screen.findByText('Ryan Dijkstra'));
+
+    // canReassign renders the reassignment fields; canManageTalentManagers
+    // renders the Talent Manager assignment control (an "add new" field
+    // with none linked yet); editable renders the delete affordance — all
+    // three unconditional now, for a plain member looking at a colleague's
+    // placement.
+    expect(await screen.findByText(/toewijzen/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/e-mailadres \(nieuw\)/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /verwijderen/i })).toBeInTheDocument();
+  });
+
+  it('9. Team Placement Import is reachable by a plain member, not just admin/manager/office_manager', async () => {
+    setSelectedPersonId('p2');
+    isSupabaseConfigured.mockReturnValue(true);
+    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: PROFILES, projects: [] }));
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByText('Lisa')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: /team placement import/i }));
+
+    expect(await screen.findByRole('button', { name: /paste from excel/i })).toBeInTheDocument();
+  });
+});
+
+describe('MissionHuntPage — a single AM+TM selection exposes both perspectives without duplicating team totals', () => {
+  it("shows the AM's own placement in My Placements AND a colleague's TM-linked placement in My Professionals, as two distinct, non-overlapping counts", async () => {
+    setSelectedPersonId('p6'); // Kim
+    isSupabaseConfigured.mockReturnValue(true);
+    getSupabaseClient.mockReturnValue(
+      buildFakeSupabaseClient({
+        profiles: PROFILES,
         projects: [
           {
             id: 'own-1',
-            owner_id: 'user-1',
+            owner_id: 'user-6',
             owner_email: 'kim.schuring@maandag.com',
             owner_display_name: 'Kim',
             professional_name: 'Kim Own Professional',
@@ -350,37 +316,53 @@ describe('MissionHuntPage — a single AM+TM login exposes both perspectives wit
 
     render(<MissionHuntPage />);
 
-    // My Placements (AM perspective) and My Professionals (TM perspective,
-    // additive) render simultaneously for a plain member with both — each
-    // placement shows exactly once, in its own section, never duplicated
-    // or merged into the other's count.
     await waitFor(() => expect(screen.getByText('Kim Own Professional')).toBeInTheDocument());
     expect(screen.getByText('Jurgen Linked Professional')).toBeInTheDocument();
     expect(screen.getAllByText('Kim Own Professional')).toHaveLength(1);
     expect(screen.getAllByText('Jurgen Linked Professional')).toHaveLength(1);
 
-    // My Professionals groups the TM-linked placement by its real AM.
     expect(screen.getByText(/mijn professionals/i)).toBeInTheDocument();
     expect(screen.getByText(/jurgen — 1/i)).toBeInTheDocument();
   });
 });
 
-describe('MissionHuntPage — loading state renders', () => {
-  it('shows an "authenticating agent" loading state, never a blank screen, while the session check is pending', () => {
+describe('MissionHuntPage — loading and error states', () => {
+  it('10. shows a "loading team roster" state, never a blank screen, while the roster fetch is pending', () => {
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = null;
-    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }, { getSessionNeverResolves: true }));
+    getSupabaseClient.mockReturnValue({
+      from: () => ({
+        select: () => ({ order: () => new Promise(() => {}) }),
+      }),
+    });
 
     render(<MissionHuntPage />);
 
-    expect(screen.getByText(/authenticating agent/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading team roster/i)).toBeInTheDocument();
+  });
+
+  it('a roster fetch failure shows System Error + Retry, never a crash', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    getSupabaseClient.mockReturnValue({
+      from: () => ({
+        select: () => ({
+          order: async () => {
+            throw new Error('network down');
+          },
+        }),
+      }),
+    });
+
+    render(<MissionHuntPage />);
+
+    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   });
 });
 
 describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches and clears the confirmation', () => {
   it('the ALLES KLOPT banner disappears once the server-side trigger has invalidated it, without a full page reload', async () => {
+    setSelectedPersonId('p1');
     isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
 
     const placementRow = {
       id: 'pl-1',
@@ -409,9 +391,9 @@ describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches an
       if (table === 'profiles') {
         return {
           select: () => ({
-            eq: () => ({ maybeSingle: async () => ({ data: { id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: 'x' }, error: null }) }),
-            then: (resolve: (v: unknown) => void) =>
-              resolve({ data: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: 'x' }], error: null }),
+            order: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: PROFILES, error: null }) }),
+            eq: () => ({ maybeSingle: async () => ({ data: PROFILES[0], error: null }) }),
+            then: (resolve: (v: unknown) => void) => resolve({ data: PROFILES, error: null }),
           }),
         };
       }
@@ -438,15 +420,14 @@ describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches an
       throw new Error(`unexpected table ${table}`);
     }
 
-    getSupabaseClient.mockReturnValue({
-      auth: {
-        getSession: () => Promise.resolve({ data: { session: mockAuthState.session } }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
-      },
-      from,
-    });
+    getSupabaseClient.mockReturnValue({ from });
 
     render(<MissionHuntPage />);
+
+    // Bernard (admin) defaults to Friday Review now — switch to My
+    // Placements, which also happens to contain "GECONTROLEERD" text.
+    await waitFor(() => expect(screen.getByRole('button', { name: /^my placements$/i })).toBeInTheDocument());
+    await userEvent.setup().click(screen.getByRole('button', { name: /^my placements$/i }));
 
     await waitFor(() => expect(screen.getByText(/gecontroleerd/i)).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /alles klopt/i })).not.toBeInTheDocument();
@@ -459,203 +440,5 @@ describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches an
 
     await waitFor(() => expect(screen.getByRole('button', { name: /alles klopt/i })).toBeInTheDocument());
     expect(screen.queryByText(/gecontroleerd/i)).not.toBeInTheDocument();
-  });
-});
-
-describe('MissionHuntPage — profile fetch error renders a safe error state', () => {
-  it('never black-screens when the profiles query throws — shows System Error + Retry instead', async () => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = { user: { id: 'user-1' } };
-    getSupabaseClient.mockReturnValue(buildFakeSupabaseClient({ profiles: [], projects: [] }, { profileFetchThrows: true }));
-
-    const { container } = render(<MissionHuntPage />);
-
-    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
-    // A real render happened — this is not an empty/unmounted tree.
-    expect(container.textContent).not.toBe('');
-  });
-});
-
-describe('MissionHuntPage — first login: 6-digit email code, not a magic link', () => {
-  function fakeClientWithBernard() {
-    return buildFakeSupabaseClient({
-      profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: '2026-09-01T00:00:00Z' }],
-      projects: [],
-    });
-  }
-
-  beforeEach(() => {
-    isSupabaseConfigured.mockReturnValue(true);
-    mockAuthState.session = null;
-  });
-
-  it('1. requesting a code calls signInWithOtp with shouldCreateUser:false and no emailRedirectTo, then shows the controlecode step with the normalized email', async () => {
-    const client = fakeClientWithBernard();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-
-    await user.type(screen.getByLabelText(/e-mailadres/i), '  Bernard.Drost@Maandag.com  ');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-
-    await waitFor(() => expect(screen.getByRole('heading', { name: /controlecode/i })).toBeInTheDocument());
-    expect(client.auth.signInWithOtp).toHaveBeenCalledWith({
-      email: 'bernard.drost@maandag.com',
-      options: { shouldCreateUser: false },
-    });
-    expect(screen.getByText('bernard.drost@maandag.com')).toBeInTheDocument();
-    // No clickable-link copy anywhere in this step.
-    expect(screen.queryByText(/inloglink/i)).not.toBeInTheDocument();
-  });
-
-  it('2. an unknown/unregistered email never creates a user client-side — shouldCreateUser:false is always sent, and a rejection shows the generic message, not the specific one', async () => {
-    const client = fakeClientWithBernard();
-    client.auth.signInWithOtp = vi.fn(async () => ({ error: { code: 'otp_disabled', message: 'Signups not allowed for otp' } }));
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'nobody@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-
-    expect(await screen.findByText(/kon geen inlogcode versturen/i)).toBeInTheDocument();
-    expect(client.auth.signInWithOtp).toHaveBeenCalledWith({ email: 'nobody@maandag.com', options: { shouldCreateUser: false } });
-    // Still on step 1 — never advanced as if a code had actually been sent.
-    expect(screen.queryByRole('heading', { name: /controlecode/i })).not.toBeInTheDocument();
-  });
-
-  it('3. entering a valid 6-digit code calls verifyOtp and signs in', async () => {
-    const client = fakeClientWithBernard();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
-
-    await user.type(screen.getByLabelText(/controlecode/i), '123456');
-    await user.click(screen.getByRole('button', { name: /^inloggen$/i }));
-
-    expect(client.auth.verifyOtp).toHaveBeenCalledWith({ email: 'bernard.drost@maandag.com', token: '123456', type: 'email' });
-    await waitFor(() => expect(screen.getByText('Bernard')).toBeInTheDocument());
-  });
-
-  it('4. an invalid code shows the safe "ongeldig of verlopen" message, never the raw Supabase error, and stays on the code step', async () => {
-    const client = fakeClientWithBernard();
-    client.auth.verifyOtp = vi.fn(async () => ({ error: { code: 'otp_expired', message: 'Token has expired or is invalid' } }));
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
-
-    await user.type(screen.getByLabelText(/controlecode/i), '000000');
-    await user.click(screen.getByRole('button', { name: /^inloggen$/i }));
-
-    expect(await screen.findByText(/deze code is ongeldig of verlopen/i)).toBeInTheDocument();
-    expect(screen.queryByText(/token has expired/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument();
-  });
-
-  it('5. STUUR NIEUWE CODE resends to the same normalized email, does not create a user, and clears the code input', async () => {
-    const client = fakeClientWithBernard();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/controlecode/i), '111111');
-
-    await user.click(screen.getByRole('button', { name: /stuur nieuwe code/i }));
-
-    await waitFor(() => expect(client.auth.signInWithOtp).toHaveBeenCalledTimes(2));
-    expect(client.auth.signInWithOtp).toHaveBeenLastCalledWith({ email: 'bernard.drost@maandag.com', options: { shouldCreateUser: false } });
-    expect(screen.getByLabelText(/controlecode/i)).toHaveValue('');
-  });
-
-  it('6. ANDER E-MAILADRES returns to the email step, clears the code and any error, without calling signOut', async () => {
-    const client = fakeClientWithBernard();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/controlecode/i), '999999');
-
-    await user.click(screen.getByRole('button', { name: /ander e-mailadres/i }));
-
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    expect(client.auth.signOut).not.toHaveBeenCalled();
-    // Spec only requires clearing the OTP code and any error, not the email
-    // field — leaving it prefilled lets someone fix a typo instead of
-    // retyping the whole address.
-    expect(screen.queryByText(/deze code is ongeldig/i)).not.toBeInTheDocument();
-  });
-
-  it('7. a rate-limited request shows the specific rate-limit message, not the generic "controleer het e-mailadres" one', async () => {
-    const client = fakeClientWithBernard();
-    client.auth.signInWithOtp = vi.fn(async () => ({ error: { code: 'over_email_send_rate_limit', message: '429: email rate limit exceeded' } }));
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-
-    expect(await screen.findByText(/even geduld: er zijn zojuist al veel inlogpogingen geweest/i)).toBeInTheDocument();
-    expect(screen.queryByText(/kon geen inlogcode versturen/i)).not.toBeInTheDocument();
-  });
-
-  it('8. the code field strips non-digits and whitespace and caps at 6 characters, and INLOGGEN stays disabled until exactly 6 digits are entered', async () => {
-    const client = fakeClientWithBernard();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
-
-    const codeInput = screen.getByLabelText(/controlecode/i);
-    const loginButton = screen.getByRole('button', { name: /^inloggen$/i });
-    expect(loginButton).toBeDisabled();
-
-    await user.type(codeInput, ' 1a2 3-45 678');
-    expect(codeInput).toHaveValue('123456');
-    expect(loginButton).toBeEnabled();
-  });
-
-  it('9. Enter inside the code field submits once 6 digits are present', async () => {
-    const client = fakeClientWithBernard();
-    getSupabaseClient.mockReturnValue(client);
-    const user = userEvent.setup();
-
-    render(<MissionHuntPage />);
-    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
-    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
-    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
-    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
-
-    await user.type(screen.getByLabelText(/controlecode/i), '123456{Enter}');
-
-    await waitFor(() => expect(client.auth.verifyOtp).toHaveBeenCalledWith({ email: 'bernard.drost@maandag.com', token: '123456', type: 'email' }));
   });
 });

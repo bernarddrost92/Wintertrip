@@ -4,22 +4,31 @@ import { MissionReceiptFlow } from './MissionReceiptFlow';
 import { LEAGUE_CHECK_ITEMS } from '../../data/leagueCheckItems';
 import type { AgentIdentity } from '../missionFlow/missionFlowContext';
 
-const { isSupabaseConfigured, getSupabaseClient, mockSession, upsert } = vi.hoisted(() => ({
+const { isSupabaseConfigured, getSupabaseClient, getSelectedPersonId, mockUserIdForPerson, upsert } = vi.hoisted(() => ({
   isSupabaseConfigured: vi.fn(),
   getSupabaseClient: vi.fn(),
-  mockSession: { current: null as null | { user: { id: string } } },
+  getSelectedPersonId: vi.fn(),
+  mockUserIdForPerson: { current: null as string | null },
   upsert: vi.fn(),
 }));
 
 vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseClient }));
+vi.mock('../mission-hunt/personStorage', () => ({ getSelectedPersonId }));
 
 function buildFakeClient() {
   return {
-    auth: {
-      getSession: () => Promise.resolve({ data: { session: mockSession.current } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+    from: (table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => (mockUserIdForPerson.current ? { data: { user_id: mockUserIdForPerson.current }, error: null } : { data: null, error: null }),
+            }),
+          }),
+        };
+      }
+      return { upsert: upsert.mockResolvedValue({ error: null }) };
     },
-    from: () => ({ upsert: upsert.mockResolvedValue({ error: null }) }),
   };
 }
 
@@ -35,11 +44,13 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     upsert.mockClear();
     getSupabaseClient.mockClear();
     isSupabaseConfigured.mockReset();
-    mockSession.current = null;
+    getSelectedPersonId.mockReset();
+    mockUserIdForPerson.current = null;
   });
 
   it('Supabase unconfigured: receipt still generates, no write is attempted, a not-registered note is shown', async () => {
     isSupabaseConfigured.mockReturnValue(false);
+    getSelectedPersonId.mockReturnValue('profile-a');
     render(
       <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-a" />,
     );
@@ -47,13 +58,13 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
 
     expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
     expect(getSupabaseClient).not.toHaveBeenCalled();
-    expect(await screen.findByText(/niet ingelogd/i)).toBeInTheDocument();
+    expect(await screen.findByText(/nog geen naam gekozen/i)).toBeInTheDocument();
   });
 
-  it('signed out (configured but no session): no write is attempted, note is shown', async () => {
+  it('no name selected yet on this device (configured, but personStorage is empty): no write is attempted, note is shown', async () => {
     isSupabaseConfigured.mockReturnValue(true);
     getSupabaseClient.mockReturnValue(buildFakeClient());
-    mockSession.current = null;
+    getSelectedPersonId.mockReturnValue(null);
 
     render(
       <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-b" />,
@@ -62,14 +73,15 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     clickGenerate();
 
     expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText(/niet ingelogd/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/nog geen naam gekozen/i)).toBeInTheDocument());
     expect(upsert).not.toHaveBeenCalled();
   });
 
-  it('signed in: Generate Receipt upserts the receipt with the session receiptId, checked count and total, no note is shown', async () => {
+  it('a name is selected: Generate Receipt upserts the receipt with the session receiptId, checked count and total, no note is shown', async () => {
     isSupabaseConfigured.mockReturnValue(true);
     getSupabaseClient.mockReturnValue(buildFakeClient());
-    mockSession.current = { user: { id: 'user-123' } };
+    getSelectedPersonId.mockReturnValue('profile-123');
+    mockUserIdForPerson.current = 'user-123';
 
     render(
       <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-c" />,
@@ -81,13 +93,14 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     await waitFor(() =>
       expect(upsert).toHaveBeenCalledWith({ id: 'session-c', checked_count: 3, total_checks: 6, created_by: 'user-123' }),
     );
-    expect(screen.queryByText(/niet ingelogd/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/nog geen naam gekozen/i)).not.toBeInTheDocument();
   });
 
-  it('signed in, re-generating after checking another box upserts the same receiptId again (update, not a new receipt)', async () => {
+  it('a name is selected, re-generating after checking another box upserts the same receiptId again (update, not a new receipt)', async () => {
     isSupabaseConfigured.mockReturnValue(true);
     getSupabaseClient.mockReturnValue(buildFakeClient());
-    mockSession.current = { user: { id: 'user-123' } };
+    getSelectedPersonId.mockReturnValue('profile-123');
+    mockUserIdForPerson.current = 'user-123';
 
     const { rerender } = render(
       <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-d" />,
@@ -108,6 +121,7 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
 
   it('resilience: getSupabaseClient() throws synchronously (the production incident) — League Check still renders and the receipt still generates', async () => {
     isSupabaseConfigured.mockReturnValue(true);
+    getSelectedPersonId.mockReturnValue('profile-e');
     getSupabaseClient.mockImplementation(() => {
       throw new Error('Invalid URL');
     });
@@ -119,18 +133,20 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     clickGenerate();
 
     expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
-    expect(await screen.findByText(/niet ingelogd/i)).toBeInTheDocument();
+    expect(await screen.findByText(/nog geen naam gekozen/i)).toBeInTheDocument();
   });
 
-  it('resilience: the upsert itself rejects while signed in — receipt generation still succeeds, failure is silent to the user', async () => {
+  it('resilience: the upsert itself rejects while a name is selected — receipt generation still succeeds, failure is silent to the user', async () => {
     isSupabaseConfigured.mockReturnValue(true);
-    mockSession.current = { user: { id: 'user-123' } };
+    getSelectedPersonId.mockReturnValue('profile-123');
+    mockUserIdForPerson.current = 'user-123';
     getSupabaseClient.mockReturnValue({
-      auth: {
-        getSession: () => Promise.resolve({ data: { session: mockSession.current } }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      from: (table: string) => {
+        if (table === 'profiles') {
+          return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { user_id: 'user-123' }, error: null }) }) }) };
+        }
+        return { upsert: vi.fn().mockRejectedValue(new Error('network down')) };
       },
-      from: () => ({ upsert: vi.fn().mockRejectedValue(new Error('network down')) }),
     });
 
     render(

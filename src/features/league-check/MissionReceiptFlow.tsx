@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { GoldButton } from '../../components/GoldButton';
-import { useSupabaseSession } from '../../hooks/useSupabaseSession';
+import { useSelectedMissionHuntPerson } from '../../hooks/useSelectedMissionHuntPerson';
 import { upsertLeagueCheckReceipt } from '../../services/leagueCheckReceipts';
 import { formatFoundPoints, formatVcdbValue } from '../../utils/format';
 import { AfterCheckEditor } from './AfterCheckEditor';
@@ -27,14 +27,18 @@ interface MissionReceiptFlowProps {
 
 /**
  * Registers this receipt in League Check Intelligence (the team-wide
- * quality-control counter in the Calculator) if — and only if — a Supabase
- * user is signed in; there is no anon write policy. Never blocks or delays
- * the on-screen receipt: this fires alongside it, not before it, and a
- * failure here is silent to the person generating the receipt (the receipt
- * itself, its download and its share still work identically either way).
+ * quality-control counter in the Calculator) if — and only if — someone has
+ * selected their name via Mission Hunt's WIE BEN JIJ? picker on this
+ * device (see personStorage.ts); there is no separate sign-in step
+ * anymore, and no anon-agnostic write policy limitation either — the
+ * remaining gate is purely "do we know who to attribute this to". Never
+ * blocks or delays the on-screen receipt: this fires alongside it, not
+ * before it, and a failure here is silent to the person generating the
+ * receipt (the receipt itself, its download and its share still work
+ * identically either way).
  */
 function useRegisterReceipt(receiptId: string, checkedCount: number, total: number) {
-  const { userId, ready } = useSupabaseSession();
+  const { userId, ready } = useSelectedMissionHuntPerson();
 
   function register() {
     if (!userId) return;
@@ -52,12 +56,13 @@ function GenerateReceiptButton({ missionApproved, onClick }: { missionApproved: 
   );
 }
 
-/** Shown only once a receipt has been generated while signed out — the
- * receipt itself already printed above this, unaffected either way. */
+/** Shown only once a receipt has been generated while nobody has selected
+ * a name yet on this device — the receipt itself already printed above
+ * this, unaffected either way. */
 function NotRegisteredNote() {
   return (
     <p className="text-center font-mono text-[10px] uppercase tracking-wider text-ink-dim">
-      Niet ingelogd — receipt nog niet team-breed geregistreerd. Log in via Mission Hunt om mee te tellen in League Check Intelligence.
+      Nog geen naam gekozen — receipt nog niet team-breed geregistreerd. Selecteer jezelf via Mission Hunt om mee te tellen in League Check Intelligence.
     </p>
   );
 }
