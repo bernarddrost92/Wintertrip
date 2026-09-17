@@ -13,6 +13,10 @@ const { isSupabaseConfigured, getSupabaseClient, mockAuthState } = vi.hoisted(()
 
 vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseClient }));
 
+/** Broad enough to let individual tests reassign signInWithOtp/verifyOtp
+ * with whatever error code/message they want to simulate. */
+type FakeAuthError = { code: string; message: string } | null;
+
 /** Minimal fake of the subset of supabase-js's query builder this feature
  * actually calls — enough to drive MissionHuntAuthProvider/useMissionHuntData
  * through a real render without a live Supabase project. */
@@ -53,7 +57,12 @@ function buildFakeSupabaseClient(
         authStateCallback = cb;
         return { data: { subscription: { unsubscribe: vi.fn() } } };
       }),
-      signInWithOtp: vi.fn(async () => ({ error: null })),
+      signInWithOtp: vi.fn(async (): Promise<{ error: FakeAuthError }> => ({ error: null })),
+      verifyOtp: vi.fn(async (): Promise<{ error: FakeAuthError }> => {
+        mockAuthState.session = { user: { id: 'user-1' } };
+        authStateCallback?.('SIGNED_IN', mockAuthState.session);
+        return { error: null };
+      }),
       signOut: vi.fn(async () => {
         mockAuthState.session = null;
       }),
@@ -95,7 +104,7 @@ describe('MissionHuntPage — auth guard', () => {
     // The "remembered on this device" copy — sets expectations without
     // promising a permanent login.
     expect(screen.getByText(/eerste keer op dit apparaat/i)).toBeInTheDocument();
-    expect(screen.getByText(/daarna onthouden we je login op dit apparaat/i)).toBeInTheDocument();
+    expect(screen.getByText(/na het inloggen onthouden we je op dit apparaat/i)).toBeInTheDocument();
   });
 });
 
@@ -465,5 +474,188 @@ describe('MissionHuntPage — profile fetch error renders a safe error state', (
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
     // A real render happened — this is not an empty/unmounted tree.
     expect(container.textContent).not.toBe('');
+  });
+});
+
+describe('MissionHuntPage — first login: 6-digit email code, not a magic link', () => {
+  function fakeClientWithBernard() {
+    return buildFakeSupabaseClient({
+      profiles: [{ id: 'p1', user_id: 'user-1', display_name: 'Bernard', email_normalized: 'bernard.drost@maandag.com', role: 'admin', active: true, created_at: '2026-09-01T00:00:00Z' }],
+      projects: [],
+    });
+  }
+
+  beforeEach(() => {
+    isSupabaseConfigured.mockReturnValue(true);
+    mockAuthState.session = null;
+  });
+
+  it('1. requesting a code calls signInWithOtp with shouldCreateUser:false and no emailRedirectTo, then shows the controlecode step with the normalized email', async () => {
+    const client = fakeClientWithBernard();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText(/e-mailadres/i), '  Bernard.Drost@Maandag.com  ');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: /controlecode/i })).toBeInTheDocument());
+    expect(client.auth.signInWithOtp).toHaveBeenCalledWith({
+      email: 'bernard.drost@maandag.com',
+      options: { shouldCreateUser: false },
+    });
+    expect(screen.getByText('bernard.drost@maandag.com')).toBeInTheDocument();
+    // No clickable-link copy anywhere in this step.
+    expect(screen.queryByText(/inloglink/i)).not.toBeInTheDocument();
+  });
+
+  it('2. an unknown/unregistered email never creates a user client-side — shouldCreateUser:false is always sent, and a rejection shows the generic message, not the specific one', async () => {
+    const client = fakeClientWithBernard();
+    client.auth.signInWithOtp = vi.fn(async () => ({ error: { code: 'otp_disabled', message: 'Signups not allowed for otp' } }));
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'nobody@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+
+    expect(await screen.findByText(/kon geen inlogcode versturen/i)).toBeInTheDocument();
+    expect(client.auth.signInWithOtp).toHaveBeenCalledWith({ email: 'nobody@maandag.com', options: { shouldCreateUser: false } });
+    // Still on step 1 — never advanced as if a code had actually been sent.
+    expect(screen.queryByRole('heading', { name: /controlecode/i })).not.toBeInTheDocument();
+  });
+
+  it('3. entering a valid 6-digit code calls verifyOtp and signs in', async () => {
+    const client = fakeClientWithBernard();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText(/controlecode/i), '123456');
+    await user.click(screen.getByRole('button', { name: /^inloggen$/i }));
+
+    expect(client.auth.verifyOtp).toHaveBeenCalledWith({ email: 'bernard.drost@maandag.com', token: '123456', type: 'email' });
+    await waitFor(() => expect(screen.getByText('Bernard')).toBeInTheDocument());
+  });
+
+  it('4. an invalid code shows the safe "ongeldig of verlopen" message, never the raw Supabase error, and stays on the code step', async () => {
+    const client = fakeClientWithBernard();
+    client.auth.verifyOtp = vi.fn(async () => ({ error: { code: 'otp_expired', message: 'Token has expired or is invalid' } }));
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText(/controlecode/i), '000000');
+    await user.click(screen.getByRole('button', { name: /^inloggen$/i }));
+
+    expect(await screen.findByText(/deze code is ongeldig of verlopen/i)).toBeInTheDocument();
+    expect(screen.queryByText(/token has expired/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument();
+  });
+
+  it('5. STUUR NIEUWE CODE resends to the same normalized email, does not create a user, and clears the code input', async () => {
+    const client = fakeClientWithBernard();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/controlecode/i), '111111');
+
+    await user.click(screen.getByRole('button', { name: /stuur nieuwe code/i }));
+
+    await waitFor(() => expect(client.auth.signInWithOtp).toHaveBeenCalledTimes(2));
+    expect(client.auth.signInWithOtp).toHaveBeenLastCalledWith({ email: 'bernard.drost@maandag.com', options: { shouldCreateUser: false } });
+    expect(screen.getByLabelText(/controlecode/i)).toHaveValue('');
+  });
+
+  it('6. ANDER E-MAILADRES returns to the email step, clears the code and any error, without calling signOut', async () => {
+    const client = fakeClientWithBernard();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/controlecode/i), '999999');
+
+    await user.click(screen.getByRole('button', { name: /ander e-mailadres/i }));
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    expect(client.auth.signOut).not.toHaveBeenCalled();
+    // Spec only requires clearing the OTP code and any error, not the email
+    // field — leaving it prefilled lets someone fix a typo instead of
+    // retyping the whole address.
+    expect(screen.queryByText(/deze code is ongeldig/i)).not.toBeInTheDocument();
+  });
+
+  it('7. a rate-limited request shows the specific rate-limit message, not the generic "controleer het e-mailadres" one', async () => {
+    const client = fakeClientWithBernard();
+    client.auth.signInWithOtp = vi.fn(async () => ({ error: { code: 'over_email_send_rate_limit', message: '429: email rate limit exceeded' } }));
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+
+    expect(await screen.findByText(/even geduld: er zijn zojuist al veel inlogpogingen geweest/i)).toBeInTheDocument();
+    expect(screen.queryByText(/kon geen inlogcode versturen/i)).not.toBeInTheDocument();
+  });
+
+  it('8. the code field strips non-digits and whitespace and caps at 6 characters, and INLOGGEN stays disabled until exactly 6 digits are entered', async () => {
+    const client = fakeClientWithBernard();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
+
+    const codeInput = screen.getByLabelText(/controlecode/i);
+    const loginButton = screen.getByRole('button', { name: /^inloggen$/i });
+    expect(loginButton).toBeDisabled();
+
+    await user.type(codeInput, ' 1a2 3-45 678');
+    expect(codeInput).toHaveValue('123456');
+    expect(loginButton).toBeEnabled();
+  });
+
+  it('9. Enter inside the code field submits once 6 digits are present', async () => {
+    const client = fakeClientWithBernard();
+    getSupabaseClient.mockReturnValue(client);
+    const user = userEvent.setup();
+
+    render(<MissionHuntPage />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: /agent login/i })).toBeInTheDocument());
+    await user.type(screen.getByLabelText(/e-mailadres/i), 'bernard.drost@maandag.com');
+    await user.click(screen.getByRole('button', { name: /stuur inlogcode/i }));
+    await waitFor(() => expect(screen.getByLabelText(/controlecode/i)).toBeInTheDocument());
+
+    await user.type(screen.getByLabelText(/controlecode/i), '123456{Enter}');
+
+    await waitFor(() => expect(client.auth.verifyOtp).toHaveBeenCalledWith({ email: 'bernard.drost@maandag.com', token: '123456', type: 'email' }));
   });
 });
