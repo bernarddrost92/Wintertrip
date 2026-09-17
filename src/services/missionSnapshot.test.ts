@@ -20,9 +20,9 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
     expect(result.fte.targetFteOnJan31).toBeNull();
   });
 
-  it('current #1 benchmark is -22.40, gap is computed centrally to 58.11 FTE', () => {
-    expect(result.fte.currentNumberOneBenchmark).toBe(-22.4);
-    expect(result.fte.fteMilestones).toContainEqual({ position: 1, team: 'Middelburg', gapFte: 58.11 });
+  it('current #1 benchmark is -22.80, gap is computed centrally to 57.71 FTE', () => {
+    expect(result.fte.currentNumberOneBenchmark).toBe(-22.8);
+    expect(result.fte.fteMilestones).toContainEqual({ position: 1, team: 'Middelburg', gapFte: 57.71 });
   });
 
   it('FTE milestones cover the reference positions from the snapshot, team names carried through', () => {
@@ -30,14 +30,14 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
       { position: 8, team: 'Alkmaar', gapFte: 23.36 },
       { position: 5, team: 'Utrecht', gapFte: 41.11 },
       { position: 3, team: 'Eindhoven', gapFte: 54.81 },
-      { position: 1, team: 'Middelburg', gapFte: 58.11 },
+      { position: 1, team: 'Middelburg', gapFte: 57.71 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Virtual Final Score are carried through, distinct from Base League Points', () => {
-    expect(result.powerBi.vcdbScore).toBe(15894.34);
+    expect(result.powerBi.vcdbScore).toBe(16141.51);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(20662.65);
+    expect(result.powerBi.finalScore).toBe(20983.97);
   });
 
   it('Virtual Top 3 is carried through unchanged', () => {
@@ -45,7 +45,7 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
   });
 
   it('snapshot timestamp (a reliable refresh time this time) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-09-16T05:16:00+02:00');
-    expect(result.powerBi.updatedAt).toBe('2026-09-16T05:16:00+02:00');
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-09-17T05:28:00+02:00');
+    expect(result.powerBi.updatedAt).toBe('2026-09-17T05:28:00+02:00');
   });
 });
