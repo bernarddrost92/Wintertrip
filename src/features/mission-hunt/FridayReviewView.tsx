@@ -12,8 +12,9 @@ import { AccountManagerDrawer } from './AccountManagerDrawer';
 import { TalentManagerSummaryCard } from './TalentManagerSummaryCard';
 import { TalentManagerDrawer } from './TalentManagerDrawer';
 import { PlacementFilterBar } from './PlacementFilterBar';
+import { buildOpportunityReviewProgress } from '../../services/missionHuntOpportunityReview';
 import type { PlacementFilter } from '../../services/missionHuntOpportunity';
-import type { MissionHuntPlacement, MissionHuntProfile, PlacementReview, TalentManagerLink, TalentManagerReview, TeamMember } from '../../types/missionHunt';
+import type { MissionHuntPlacement, MissionHuntProfile, OpportunityReview, PlacementReview, TalentManagerLink, TalentManagerReview, TeamMember } from '../../types/missionHunt';
 
 interface FridayReviewViewProps {
   placements: MissionHuntPlacement[];
@@ -23,6 +24,9 @@ interface FridayReviewViewProps {
   talentManagerLinks: TalentManagerLink[];
   talentManagerReviews: TalentManagerReview[];
   onOpenPlacement: (placementId: string) => void;
+  /** Optional — omitted, the per-AM/team review intelligence simply
+   * doesn't render, exactly as before this feature existed. */
+  opportunityReviews?: OpportunityReview[];
 }
 
 /**
@@ -33,12 +37,24 @@ interface FridayReviewViewProps {
  * flat list. Team Zwolle totals use the UNIQUE placement set: a placement
  * linked to 1 AM + 2 TMs still counts once, never three times.
  */
-export function FridayReviewView({ placements, profiles, teamMembers, placementReviews, talentManagerLinks, talentManagerReviews, onOpenPlacement }: FridayReviewViewProps) {
+export function FridayReviewView({
+  placements,
+  profiles,
+  teamMembers,
+  placementReviews,
+  talentManagerLinks,
+  talentManagerReviews,
+  onOpenPlacement,
+  opportunityReviews = [],
+}: FridayReviewViewProps) {
   const [filter, setFilter] = useState<PlacementFilter>('all-opportunities');
   const [selectedAmEmail, setSelectedAmEmail] = useState<string | null>(null);
   const [selectedTmEmail, setSelectedTmEmail] = useState<string | null>(null);
 
   const amSummaries = buildAccountManagerSummaries(placements, profiles, teamMembers, placementReviews);
+  // Team-wide review intelligence — SECONDARY per spec, reusing the same
+  // pure progress function against the FULL unique placement set.
+  const teamReviewProgress = buildOpportunityReviewProgress(placements, opportunityReviews);
   const tmSummaries = buildTalentManagerSummaries(placements, talentManagerLinks, profiles, talentManagerReviews);
   const crossIntelligence = buildCrossIntelligence(placements, talentManagerLinks, profiles);
   // Team Zwolle's totals come from the unique placement set itself — never
@@ -85,6 +101,12 @@ export function FridayReviewView({ placements, profiles, teamMembers, placementR
             TM CHECK: {tmCompletion.verifiedCount} / {tmCompletion.totalCount} TALENT MANAGERS GECONTROLEERD
           </div>
         </div>
+        {teamReviewProgress.opportunityTotal > 0 && (
+          <div className="mt-2 border border-sky-400/20 bg-mission-raised px-3 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.1em] text-ink">
+            TEAM REVIEW: {teamReviewProgress.opportunityTotal} kansen gevonden · {teamReviewProgress.reviewedCount} / {teamReviewProgress.opportunityTotal} beoordeeld ·{' '}
+            <span className="text-gold">{teamReviewProgress.opvolgen} opvolgen</span>
+          </div>
+        )}
       </div>
 
       {/* UREN & INSCHIETKANSEN — for now this surfaces the automatically
@@ -114,7 +136,12 @@ export function FridayReviewView({ placements, profiles, teamMembers, placementR
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {amSummaries.map((summary) => (
-              <AccountManagerSummaryCard key={summary.emailNormalized} summary={summary} onClick={() => setSelectedAmEmail(summary.emailNormalized)} />
+              <AccountManagerSummaryCard
+                key={summary.emailNormalized}
+                summary={summary}
+                onClick={() => setSelectedAmEmail(summary.emailNormalized)}
+                opportunityReviews={opportunityReviews}
+              />
             ))}
           </div>
         )}

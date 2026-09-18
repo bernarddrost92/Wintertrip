@@ -146,3 +146,26 @@ export interface PlacementReview {
   placementCountAtVerification: number;
   createdAt: string;
 }
+
+/** An Accountmanager's sales-meeting decision on one detected opportunity
+ * (public.opportunity_reviews, migration 0011). One row per placement,
+ * upserted by projectId — current state only, not an audit log. Never
+ * changes the placement's own data (FTE/DB/dates/owner) or its automatic
+ * opportunity classification; it is only a commitment recorded on top. */
+export type OpportunityReviewStatus = 'opvolgen' | 'geen_kans' | 'later';
+
+export type OpportunityReviewActionType = 'uren_ophogen' | 'verlenging_bespreken' | 'timing_inschieten' | 'anders';
+
+export interface OpportunityReview {
+  id: string;
+  projectId: string;
+  status: OpportunityReviewStatus;
+  actionType: OpportunityReviewActionType | null;
+  note: string | null;
+  /** Normalized (trim + lowercase) — the WIE BEN JIJ? person who reviewed
+   * it, never the shared Supabase technical login. */
+  reviewerEmail: string;
+  reviewerDisplayName: string;
+  createdAt: string;
+  updatedAt: string;
+}

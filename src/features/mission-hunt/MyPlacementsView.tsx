@@ -4,11 +4,13 @@ import { GoldButton } from '../../components/GoldButton';
 import { AddPlacementForm } from './AddPlacementForm';
 import { PlacementRow } from './PlacementRow';
 import { PlacementFilterBar } from './PlacementFilterBar';
+import { OpportunityReceipt } from './OpportunityReceipt';
 import { countOpportunities } from '../../services/missionHuntAggregate';
 import { classifyPlacement } from '../../services/missionHuntClassification';
 import { placementMatchesFilter, type PlacementFilter } from '../../services/missionHuntOpportunity';
+import { buildOpportunityReviewProgress, hasOpportunitySignal } from '../../services/missionHuntOpportunityReview';
 import { formatIsoDateReceipt } from '../../utils/dates';
-import type { MissionHuntPlacement, NewPlacementInput } from '../../types/missionHunt';
+import type { MissionHuntPlacement, NewPlacementInput, OpportunityReview, OpportunityReviewActionType, OpportunityReviewStatus } from '../../types/missionHunt';
 
 interface MyPlacementsViewProps {
   displayName: string;
@@ -18,20 +20,63 @@ interface MyPlacementsViewProps {
   onAdd: (input: NewPlacementInput) => Promise<void> | void;
   onOpenPlacement: (id: string) => void;
   onVerify: () => Promise<void> | void;
+  /** Both optional: omitting them (e.g. an older caller/test) simply hides
+   * the whole review workflow — the view behaves exactly as before. */
+  opportunityReviews?: OpportunityReview[];
+  onReviewOpportunity?: (projectId: string, status: OpportunityReviewStatus, actionType: OpportunityReviewActionType | null, note: string | null) => Promise<void> | void;
 }
+
+type ReviewFilter = 'all' | 'nog-te-beoordelen' | 'opvolgen' | 'geen_kans' | 'later';
+
+const REVIEW_FILTER_LABEL: Record<ReviewFilter, string> = {
+  all: 'ALLE BEOORDELINGEN',
+  'nog-te-beoordelen': 'NOG TE BEOORDELEN',
+  opvolgen: 'OPVOLGEN',
+  geen_kans: 'GEEN KANS',
+  later: 'LATER',
+};
 
 /**
  * MY PLACEMENTS — landed on directly after login (spec section 34): the
  * homework block, the stat row, then the actual placements. Never a
  * team/admin screen first.
  */
-export function MyPlacementsView({ displayName, placements, isVerified, verifiedAt, onAdd, onOpenPlacement, onVerify }: MyPlacementsViewProps) {
+export function MyPlacementsView({
+  displayName,
+  placements,
+  isVerified,
+  verifiedAt,
+  onAdd,
+  onOpenPlacement,
+  onVerify,
+  opportunityReviews = [],
+  onReviewOpportunity,
+}: MyPlacementsViewProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [filter, setFilter] = useState<PlacementFilter>('all-placements');
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('all');
   const [verifying, setVerifying] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   const counts = countOpportunities(placements);
-  const visible = placements.filter((p) => placementMatchesFilter(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek), filter));
+  const reviewByProjectId = new Map(opportunityReviews.map((r) => [r.projectId, r]));
+  const progress = buildOpportunityReviewProgress(placements, opportunityReviews);
+  const showReviewWorkflow = Boolean(onReviewOpportunity);
+
+  const visible = placements.filter((p) => {
+    if (!placementMatchesFilter(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek), filter)) return false;
+    if (reviewFilter === 'all') return true;
+    const isOpportunity = hasOpportunitySignal(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek));
+    if (!isOpportunity) return false;
+    const review = reviewByProjectId.get(p.id);
+    if (reviewFilter === 'nog-te-beoordelen') return !review;
+    return review?.status === reviewFilter;
+  });
+
+  const commitments = placements
+    .filter((p) => hasOpportunitySignal(classifyPlacement(p.startDate, p.endDate, p.hoursPerWeek)))
+    .map((p) => ({ placement: p, review: reviewByProjectId.get(p.id) }))
+    .filter((c): c is { placement: MissionHuntPlacement; review: OpportunityReview } => c.review?.status === 'opvolgen');
 
   async function handleVerify() {
     setVerifying(true);
@@ -73,7 +118,59 @@ export function MyPlacementsView({ displayName, placements, isVerified, verified
         </GoldButton>
       )}
 
+      {showReviewWorkflow && progress.opportunityTotal > 0 && (
+        <div className="border border-sky-400/25 bg-mission-raised p-4">
+          <p className="label-classified text-sky-400/80">{displayName}</p>
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <StatTile label="Kansen gevonden" value={progress.opportunityTotal} tone="text-sky-400" />
+            <StatTile label={`Beoordeeld ${progress.reviewedCount} / ${progress.opportunityTotal}`} value={progress.reviewedCount} />
+            <StatTile label="Opvolgen" value={progress.opvolgen} tone="text-gold" />
+            <StatTile label="Geen kans" value={progress.geenKans} />
+            <StatTile label="Later" value={progress.later} />
+          </div>
+          {progress.missionComplete ? (
+            <GoldButton type="button" onClick={() => setShowReceipt(true)} className="mt-3 w-full sm:w-auto">
+              Mission Complete — Bekijk Receipt
+            </GoldButton>
+          ) : (
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-muted">Mission Complete ontgrendelt zodra elke kans is beoordeeld.</p>
+          )}
+        </div>
+      )}
+
+      {showReceipt && (
+        <OpportunityReceipt
+          displayName={displayName}
+          portfolioCount={placements.length}
+          opportunityTotal={progress.opportunityTotal}
+          reviewedCount={progress.reviewedCount}
+          opvolgen={progress.opvolgen}
+          geenKans={progress.geenKans}
+          later={progress.later}
+          commitments={commitments}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
+
       <PlacementFilterBar value={filter} onChange={setFilter} />
+
+      {showReviewWorkflow && progress.opportunityTotal > 0 && (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter op beoordeling">
+          {(Object.keys(REVIEW_FILTER_LABEL) as ReviewFilter[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setReviewFilter(key)}
+              aria-pressed={reviewFilter === key}
+              className={`border px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em] transition-colors duration-150 ${
+                reviewFilter === key ? 'border-sky-400 bg-sky-400/15 text-sky-400' : 'border-white/15 text-ink-muted hover:border-white/30'
+              }`}
+            >
+              {REVIEW_FILTER_LABEL[key]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {showAddForm ? (
         <AddPlacementForm
@@ -95,7 +192,15 @@ export function MyPlacementsView({ displayName, placements, isVerified, verified
             {placements.length === 0 ? 'Nog geen plaatsingen. Voeg er handmatig één toe, of wacht op de centrale import.' : 'Geen plaatsingen met deze kans.'}
           </p>
         ) : (
-          visible.map((placement) => <PlacementRow key={placement.id} placement={placement} onOpen={() => onOpenPlacement(placement.id)} />)
+          visible.map((placement) => (
+            <PlacementRow
+              key={placement.id}
+              placement={placement}
+              onOpen={() => onOpenPlacement(placement.id)}
+              review={reviewByProjectId.get(placement.id) ?? null}
+              onReview={onReviewOpportunity ? (status, actionType, note) => onReviewOpportunity(placement.id, status, actionType, note) : undefined}
+            />
+          ))
         )}
       </div>
     </div>

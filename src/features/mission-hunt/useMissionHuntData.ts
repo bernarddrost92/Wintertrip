@@ -3,6 +3,8 @@ import { getSupabaseClient } from '../../lib/supabaseClient';
 import { normalizeEmail } from '../../utils/normalizeEmail';
 import {
   newPlacementToInsertRow,
+  opportunityReviewRowToOpportunityReview,
+  opportunityReviewToUpsertRow,
   placementReviewRowToPlacementReview,
   placementRowToPlacement,
   profileRowToProfile,
@@ -11,6 +13,7 @@ import {
   talentManagerReviewRowToTalentManagerReview,
   teamImportRowToInsertRow,
   teamMemberRowToTeamMember,
+  type OpportunityReviewRow,
   type PlacementRow,
   type PlacementReviewRow,
   type ProfileRow,
@@ -24,6 +27,9 @@ import type {
   MissionHuntPlacement,
   MissionHuntProfile,
   NewPlacementInput,
+  OpportunityReview,
+  OpportunityReviewActionType,
+  OpportunityReviewStatus,
   PlacementFieldUpdate,
   PlacementReview,
   TalentManagerLink,
@@ -40,6 +46,7 @@ interface MissionHuntDataState {
   placementReviews: PlacementReview[];
   talentManagerLinks: TalentManagerLink[];
   talentManagerReviews: TalentManagerReview[];
+  opportunityReviews: OpportunityReview[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -86,22 +93,32 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
     placementReviews: [],
     talentManagerLinks: [],
     talentManagerReviews: [],
+    opportunityReviews: [],
   });
 
   const refresh = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const supabase = getSupabaseClient();
-      const [profilesRes, placementsRes, teamMembersRes, reviewsRes, tmLinksRes, tmReviewsRes] = await Promise.all([
+      const [profilesRes, placementsRes, teamMembersRes, reviewsRes, tmLinksRes, tmReviewsRes, opportunityReviewsRes] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('projects').select('*'),
         supabase.from('team_members').select('*'),
         supabase.from('placement_reviews').select('*'),
         supabase.from('placement_talent_managers').select('*'),
         supabase.from('talent_manager_reviews').select('*'),
+        supabase.from('opportunity_reviews').select('*'),
       ]);
 
-      if (profilesRes.error || placementsRes.error || teamMembersRes.error || reviewsRes.error || tmLinksRes.error || tmReviewsRes.error) {
+      if (
+        profilesRes.error ||
+        placementsRes.error ||
+        teamMembersRes.error ||
+        reviewsRes.error ||
+        tmLinksRes.error ||
+        tmReviewsRes.error ||
+        opportunityReviewsRes.error
+      ) {
         setState((prev) => ({ ...prev, loading: false, error: GENERIC_ERROR }));
         return;
       }
@@ -115,6 +132,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
         placementReviews: (reviewsRes.data as PlacementReviewRow[]).map(placementReviewRowToPlacementReview),
         talentManagerLinks: (tmLinksRes.data as TalentManagerLinkRow[]).map(talentManagerLinkRowToTalentManagerLink),
         talentManagerReviews: (tmReviewsRes.data as TalentManagerReviewRow[]).map(talentManagerReviewRowToTalentManagerReview),
+        opportunityReviews: (opportunityReviewsRes.data as OpportunityReviewRow[]).map(opportunityReviewRowToOpportunityReview),
       });
     } catch {
       setState((prev) => ({ ...prev, loading: false, error: GENERIC_ERROR }));
@@ -367,6 +385,27 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
     });
   }
 
+  /** BEOORDELEN — upserts by project_id (unique constraint), so re-review
+   * or WIJZIG always updates the same row. Never touches the placement's
+   * own data (FTE/DB/dates/owner) or its classification, per spec — this
+   * writes to opportunity_reviews only. */
+  function upsertOpportunityReview(
+    projectId: string,
+    status: OpportunityReviewStatus,
+    actionType: OpportunityReviewActionType | null,
+    note: string | null,
+  ): Promise<WriteResult> {
+    return safeCall(async () => {
+      const supabase = getSupabaseClient();
+      const row = opportunityReviewToUpsertRow(projectId, status, actionType, note, profile.emailNormalized, profile.displayName);
+      const { data, error } = await supabase.from('opportunity_reviews').upsert(row, { onConflict: 'project_id' }).select().single();
+      if (error || !data) return { ok: false, error: GENERIC_ERROR };
+      const updated = opportunityReviewRowToOpportunityReview(data as OpportunityReviewRow);
+      setState((prev) => ({ ...prev, opportunityReviews: [...prev.opportunityReviews.filter((r) => r.projectId !== updated.projectId), updated] }));
+      return { ok: true };
+    });
+  }
+
   return {
     ...state,
     refresh,
@@ -378,6 +417,7 @@ export function useMissionHuntData(profile: MissionHuntProfile) {
     setPlacementTalentManagers,
     submitVerification,
     submitTalentManagerVerification,
+    upsertOpportunityReview,
     countOpportunities,
   };
 }

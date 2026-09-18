@@ -23,8 +23,9 @@ function buildFakeSupabaseClient(tables: {
   placement_reviews?: unknown[];
   placement_talent_managers?: unknown[];
   talent_manager_reviews?: unknown[];
+  opportunity_reviews?: unknown[];
 }) {
-  function from(table: 'profiles' | 'projects' | 'team_members' | 'placement_reviews' | 'placement_talent_managers' | 'talent_manager_reviews') {
+  function from(table: 'profiles' | 'projects' | 'team_members' | 'placement_reviews' | 'placement_talent_managers' | 'talent_manager_reviews' | 'opportunity_reviews') {
     const rows = tables[table] ?? [];
     const builder = {
       select: () => builder,
@@ -417,6 +418,7 @@ describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches an
       if (table === 'placement_reviews') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [...reviewsTable], error: null }) }) };
       if (table === 'placement_talent_managers') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
       if (table === 'talent_manager_reviews') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
+      if (table === 'opportunity_reviews') return { select: () => ({ then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }) }) };
       throw new Error(`unexpected table ${table}`);
     }
 

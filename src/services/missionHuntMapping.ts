@@ -4,6 +4,9 @@ import type {
   MissionHuntPlacement,
   MissionHuntProfile,
   NewPlacementInput,
+  OpportunityReview,
+  OpportunityReviewActionType,
+  OpportunityReviewStatus,
   PlacementReview,
   TalentManagerLink,
   TalentManagerReview,
@@ -88,6 +91,18 @@ export interface TeamMemberRoleRow {
   created_at: string;
 }
 
+export interface OpportunityReviewRow {
+  id: string;
+  project_id: string;
+  status: OpportunityReviewStatus;
+  action_type: OpportunityReviewActionType | null;
+  note: string | null;
+  reviewer_email: string;
+  reviewer_display_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export function profileRowToProfile(row: ProfileRow): MissionHuntProfile {
   return {
     id: row.id,
@@ -168,6 +183,42 @@ export function teamMemberRoleRowToTeamMemberRole(row: TeamMemberRoleRow): TeamM
     emailNormalized: row.email_normalized,
     role: row.role,
     createdAt: row.created_at,
+  };
+}
+
+export function opportunityReviewRowToOpportunityReview(row: OpportunityReviewRow): OpportunityReview {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    status: row.status,
+    actionType: row.action_type,
+    note: row.note,
+    reviewerEmail: row.reviewer_email,
+    reviewerDisplayName: row.reviewer_display_name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** Builds the upsert row for BEOORDELEN — onConflict: 'project_id' means a
+ * re-review (or a WIJZIG change) always updates the same row, never piles
+ * up duplicates, matching the ALLES KLOPT upsert-by-user_id pattern. */
+export function opportunityReviewToUpsertRow(
+  projectId: string,
+  status: OpportunityReviewStatus,
+  actionType: OpportunityReviewActionType | null,
+  note: string | null,
+  reviewerEmail: string,
+  reviewerDisplayName: string,
+) {
+  return {
+    project_id: projectId,
+    status,
+    action_type: actionType,
+    note,
+    reviewer_email: normalizeEmail(reviewerEmail),
+    reviewer_display_name: reviewerDisplayName,
+    updated_at: new Date().toISOString(),
   };
 }
 

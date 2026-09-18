@@ -1,8 +1,13 @@
 import type { AccountManagerSummary } from '../../services/missionHuntAggregate';
+import { buildOpportunityReviewProgress } from '../../services/missionHuntOpportunityReview';
+import type { OpportunityReview } from '../../types/missionHunt';
 
 interface AccountManagerSummaryCardProps {
   summary: AccountManagerSummary;
   onClick: () => void;
+  /** Omitted by any caller that doesn't have reviews loaded — the review
+   * intelligence line simply doesn't render then. */
+  opportunityReviews?: OpportunityReview[];
 }
 
 /**
@@ -11,8 +16,9 @@ interface AccountManagerSummaryCardProps {
  * placements: the main screen never gets "polluted" with professional/
  * client names.
  */
-export function AccountManagerSummaryCard({ summary, onClick }: AccountManagerSummaryCardProps) {
+export function AccountManagerSummaryCard({ summary, onClick, opportunityReviews }: AccountManagerSummaryCardProps) {
   const { displayName, counts, isVerified, hasLoggedIn } = summary;
+  const progress = opportunityReviews ? buildOpportunityReviewProgress(summary.placements, opportunityReviews) : null;
 
   return (
     <button
@@ -38,6 +44,13 @@ export function AccountManagerSummaryCard({ summary, onClick }: AccountManagerSu
         <span className="text-sky-400">{counts.urenkans} urenkansen</span>
         {counts.double > 0 && <span className="text-red-400">{counts.double} double</span>}
       </div>
+
+      {progress && progress.opportunityTotal > 0 && (
+        <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
+          {progress.reviewedCount}/{progress.opportunityTotal} beoordeeld
+          {progress.opvolgen > 0 && <span className="text-gold"> · {progress.opvolgen} opvolgen</span>}
+        </p>
+      )}
 
       {!hasLoggedIn && <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-muted/70">○ nog niet ingelogd</p>}
     </button>

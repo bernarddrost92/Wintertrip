@@ -154,6 +154,10 @@ function MissionHuntDashboard({ profile, onSwitchPerson }: { profile: MissionHun
                 onVerify={async () => {
                   await data.submitVerification(myPlacements.length);
                 }}
+                opportunityReviews={data.opportunityReviews}
+                onReviewOpportunity={async (projectId, status, actionType, note) => {
+                  await data.upsertOpportunityReview(projectId, status, actionType, note);
+                }}
               />
               {/* Additive: shown only once ≥1 placement is linked to me as a
                   Talent Manager — never a new tab, so "My Placements" stays
@@ -194,6 +198,7 @@ function MissionHuntDashboard({ profile, onSwitchPerson }: { profile: MissionHun
               talentManagerLinks={data.talentManagerLinks}
               talentManagerReviews={data.talentManagerReviews}
               onOpenPlacement={setSelectedPlacementId}
+              opportunityReviews={data.opportunityReviews}
             />
           )}
         </div>
