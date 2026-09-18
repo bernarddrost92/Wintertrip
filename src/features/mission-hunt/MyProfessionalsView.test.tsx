@@ -37,9 +37,10 @@ describe('MyProfessionalsView', () => {
 
     render(<MyProfessionalsView displayName="Kim" summary={summary} isVerified={false} verifiedAt={null} onOpenPlacement={vi.fn()} onVerify={vi.fn()} />);
 
+    // Privacy hotfix: PlacementRow shows initials only, never the full name.
     expect(screen.getByText(/mijn professionals/i)).toBeInTheDocument();
-    expect(screen.getByText('Ryan Dijkstra')).toBeInTheDocument();
-    expect(screen.getByText('Andere Prof')).toBeInTheDocument();
+    expect(screen.getByText('R.D.')).toBeInTheDocument();
+    expect(screen.getByText('A.P.')).toBeInTheDocument();
     expect(screen.getByText(/Bernard — 1/)).toBeInTheDocument();
     expect(screen.getByText(/Jurgen — 1/)).toBeInTheDocument();
   });

@@ -62,7 +62,7 @@ describe('FridayReviewView', () => {
     renderView({ placements: [placement()] });
 
     await user.click(screen.getByText('Bernard'));
-    expect(screen.getByText('Ryan Dijkstra')).toBeInTheDocument();
+    expect(screen.getByText('R.D.')).toBeInTheDocument();
   });
 
   it('marks a person GECONTROLEERD or NOG CONTROLEREN based on their placement_review', () => {
@@ -103,7 +103,7 @@ describe('FridayReviewView', () => {
     renderView({ placements, talentManagerLinks: links });
 
     await user.click(screen.getByText('Kim'));
-    expect(screen.getByText('Ryan Dijkstra')).toBeInTheDocument();
+    expect(screen.getByText('R.D.')).toBeInTheDocument();
     expect(screen.getByText(/Bernard — 1/)).toBeInTheDocument();
   });
 
@@ -163,7 +163,10 @@ describe('FridayReviewView', () => {
     await user.click(screen.getByRole('button', { name: /bekijk plaatsingen/i }));
     await user.click(screen.getByText('Bernard'));
 
-    expect(screen.getByText('Onder 32 uur')).toBeInTheDocument();
-    expect(screen.queryByText('Voltijd')).not.toBeInTheDocument();
+    // Privacy hotfix: PlacementRow shows initials only. "Onder 32 uur" only
+    // has one part starting with an uppercase letter ("Onder") -> "O.";
+    // "32"/"uur" are dropped, not real name parts.
+    expect(screen.getByText('O.')).toBeInTheDocument();
+    expect(screen.queryByText('V.')).not.toBeInTheDocument();
   });
 });

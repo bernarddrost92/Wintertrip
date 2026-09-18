@@ -91,12 +91,13 @@ describe('MyPlacementsView', () => {
     const user = userEvent.setup();
     render(<MyPlacementsView displayName="Bernard" placements={placements} isVerified={false} verifiedAt={null} onAdd={vi.fn()} onOpenPlacement={vi.fn()} onVerify={vi.fn()} />);
 
-    expect(screen.getByText('Ryan Dijkstra')).toBeInTheDocument();
-    expect(screen.getByText('Grey Persoon')).toBeInTheDocument();
+    // Privacy hotfix: PlacementRow shows initials only, never the full name.
+    expect(screen.getByText('R.D.')).toBeInTheDocument();
+    expect(screen.getByText('G.P.')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'DOUBLE' }));
-    expect(screen.getByText('Ryan Dijkstra')).toBeInTheDocument();
-    expect(screen.queryByText('Grey Persoon')).not.toBeInTheDocument();
+    expect(screen.getByText('R.D.')).toBeInTheDocument();
+    expect(screen.queryByText('G.P.')).not.toBeInTheDocument();
   });
 
   it('shows the URENKANSEN summary counter tile', () => {
@@ -343,8 +344,11 @@ describe('MyPlacementsView — opportunity review (sales-meeting workflow)', () 
     expect(missionCompleteButton).toBeInTheDocument();
     await user.click(missionCompleteButton);
 
+    // Privacy hotfix: the receipt shows initials + city, never the real name.
     expect(screen.getByText('Mission Hunt Receipt')).toBeInTheDocument();
-    expect(screen.getByText((content) => content.includes('Ryan Dijkstra') && content.includes('Greijdanus'))).toBeInTheDocument();
+    expect(screen.getByText((content) => content.includes('R.D.') && content.includes('LOCATIE ONBEKEND'))).toBeInTheDocument();
+    expect(screen.queryByText(/Ryan Dijkstra/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Greijdanus/)).not.toBeInTheDocument();
     // Also still shown on the reviewed placement row itself below the
     // receipt (additive, never replaced) — hence AllBy, not a single match.
     expect(screen.getAllByText('TIMING / INSCHIETEN').length).toBeGreaterThan(0);
@@ -390,12 +394,13 @@ describe('MyPlacementsView — opportunity review (sales-meeting workflow)', () 
       />,
     );
 
-    expect(screen.getByText('Reviewed Opvolgen')).toBeInTheDocument();
-    expect(screen.getByText('Still Unreviewed')).toBeInTheDocument();
+    // Privacy hotfix: PlacementRow shows initials only ("R.O.", "S.U.").
+    expect(screen.getByText('R.O.')).toBeInTheDocument();
+    expect(screen.getByText('S.U.')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'NOG TE BEOORDELEN' }));
-    expect(screen.queryByText('Reviewed Opvolgen')).not.toBeInTheDocument();
-    expect(screen.getByText('Still Unreviewed')).toBeInTheDocument();
+    expect(screen.queryByText('R.O.')).not.toBeInTheDocument();
+    expect(screen.getByText('S.U.')).toBeInTheDocument();
   });
 
   it('omitting onReviewOpportunity hides the entire review workflow — the view behaves exactly as before', () => {

@@ -3,6 +3,7 @@ import { badgesForClassification } from '../../services/missionHuntOpportunity';
 import { hasOpportunitySignal } from '../../services/missionHuntOpportunityReview';
 import { OpportunityReviewControl } from './OpportunityReviewControl';
 import { formatIsoDateNl } from '../../utils/dates';
+import { formatClientLocation, formatDisplayDb, formatProfessionalInitials } from '../../utils/privacyDisplay';
 import type { MissionHuntPlacement, OpportunityReview, OpportunityReviewActionType, OpportunityReviewStatus } from '../../types/missionHunt';
 
 interface PlacementRowProps {
@@ -29,8 +30,8 @@ export function PlacementRow({ placement, onOpen, review = null, onReview }: Pla
   const weeklyHours = calculatedWeeklyHours(placement.hoursPerWeek);
   const showReview = Boolean(onReview) && hasOpportunitySignal(classification);
   const metaParts = [
-    placement.clientName,
-    placement.monthlyDb !== null ? `${placement.monthlyDb} DB` : null,
+    formatClientLocation(placement.clientName),
+    placement.monthlyDb !== null ? `${formatDisplayDb(placement.monthlyDb)} DB` : null,
     placement.hoursPerWeek !== null ? `${placement.hoursPerWeek} uur` : null,
   ].filter(Boolean);
 
@@ -39,7 +40,7 @@ export function PlacementRow({ placement, onOpen, review = null, onReview }: Pla
       <button type="button" onClick={onOpen} className="flex w-full flex-col gap-1.5 text-left">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold uppercase tracking-wide text-ink">{placement.professionalName || '—'}</p>
+            <p className="truncate text-sm font-semibold uppercase tracking-wide text-ink">{formatProfessionalInitials(placement.professionalName) || '—'}</p>
             <p className="truncate text-xs text-ink-muted">{metaParts.join(' · ')}</p>
             {placement.startDate && placement.endDate && (
               <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted/80">

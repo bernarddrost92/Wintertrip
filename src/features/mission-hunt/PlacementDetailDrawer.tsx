@@ -5,6 +5,7 @@ import { GoldButton } from '../../components/GoldButton';
 import { formatIsoDateNl } from '../../utils/dates';
 import { classifyPlacement } from '../../services/missionHuntClassification';
 import { badgesForClassification } from '../../services/missionHuntOpportunity';
+import { formatClientLocation, formatDisplayDb, formatProfessionalInitials } from '../../utils/privacyDisplay';
 import type { MissionHuntPlacement, PlacementFieldUpdate, TalentManagerLink } from '../../types/missionHunt';
 
 export interface KnownTalentManagerOption {
@@ -75,7 +76,7 @@ export function PlacementDetailDrawer({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Plaatsing — ${placement.professionalName}`}
+      aria-label={`Plaatsing — ${formatProfessionalInitials(placement.professionalName)}`}
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-mission-void/90 px-3 py-6 backdrop-blur-sm sm:items-center sm:px-6"
       onClick={handleBackdropClick}
     >
@@ -83,7 +84,7 @@ export function PlacementDetailDrawer({
         <div className="flex items-start justify-between gap-4 border-b border-gold/15 px-4 py-3 sm:px-6">
           <div className="min-w-0">
             <p className="label-classified text-gold/70">{editable ? 'Mijn plaatsing' : `Plaatsing van ${placement.ownerDisplayName ?? placement.ownerEmail}`}</p>
-            <p className="mt-1 truncate font-display text-lg font-bold uppercase tracking-wide text-ink">{placement.professionalName || '—'}</p>
+            <p className="mt-1 truncate font-display text-lg font-bold uppercase tracking-wide text-ink">{formatProfessionalInitials(placement.professionalName) || '—'}</p>
           </div>
           <button
             ref={closeButtonRef}
@@ -108,8 +109,17 @@ export function PlacementDetailDrawer({
             </div>
           )}
 
-          <DetailField label="Professional" value={placement.professionalName} editable={editable} onSave={(v) => onUpdateField('professionalName', v)} />
-          <DetailField label="Klant" value={placement.clientName} editable={editable} onSave={(v) => onUpdateField('clientName', v)} />
+          {/* Privacy hotfix: the masked value renders by default, whether
+              or not this drawer is editable — "editable" is always true in
+              the real app (see missionHuntPermissions — everyone may edit),
+              so gating the mask on editable would never actually mask
+              anything live. WIJZIG reveals the real stored value in an
+              editable input on demand — the input's own defaultValue is
+              always the real, full-precision value, so a save always
+              writes back exactly what was there or what was deliberately
+              typed, never the masked/rounded display value. */}
+          <DetailField label="Professional" value={placement.professionalName} editable={editable} onSave={(v) => onUpdateField('professionalName', v)} displayValue={formatProfessionalInitials(placement.professionalName)} />
+          <DetailField label="Klant" value={placement.clientName} editable={editable} onSave={(v) => onUpdateField('clientName', v)} displayValue={formatClientLocation(placement.clientName)} />
 
           <div className="grid grid-cols-2 gap-3">
             <DetailDateField label="Startdatum" value={placement.startDate} editable={editable} onSave={(v) => onUpdateField('startDate', v)} />
@@ -118,7 +128,7 @@ export function PlacementDetailDrawer({
 
           <div className="grid grid-cols-2 gap-3">
             <DetailNumberField label="Uren per week" value={placement.hoursPerWeek} editable={editable} onSave={(v) => onUpdateField('hoursPerWeek', v)} />
-            <DetailNumberField label="DB per maand" value={placement.monthlyDb} editable={editable} onSave={(v) => onUpdateField('monthlyDb', v)} />
+            <DetailNumberField label="DB per maand" value={placement.monthlyDb} editable={editable} onSave={(v) => onUpdateField('monthlyDb', v)} displayValue={formatDisplayDb(placement.monthlyDb)} />
           </div>
 
           <FormField id="mh-detail-note" label="Opmerking">
@@ -279,14 +289,37 @@ function TalentManagerAssignment({
   );
 }
 
-function DetailField({ label, value, editable, onSave }: { label: string; value: string; editable: boolean; onSave: (v: string) => void }) {
+/** Shows `displayValue` (masked) by default; WIJZIG reveals a real input
+ * seeded with the real `value`, for a deliberate edit. Never shows the
+ * real value passively. */
+function DetailField({
+  label,
+  value,
+  editable,
+  onSave,
+  displayValue,
+}: {
+  label: string;
+  value: string;
+  editable: boolean;
+  onSave: (v: string) => void;
+  displayValue: string;
+}) {
   const id = `mh-detail-${label.toLowerCase()}`;
+  const [revealed, setRevealed] = useState(false);
   return (
     <FormField id={id} label={label}>
-      {editable ? (
-        <TextInput id={id} defaultValue={value} onBlur={(e) => onSave(e.target.value)} />
+      {editable && revealed ? (
+        <TextInput id={id} defaultValue={value} onBlur={(e) => onSave(e.target.value)} autoFocus />
       ) : (
-        <p className="text-sm text-ink">{value || '—'}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm text-ink">{displayValue || '—'}</p>
+          {editable && (
+            <button type="button" onClick={() => setRevealed(true)} className="shrink-0 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted underline hover:text-gold">
+              Wijzig
+            </button>
+          )}
+        </div>
       )}
     </FormField>
   );
@@ -305,31 +338,52 @@ function DetailDateField({ label, value, editable, onSave }: { label: string; va
   );
 }
 
+/** `displayValue` is optional — omitted for fields that stay visible as-is
+ * (e.g. Uren per week/FTE); passed for DB, which must never show its
+ * decimal value passively. WIJZIG always reveals the real, full-precision
+ * value for editing — a save never writes the rounded display value. */
 function DetailNumberField({
   label,
   value,
   editable,
   onSave,
+  displayValue,
 }: {
   label: string;
   value: number | null;
   editable: boolean;
   onSave: (v: number | null) => void;
+  displayValue?: string;
 }) {
   const id = `mh-detail-${label.toLowerCase()}`;
-  return (
-    <FormField id={id} label={label}>
-      {editable ? (
+  const [revealed, setRevealed] = useState(false);
+  const masked = displayValue !== undefined;
+
+  if (editable && (!masked || revealed)) {
+    return (
+      <FormField id={id} label={label}>
         <TextInput
           id={id}
           type="number"
           step="0.5"
           defaultValue={value ?? ''}
           onBlur={(e) => onSave(e.target.value === '' ? null : Number(e.target.value))}
+          autoFocus={revealed}
         />
-      ) : (
-        <p className="text-sm text-ink">{value ?? '—'}</p>
-      )}
+      </FormField>
+    );
+  }
+
+  return (
+    <FormField id={id} label={label}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-ink">{displayValue ?? value ?? '—'}</p>
+        {editable && masked && (
+          <button type="button" onClick={() => setRevealed(true)} className="shrink-0 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted underline hover:text-gold">
+            Wijzig
+          </button>
+        )}
+      </div>
     </FormField>
   );
 }

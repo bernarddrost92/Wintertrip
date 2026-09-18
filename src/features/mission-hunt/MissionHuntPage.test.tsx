@@ -241,7 +241,9 @@ describe('MissionHuntPage — everyone may edit: no personal write restrictions'
     // Friday Review's drilldown instead.
     await user.click(screen.getByRole('button', { name: /friday review/i }));
     await user.click(await screen.findByText('Bernard'));
-    await user.click(await screen.findByText('Ryan Dijkstra'));
+    // Privacy hotfix: PlacementRow shows initials only ("R.D."), never the
+    // full professional name.
+    await user.click(await screen.findByText('R.D.'));
 
     // canReassign renders the reassignment fields; canManageTalentManagers
     // renders the Talent Manager assignment control (an "add new" field
@@ -317,10 +319,15 @@ describe('MissionHuntPage — a single AM+TM selection exposes both perspectives
 
     render(<MissionHuntPage />);
 
-    await waitFor(() => expect(screen.getByText('Kim Own Professional')).toBeInTheDocument());
-    expect(screen.getByText('Jurgen Linked Professional')).toBeInTheDocument();
-    expect(screen.getAllByText('Kim Own Professional')).toHaveLength(1);
-    expect(screen.getAllByText('Jurgen Linked Professional')).toHaveLength(1);
+    // Privacy hotfix: PlacementRow shows initials only ("K.O.P.", "J.L.P."),
+    // never the full professional name — still a unique, stable identifier
+    // per row for this "two distinct, non-overlapping" assertion.
+    await waitFor(() => expect(screen.getByText('K.O.P.')).toBeInTheDocument());
+    expect(screen.getByText('J.L.P.')).toBeInTheDocument();
+    expect(screen.getAllByText('K.O.P.')).toHaveLength(1);
+    expect(screen.getAllByText('J.L.P.')).toHaveLength(1);
+    expect(screen.queryByText('Kim Own Professional')).not.toBeInTheDocument();
+    expect(screen.queryByText('Jurgen Linked Professional')).not.toBeInTheDocument();
 
     expect(screen.getByText(/mijn professionals/i)).toBeInTheDocument();
     expect(screen.getByText(/jurgen — 1/i)).toBeInTheDocument();
@@ -434,7 +441,9 @@ describe('MissionHuntPage — editing a placement after ALLES KLOPT refetches an
     await waitFor(() => expect(screen.getByText(/gecontroleerd/i)).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /alles klopt/i })).not.toBeInTheDocument();
 
-    await userEvent.setup().click(screen.getByText('Test Professional'));
+    // Privacy hotfix: PlacementRow shows initials only ("T.P."), never the
+    // full professional name.
+    await userEvent.setup().click(screen.getByText('T.P.'));
     const hoursField = await screen.findByLabelText(/uren per week/i);
     await userEvent.setup().clear(hoursField);
     await userEvent.setup().type(hoursField, '30');
