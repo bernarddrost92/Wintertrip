@@ -12,6 +12,7 @@ function placement(overrides: Partial<MissionHuntPlacement> = {}): MissionHuntPl
     ownerDisplayName: 'Bernard',
     professionalName: 'Ryan Dijkstra',
     clientName: 'Greijdanus',
+    clientCity: null,
     startDate: '2026-10-01',
     endDate: '2026-12-31',
     hoursPerWeek: 24,

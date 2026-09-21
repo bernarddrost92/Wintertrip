@@ -49,6 +49,21 @@ describe('formatClientLocation', () => {
     expect(formatClientLocation(null)).toBe('LOCATIE ONBEKEND');
     expect(formatClientLocation('')).toBe('LOCATIE ONBEKEND');
   });
+
+  it('prefers the real client_city (from the original import source) over the Gemeente-name heuristic', () => {
+    expect(formatClientLocation('Stichting GGz Centraal', 'Lelystad')).toBe('Lelystad');
+    expect(formatClientLocation('Gemeente Apeldoorn', 'Deventer')).toBe('Deventer');
+  });
+
+  it('falls back to the Gemeente-name heuristic when client_city is null or empty', () => {
+    expect(formatClientLocation('Gemeente Apeldoorn', null)).toBe('Apeldoorn');
+    expect(formatClientLocation('Gemeente Apeldoorn', '')).toBe('Apeldoorn');
+    expect(formatClientLocation('Gemeente Apeldoorn', '   ')).toBe('Apeldoorn');
+  });
+
+  it('falls back to LOCATIE ONBEKEND when neither client_city nor a Gemeente name is available', () => {
+    expect(formatClientLocation('Stichting GGz Centraal', null)).toBe('LOCATIE ONBEKEND');
+  });
 });
 
 describe('formatDisplayDb', () => {

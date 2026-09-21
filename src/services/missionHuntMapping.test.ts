@@ -44,6 +44,7 @@ describe('placementRowToPlacement', () => {
       owner_display_name: 'Lisa',
       professional_name: 'Ryan Dijkstra',
       client_name: 'Greijdanus',
+      client_city: null,
       start_date: '2026-10-01',
       end_date: '2026-12-31',
       hours_per_week: 24,

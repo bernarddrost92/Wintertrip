@@ -119,7 +119,7 @@ export function PlacementDetailDrawer({
               writes back exactly what was there or what was deliberately
               typed, never the masked/rounded display value. */}
           <DetailField label="Professional" value={placement.professionalName} editable={editable} onSave={(v) => onUpdateField('professionalName', v)} displayValue={formatProfessionalInitials(placement.professionalName)} />
-          <DetailField label="Klant" value={placement.clientName} editable={editable} onSave={(v) => onUpdateField('clientName', v)} displayValue={formatClientLocation(placement.clientName)} />
+          <DetailField label="Klant" value={placement.clientName} editable={editable} onSave={(v) => onUpdateField('clientName', v)} displayValue={formatClientLocation(placement.clientName, placement.clientCity)} />
 
           <div className="grid grid-cols-2 gap-3">
             <DetailDateField label="Startdatum" value={placement.startDate} editable={editable} onSave={(v) => onUpdateField('startDate', v)} />

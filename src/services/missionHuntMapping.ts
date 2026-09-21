@@ -39,6 +39,7 @@ export interface PlacementRow {
   owner_display_name: string | null;
   professional_name: string | null;
   client_name: string | null;
+  client_city: string | null;
   start_date: string | null;
   end_date: string | null;
   hours_per_week: number | null;
@@ -123,6 +124,7 @@ export function placementRowToPlacement(row: PlacementRow): MissionHuntPlacement
     ownerDisplayName: row.owner_display_name,
     professionalName: row.professional_name ?? '',
     clientName: row.client_name ?? '',
+    clientCity: row.client_city,
     startDate: row.start_date ?? '',
     endDate: row.end_date ?? '',
     hoursPerWeek: row.hours_per_week,

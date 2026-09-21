@@ -11,6 +11,7 @@ function placement(overrides: Partial<MissionHuntPlacement> = {}): MissionHuntPl
     ownerDisplayName: 'Bernard',
     professionalName: 'Janny Hakkers',
     clientName: 'Gemeente Apeldoorn',
+    clientCity: null,
     startDate: '2026-06-01',
     endDate: '2026-08-31',
     hoursPerWeek: 1,
@@ -34,6 +35,12 @@ describe('PlacementRow — privacy hotfix (display-only masking)', () => {
     render(<PlacementRow placement={placement()} onOpen={vi.fn()} />);
     expect(screen.getByText(/Apeldoorn/)).toBeInTheDocument();
     expect(screen.queryByText(/Gemeente Apeldoorn/)).not.toBeInTheDocument();
+  });
+
+  it('shows the real client_city when present, never the real client name', () => {
+    render(<PlacementRow placement={placement({ clientName: 'Stichting GGz Centraal', clientCity: 'Lelystad' })} onOpen={vi.fn()} />);
+    expect(screen.getByText(/Lelystad/)).toBeInTheDocument();
+    expect(screen.queryByText(/Stichting GGz Centraal/)).not.toBeInTheDocument();
   });
 
   it('falls back to LOCATIE ONBEKEND when no city can be derived, never the real client name', () => {

@@ -108,7 +108,7 @@ export function OpportunityReceipt({ displayName, portfolioCount, opportunityTot
                   {commitments.map(({ placement, review }, index) => (
                     <li key={placement.id} className="space-y-0.5 text-[11px]">
                       <p className="font-semibold text-ink">
-                        {index + 1}. {formatProfessionalInitials(placement.professionalName)} — {formatClientLocation(placement.clientName)}
+                        {index + 1}. {formatProfessionalInitials(placement.professionalName)} — {formatClientLocation(placement.clientName, placement.clientCity)}
                       </p>
                       {review.actionType && <p className="pl-3.5 uppercase tracking-wider text-gold">{REVIEW_ACTION_TYPE_LABEL[review.actionType]}</p>}
                       {review.note && <p className="pl-3.5 italic text-ink-muted">"{review.note}"</p>}

@@ -30,7 +30,7 @@ export function PlacementRow({ placement, onOpen, review = null, onReview }: Pla
   const weeklyHours = calculatedWeeklyHours(placement.hoursPerWeek);
   const showReview = Boolean(onReview) && hasOpportunitySignal(classification);
   const metaParts = [
-    formatClientLocation(placement.clientName),
+    formatClientLocation(placement.clientName, placement.clientCity),
     placement.monthlyDb !== null ? `${formatDisplayDb(placement.monthlyDb)} DB` : null,
     placement.hoursPerWeek !== null ? `${placement.hoursPerWeek} uur` : null,
   ].filter(Boolean);

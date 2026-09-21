@@ -26,11 +26,14 @@ export function formatProfessionalInitials(name: string | null): string {
 
 const FALLBACK_LOCATION = 'LOCATIE ONBEKEND';
 
-/** Derives a displayable city from the existing client_name — never the
- * real client name itself. Only "Gemeente <City>" names have a city
- * unambiguously present in the current data; anything else falls back to
- * FALLBACK_LOCATION rather than ever guessing or leaking the real name. */
-export function formatClientLocation(clientName: string | null): string {
+/** Derives a displayable city — never the real client name itself.
+ * Prefers the real client_city (from the original import source's "Stad
+ * klant", once backfilled/imported) when present. Falls back to the
+ * "Gemeente <City>" name heuristic only when no real city is stored yet.
+ * Never guesses beyond that — anything else shows FALLBACK_LOCATION. */
+export function formatClientLocation(clientName: string | null, clientCity: string | null = null): string {
+  const realCity = clientCity?.trim();
+  if (realCity) return realCity;
   if (!clientName) return FALLBACK_LOCATION;
   const match = clientName.trim().match(/^Gemeente\s+(.+)$/i);
   const city = match?.[1]?.trim();

@@ -39,6 +39,12 @@ export interface MissionHuntPlacement {
   ownerDisplayName: string | null;
   professionalName: string;
   clientName: string;
+  /** The real client city, from the original import source ("Stad
+   * klant") — never guessed/inferred. Null until backfilled/imported.
+   * The frontend privacy mask (formatClientLocation) prefers this over
+   * its "Gemeente X" name heuristic, and only falls back to LOCATIE
+   * ONBEKEND when neither is available. */
+  clientCity: string | null;
   startDate: string;
   endDate: string;
   hoursPerWeek: number | null;
