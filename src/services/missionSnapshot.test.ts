@@ -29,23 +29,23 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
     expect(result.fte.fteMilestones).toEqual([
       { position: 8, team: 'Alkmaar', gapFte: 24.06 },
       { position: 5, team: 'Utrecht', gapFte: 42.61 },
-      { position: 3, team: 'Eindhoven', gapFte: 55.71 },
+      { position: 3, team: 'Groningen', gapFte: 55.91 },
       { position: 1, team: 'Middelburg', gapFte: 58.61 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Virtual Final Score are carried through, distinct from Base League Points', () => {
-    expect(result.powerBi.vcdbScore).toBe(19247.93);
+    expect(result.powerBi.vcdbScore).toBe(20258.71);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(25022.31);
+    expect(result.powerBi.finalScore).toBe(26336.33);
   });
 
   it('Virtual Top 3 is carried through unchanged', () => {
     expect(result.powerBi.topThree).toEqual(MANUAL_POWER_BI_SNAPSHOT.topThree);
   });
 
-  it('snapshot timestamp (a reliable refresh time this time) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-09-27T12:37:00+02:00');
-    expect(result.powerBi.updatedAt).toBe('2026-09-27T12:37:00+02:00');
+  it('snapshot timestamp (date-only — no reliable refresh time in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-09-29');
+    expect(result.powerBi.updatedAt).toBe('2026-09-29');
   });
 });

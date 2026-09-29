@@ -53,18 +53,18 @@ export interface ManualPowerBiSnapshot {
 }
 
 export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
-  // This screenshot carried a reliable Power BI "last refresh" time — a
-  // full ISO datetime with an explicit +02:00 (CEST) offset, per the
-  // existing IntelligenceStatusSection.test.tsx convention — so it renders
-  // as "27 SEP 2026 · 12:37" rather than a bare date.
-  updatedAt: '2026-09-27T12:37:00+02:00',
+  // Date-only: this screenshot carried no reliable Power BI "last refresh"
+  // time, so updatedAt stays a bare date rather than a fabricated time —
+  // see IntelligenceStatusSection.tsx's formatPowerBiTime, which renders a
+  // date-only string without a time suffix.
+  updatedAt: '2026-09-29',
 
   virtualPosition: 1,
 
   vcdbRanking: 1,
-  vcdbScore: 19247.93,
+  vcdbScore: 20258.71,
 
-  placementsInScope: 100,
+  placementsInScope: 105,
   placementsExtraHoursRule: 2,
 
   netFteRanking: 9,
@@ -73,22 +73,22 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
 
   // The Final Ranking table's own Final Score for Zwolle — NOT the Power
   // BI "Top Team" card, which shows the VCDB Score again by coincidence
-  // (19,247.93). The real Final Score is VCDB x Factor: 19,247.93 x 1.3 =
-  // 25,022.31 (per the official standings, not a re-derivation here).
-  finalScore: 25022.31,
+  // (20,258.71). The real Final Score is VCDB x Factor: 20,258.71 x 1.3 =
+  // 26,336.33 (per the official standings, not a re-derivation here).
+  finalScore: 26336.33,
 
   currentNumberOneBenchmark: -22.8,
 
   fteMilestones: [
     { position: 8, team: 'Alkmaar', netFte: -57.35 },
     { position: 5, team: 'Utrecht', netFte: -38.8 },
-    { position: 3, team: 'Eindhoven', netFte: -25.7 },
+    { position: 3, team: 'Groningen', netFte: -25.5 },
     { position: 1, team: 'Middelburg', netFte: -22.8 },
   ],
 
   topThree: [
-    { position: 1, team: 'Zwolle', finalScore: 25022.31 },
-    { position: 2, team: 'Rotterdam', finalScore: 17427.38 },
-    { position: 3, team: 'Maastricht', finalScore: 17122.76 },
+    { position: 1, team: 'Zwolle', finalScore: 26336.33 },
+    { position: 2, team: 'Rotterdam', finalScore: 18621.03 },
+    { position: 3, team: 'Maastricht', finalScore: 17456.74 },
   ],
 };
