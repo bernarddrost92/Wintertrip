@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PlayCircle, Radio } from 'lucide-react';
+import { Eye, PlayCircle, Radio } from 'lucide-react';
 import { HudCorners } from '../../components/HudCorners';
 import { TacticalGrid } from '../../components/TacticalGrid';
 import { GoldButton } from '../../components/GoldButton';
@@ -90,8 +90,8 @@ function LatestTransmissionCard({ update, onWatch }: { update: MissionUpdate; on
           <p className="mt-2 font-display text-2xl font-black uppercase leading-tight tracking-wide text-ink sm:text-3xl">{update.title}</p>
           {update.subtitle && <p className="mt-2 text-sm text-ink-muted">{update.subtitle}</p>}
 
-          <GoldButton className="mt-6 w-full sm:w-auto" icon={<PlayCircle size={17} />} onClick={onWatch}>
-            Watch Transmission
+          <GoldButton className="mt-6 w-full sm:w-auto" icon={update.imageSrc ? <Eye size={17} /> : <PlayCircle size={17} />} onClick={onWatch}>
+            {update.imageSrc ? 'View Transmission' : 'Watch Transmission'}
           </GoldButton>
         </div>
       </div>
@@ -100,17 +100,19 @@ function LatestTransmissionCard({ update, onWatch }: { update: MissionUpdate; on
 }
 
 /** The poster preview — a real (lazy-loaded) image when one exists, never
- * the video itself just to show a first frame. Falls back to a dark/gold
- * placeholder card if no poster is configured. */
+ * the video itself just to show a first frame. An image transmission is its
+ * own poster. Falls back to a dark/gold placeholder card if neither exists. */
 function TransmissionPoster({ update, onClick }: { update: MissionUpdate; onClick: () => void }) {
+  const posterSrc = update.posterSrc ?? update.imageSrc;
+  const Icon = update.imageSrc ? Eye : PlayCircle;
   return (
     <button
       type="button"
       onClick={onClick}
       className="group relative block aspect-[9/16] w-full overflow-hidden border border-gold/25 bg-mission-raised"
     >
-      {update.posterSrc ? (
-        <img src={update.posterSrc} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+      {posterSrc ? (
+        <img src={posterSrc} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
       ) : (
         <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center">
           <Radio className="text-gold/60" size={22} aria-hidden />
@@ -119,10 +121,10 @@ function TransmissionPoster({ update, onClick }: { update: MissionUpdate; onClic
         </div>
       )}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30">
-        <PlayCircle className="text-gold opacity-0 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-100" size={36} aria-hidden />
+        <Icon className="text-gold opacity-0 drop-shadow-[0_0_12px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-100" size={36} aria-hidden />
       </div>
       <span className="absolute bottom-1.5 left-0 right-0 text-center font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-gold/80">
-        Play Transmission
+        {update.imageSrc ? 'Open Transmission' : 'Play Transmission'}
       </span>
     </button>
   );

@@ -11,8 +11,8 @@ interface MissionUpdatePlayerProps {
 }
 
 /**
- * Immersive dark player overlay for one Mission Update. The video is
- * always 9:16 portrait — the frame is sized by aspect-ratio, never
+ * Immersive dark player overlay for one Mission Update — a video, or a
+ * still image transmission shown the same way. Either is always 9:16 portrait — the frame is sized by aspect-ratio, never
  * stretched to landscape, and never cropped: on desktop it's centered and
  * capped to the viewport height; on mobile it fills the width with no
  * horizontal overflow.
@@ -21,12 +21,13 @@ interface MissionUpdatePlayerProps {
  * existing soundtrack player): the video carries its own soundtrack, so the
  * global 007 theme is paused for as long as this overlay is open, and only
  * resumed afterwards if it was actually playing before — never started
- * from nothing.
+ * from nothing. An image transmission has no audio, so it leaves the
+ * soundtrack alone entirely.
  */
 export function MissionUpdatePlayer({ update, transmissionLabel, onClose }: MissionUpdatePlayerProps) {
   const { isPlaying, pause, start } = useSoundtrack();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const wasPlayingOnOpen = useRef(isPlaying);
+  const wasPlayingOnOpen = useRef(isPlaying && !update.imageSrc);
 
   useEffect(() => {
     if (wasPlayingOnOpen.current) pause();
@@ -85,17 +86,27 @@ export function MissionUpdatePlayer({ update, transmissionLabel, onClose }: Miss
         {/* aspect-[9/16] is the one thing sizing this box — height-capped on
             desktop (tall viewport), width-capped on mobile (narrow
             viewport), but the ratio itself never changes either way. */}
-        <video
-          key={update.id}
-          controls
-          playsInline
-          preload="metadata"
-          poster={update.posterSrc}
-          className="aspect-[9/16] max-h-full max-w-full bg-black shadow-gold-lg"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <source src={update.videoSrc} type="video/mp4" />
-        </video>
+        {update.imageSrc ? (
+          <img
+            key={update.id}
+            src={update.imageSrc}
+            alt={update.title}
+            className="aspect-[9/16] max-h-full max-w-full bg-black object-contain shadow-gold-lg"
+            onClick={(event) => event.stopPropagation()}
+          />
+        ) : (
+          <video
+            key={update.id}
+            controls
+            playsInline
+            preload="metadata"
+            poster={update.posterSrc}
+            className="aspect-[9/16] max-h-full max-w-full bg-black shadow-gold-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <source src={update.videoSrc} type="video/mp4" />
+          </video>
+        )}
       </div>
     </div>
   );

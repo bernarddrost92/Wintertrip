@@ -13,7 +13,14 @@ const UPDATE: MissionUpdate = {
   posterSrc: '/mission-updates/mission-update-september-poster.jpg',
 };
 
-function renderPlayer(soundtrackOverrides: Partial<SoundtrackContextValue> = {}, onClose = vi.fn()) {
+const IMAGE_UPDATE: MissionUpdate = {
+  id: 'stoptober',
+  date: '2026-10-01',
+  title: 'Stoptober',
+  imageSrc: '/mission-updates/mission-update-stoptober.webp',
+};
+
+function renderPlayer(soundtrackOverrides: Partial<SoundtrackContextValue> = {}, onClose = vi.fn(), update: MissionUpdate = UPDATE) {
   const value: SoundtrackContextValue = {
     isPlaying: false,
     isMuted: false,
@@ -25,7 +32,7 @@ function renderPlayer(soundtrackOverrides: Partial<SoundtrackContextValue> = {},
   };
   const utils = render(
     <SoundtrackContext.Provider value={value}>
-      <MissionUpdatePlayer update={UPDATE} transmissionLabel="TRANSMISSION 001" onClose={onClose} />
+      <MissionUpdatePlayer update={update} transmissionLabel="TRANSMISSION 001" onClose={onClose} />
     </SoundtrackContext.Provider>,
   );
   return { ...utils, soundtrack: value, onClose };
@@ -115,6 +122,23 @@ describe('MissionUpdatePlayer — global soundtrack coordination', () => {
   it('never resumes the soundtrack after unmount if it was not playing before opening', () => {
     const { unmount, soundtrack } = renderPlayer({ isPlaying: false });
     unmount();
+    expect(soundtrack.start).not.toHaveBeenCalled();
+  });
+});
+
+describe('MissionUpdatePlayer — image transmissions', () => {
+  it('shows the image in a 9:16 frame instead of a video', () => {
+    renderPlayer({}, vi.fn(), IMAGE_UPDATE);
+    const image = screen.getByRole('img', { name: 'Stoptober' });
+    expect(image).toHaveAttribute('src', '/mission-updates/mission-update-stoptober.webp');
+    expect(image.className).toContain('aspect-[9/16]');
+    expect(document.querySelector('video')).not.toBeInTheDocument();
+  });
+
+  it('never pauses or resumes the global soundtrack — an image has no audio', () => {
+    const { soundtrack, unmount } = renderPlayer({ isPlaying: true }, vi.fn(), IMAGE_UPDATE);
+    unmount();
+    expect(soundtrack.pause).not.toHaveBeenCalled();
     expect(soundtrack.start).not.toHaveBeenCalled();
   });
 });

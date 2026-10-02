@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { MissionUpdatesPage } from './MissionUpdatesPage';
 import { SoundtrackContext, type SoundtrackContextValue } from '../soundtrack/soundtrackContext';
-import { missionUpdates } from '../../data/missionUpdates';
 
 const NOOP_SOUNDTRACK: SoundtrackContextValue = {
   isPlaying: false,
@@ -36,29 +35,42 @@ describe('MissionUpdatesPage — Latest Transmission uses the newest date', () =
   it("shows the catalog's newest update as Latest Transmission, regardless of array order", () => {
     renderPage();
     expect(screen.getByText(/latest transmission/i)).toBeInTheDocument();
-    expect(screen.getByText(missionUpdates[0].title)).toBeInTheDocument();
-    expect(screen.getByText(/14 sep 2026/i)).toBeInTheDocument();
+    expect(screen.getByText('Stoptober')).toBeInTheDocument();
+    expect(screen.getByText(/01 okt 2026/i)).toBeInTheDocument();
   });
 
-  it('shows a WATCH TRANSMISSION call to action', () => {
+  it('an image transmission shows a VIEW TRANSMISSION call to action', () => {
     renderPage();
-    expect(screen.getByRole('button', { name: /watch transmission/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^view transmission$/i })).toBeInTheDocument();
   });
 });
 
 describe('MissionUpdatesPage — Mission Archive', () => {
-  it('shows a compact placeholder when there are no older transmissions yet', () => {
+  it('logs the older September video in the archive, numbered from the oldest', () => {
     renderPage();
-    expect(screen.getByText(/no additional transmissions logged/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no additional transmissions logged/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Pak september mee')).toBeInTheDocument();
+    expect(screen.getByText('TRANSMISSION 001')).toBeInTheDocument();
   });
 });
 
 describe('MissionUpdatesPage — opening/closing the player', () => {
-  it('clicking WATCH TRANSMISSION opens the player with the video visible', async () => {
+  it('clicking VIEW TRANSMISSION opens the player with the image visible', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: /watch transmission/i }));
+    await user.click(screen.getByRole('button', { name: /^view transmission$/i }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Stoptober' })).toBeInTheDocument();
+    expect(document.querySelector('video')).not.toBeInTheDocument();
+  });
+
+  it('opening an archived video transmission shows the video', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByText('Pak september mee'));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(document.querySelector('video')).toBeInTheDocument();
@@ -68,7 +80,7 @@ describe('MissionUpdatesPage — opening/closing the player', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: /watch transmission/i }));
+    await user.click(screen.getByRole('button', { name: /^view transmission$/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /close transmission/i }));
