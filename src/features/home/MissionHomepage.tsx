@@ -1,4 +1,4 @@
-import { Calculator, Crosshair, LayoutDashboard, Radio, ShieldCheck } from 'lucide-react';
+import { Calculator, LayoutDashboard, Radio, ShieldCheck } from 'lucide-react';
 import { missionUpdates } from '../../data/missionUpdates';
 import type { AppView } from '../../types/navigation';
 import { MissionChoiceCard } from './MissionChoiceCard';
@@ -79,14 +79,6 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
           icon={Radio}
           badge={updateBadge}
           onClick={() => onSelect('mission-updates')}
-        />
-        <MissionChoiceCard
-          code="05"
-          title="Mission Hunt"
-          subtitle="Project Intelligence — find the opportunities."
-          cta="Open Mission"
-          icon={Crosshair}
-          onClick={() => onSelect('mission-hunt')}
         />
       </div>
     </div>

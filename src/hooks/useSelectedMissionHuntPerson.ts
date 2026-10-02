@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabaseClient';
-import { getSelectedPersonId } from '../features/mission-hunt/personStorage';
+import { getSelectedPersonId, setSelectedPersonId } from '../features/mission-hunt/personStorage';
 
 interface SelectedPersonState {
   /** null when nobody has selected a name yet on this device (or Supabase
@@ -9,6 +9,19 @@ interface SelectedPersonState {
   userId: string | null;
   /** false only during the brief initial lookup. */
   ready: boolean;
+}
+
+/** Resolves a profiles.id to its auth.users id, or null when that isn't
+ * possible for any reason. Never throws — see the hook's comment below. */
+async function resolveUserId(personId: string | null): Promise<string | null> {
+  if (!personId || !isSupabaseConfigured()) return null;
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.from('profiles').select('user_id').eq('id', personId).maybeSingle<{ user_id: string }>();
+    return !error && data ? data.user_id : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -25,34 +38,28 @@ interface SelectedPersonState {
  * which can throw synchronously for config that merely *looks* plausible
  * enough to pass isSupabaseConfigured() but still isn't usable).
  */
-export function useSelectedMissionHuntPerson(): SelectedPersonState {
+export function useSelectedMissionHuntPerson(): SelectedPersonState & { selectPerson: (personId: string) => Promise<string | null> } {
   const [state, setState] = useState<SelectedPersonState>({ userId: null, ready: false });
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      const personId = getSelectedPersonId();
-      if (!personId || !isSupabaseConfigured()) {
-        if (!cancelled) setState({ userId: null, ready: true });
-        return;
-      }
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.from('profiles').select('user_id').eq('id', personId).maybeSingle<{ user_id: string }>();
-        if (cancelled) return;
-        setState({ userId: !error && data ? data.user_id : null, ready: true });
-      } catch {
-        if (!cancelled) setState({ userId: null, ready: true });
-      }
-    }
-
-    load();
+    resolveUserId(getSelectedPersonId()).then((userId) => {
+      if (!cancelled) setState({ userId, ready: true });
+    });
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return state;
+  /** The WIE BEN JIJ? choice: remembered on this device, then resolved. */
+  const selectPerson = useCallback(async (personId: string) => {
+    setSelectedPersonId(personId);
+    const userId = await resolveUserId(personId);
+    setState({ userId, ready: true });
+    return userId;
+  }, []);
+
+  return { ...state, selectPerson };
 }

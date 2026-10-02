@@ -33,20 +33,11 @@ describe('MissionHomepage — Mission Updates terminal', () => {
   });
 });
 
-describe('MissionHomepage — Mission Hunt terminal', () => {
-  it('renders a "05 Mission Hunt" terminal', () => {
+describe('MissionHomepage — Mission Hunt is no longer part of the site', () => {
+  it('renders no Mission Hunt terminal', () => {
     render(<MissionHomepage onSelect={vi.fn()} />);
-    expect(screen.getByText('05')).toBeInTheDocument();
-    expect(screen.getByText('Mission Hunt')).toBeInTheDocument();
-    expect(screen.getByText(/open mission/i)).toBeInTheDocument();
-  });
-
-  it('clicking the terminal navigates to mission-hunt', async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-    render(<MissionHomepage onSelect={onSelect} />);
-
-    await user.click(screen.getByText(/open mission/i));
-    expect(onSelect).toHaveBeenCalledWith('mission-hunt');
+    expect(screen.queryByText('05')).not.toBeInTheDocument();
+    expect(screen.queryByText('Mission Hunt')).not.toBeInTheDocument();
+    expect(screen.queryByText(/open mission/i)).not.toBeInTheDocument();
   });
 });

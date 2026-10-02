@@ -185,7 +185,7 @@ describe('App — mission gate / intro / home flow (a Team Zwolle session alread
     expect(screen.queryByText('Missie #1')).not.toBeInTheDocument();
   });
 
-  it('14. UITLOGGEN is a distinct action from Mission Hunt\'s own WISSEL PERSOON — logging out never touches the locally selected person', async () => {
+  it('14. UITLOGGEN never touches the locally selected WIE BEN JIJ? person', async () => {
     const PERSON_KEY = 'wintertrip-mission-hunt-person';
     localStorage.setItem(PERSON_KEY, 'some-profile-id');
     sessionStorage.setItem('ws27-intro-seen', '1');
@@ -196,7 +196,7 @@ describe('App — mission gate / intro / home flow (a Team Zwolle session alread
     await user.click(screen.getByRole('button', { name: /uitloggen/i }));
 
     // The shared security session ends, but WIE BEN JIJ?'s own locally
-    // selected person is untouched — that's Mission Hunt's own concern.
+    // selected person is untouched — League Check still registers under it.
     expect(localStorage.getItem(PERSON_KEY)).toBe('some-profile-id');
   });
 });
@@ -237,44 +237,28 @@ describe('App — /mission-updates direct route (via the 404.html redirect param
   });
 });
 
-describe('App — Mission Hunt: a failed lazy chunk load never black-screens the app', () => {
-  const originalConsoleError = console.error;
-
+describe('App — Mission Hunt is no longer part of the site', () => {
   beforeEach(() => {
     getSupabaseClient.mockReturnValue({ auth: createFakeAuth({ access_token: 'existing-session' }) });
     sessionStorage.setItem('ws27-intro-seen', '1');
   });
 
   afterEach(() => {
-    console.error = originalConsoleError;
-    vi.doUnmock('./features/mission-hunt/MissionHuntPage');
+    window.history.pushState({}, '', '/');
   });
 
-  it('a rejected dynamic import (e.g. a stale chunk reference after a redeploy) shows System Error, not an empty page — and the rest of the app stays usable', async () => {
-    // Simulates exactly the reproduced bug: React.lazy's import() rejecting.
-    // Without an error boundary this unmounts #root entirely (confirmed by
-    // direct reproduction before this fix) — with one, only Mission Hunt's
-    // subtree is affected.
-    vi.doMock('./features/mission-hunt/MissionHuntPage', () => {
-      throw new Error('Failed to fetch dynamically imported module');
-    });
-    console.error = vi.fn();
-
-    const user = userEvent.setup();
+  it('the header has no Mission Hunt entry', async () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
-    await user.click(screen.getByText(/open mission/i));
+    expect(screen.queryByRole('button', { name: 'Mission Hunt' })).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => expect(screen.getByText('System Error')).toBeInTheDocument());
+  it('an old bookmarked /mission-hunt link lands on the Mission Homepage', async () => {
+    window.history.pushState({}, '', '/?redirect=mission-hunt');
+    render(<App />);
 
-    // The app shell around Mission Hunt is still there — this is not a
-    // blank/unmounted page.
-    expect(screen.getByRole('button', { name: 'Mission Hunt' })).toBeInTheDocument();
-    expect(document.body.textContent).not.toBe('');
-
-    // BACK TO HOME actually navigates — the rest of the app still works.
-    await user.click(screen.getByRole('button', { name: /back to home/i }));
-    expect(screen.getByText('Missie #1')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
+    expect(screen.queryByText(/project intelligence/i)).not.toBeInTheDocument();
   });
 });

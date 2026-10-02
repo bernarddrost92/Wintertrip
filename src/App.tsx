@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { useState } from 'react';
 import { AccessGate } from './features/access/AccessGate';
 import { signOutTeamZwolle, useSupabaseAuthSession } from './features/access/teamZwolleAuth';
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -15,16 +15,10 @@ import { MissionIntroSequence } from './features/intro/MissionIntroSequence';
 import { LeagueCheckPage } from './features/league-check/LeagueCheckPage';
 import { MissionControlPage } from './features/mission-control/MissionControlPage';
 import { MissionUpdatesPage } from './features/mission-updates/MissionUpdatesPage';
-import { MissionHuntErrorBoundary } from './features/mission-hunt/MissionHuntErrorBoundary';
 import { MissionFlowProvider } from './features/missionFlow/MissionFlowProvider';
 import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
 import type { AppView } from './types/navigation';
 import { clearDeepLinkParam, readDeepLinkView } from './utils/deepLink';
-
-// Mission Hunt pulls in the Supabase client and SheetJS (xlsx) — both sizable
-// and irrelevant to every other view — so it's loaded on demand rather than
-// bundled into the JS every visitor downloads just to see the homepage.
-const MissionHuntPage = lazy(() => import('./features/mission-hunt/MissionHuntPage').then((m) => ({ default: m.MissionHuntPage })));
 
 type GatePhase = 'gate' | 'intro' | 'ready';
 
@@ -34,7 +28,6 @@ const ACCESS_LABEL: Record<AppView, string> = {
   'league-check': 'ACCESSING LEAGUE CHECK...',
   'mission-control': 'ACCESSING MISSION CONTROL...',
   'mission-updates': 'ACCESSING MISSION UPDATES...',
-  'mission-hunt': 'ACCESSING MISSION HUNT...',
 };
 
 const TRANSITION_MS = 650;
@@ -59,10 +52,13 @@ const TRANSITION_MS = 650;
  *    refresh within the same session skips straight back to "ready".
  *
  * UITLOGGEN (Footer) ends the shared Supabase session and returns to the
- * Access Gate — it never touches the inner intro/session state, and it is
- * a completely different action from Mission Hunt's own WISSEL PERSOON
- * (which only clears the locally selected WIE BEN JIJ? person and leaves
- * this Supabase session untouched).
+ * Access Gate — it never touches the inner intro/session state, nor the
+ * locally selected WIE BEN JIJ? person League Check registers receipts
+ * under (see features/league-check/ReceiptPersonPicker.tsx).
+ *
+ * Mission Hunt is no longer part of the site: its view, navigation and
+ * deep link are gone, but features/mission-hunt/ and its Supabase data are
+ * left in place so it can be brought back.
  */
 export default function App() {
   const { loading: authLoading, session } = useSupabaseAuthSession();
@@ -77,20 +73,6 @@ export default function App() {
     return deepLinkView ?? 'home';
   });
   const [transition, setTransition] = useState<AppView | null>(null);
-
-  /** A rejected React.lazy() import (the chunk 404ing — a stale cached
-   * index.html after a redeploy, or any transient fetch failure) doesn't
-   * just get cached on the lazy object: confirmed by direct testing, the
-   * browser's module loader itself won't re-fetch a specifier it has
-   * already failed to load once, for the rest of the page's lifetime — so
-   * no in-place React trick (new lazy() instance, remounting) reliably
-   * retries it. A full navigation is the only thing that reliably does.
-   * Routes back through the same public/404.html deep-link mechanism used
-   * for a shared /mission-hunt link, so RETRY lands the user back on
-   * Mission Hunt (not the homepage) once the fresh load completes. */
-  function handleMissionHuntRetry() {
-    window.location.href = `${import.meta.env.BASE_URL}?redirect=mission-hunt`;
-  }
 
   function handleLogout() {
     void signOutTeamZwolle();
@@ -163,17 +145,6 @@ export default function App() {
                       </CommandFrame>
                     )}
                     {view === 'mission-updates' && <MissionUpdatesPage />}
-                    {view === 'mission-hunt' && (
-                      <MissionHuntErrorBoundary onRetry={handleMissionHuntRetry} onBackHome={() => setView('home')}>
-                        <Suspense
-                          fallback={
-                            <p className="px-4 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Loading project intelligence…</p>
-                          }
-                        >
-                          <MissionHuntPage />
-                        </Suspense>
-                      </MissionHuntErrorBoundary>
-                    )}
                   </main>
                   <Footer onReplayIntro={handleReplayIntro} onLogout={handleLogout} />
                 </div>

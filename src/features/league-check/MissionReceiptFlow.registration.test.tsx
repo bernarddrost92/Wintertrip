@@ -4,16 +4,17 @@ import { MissionReceiptFlow } from './MissionReceiptFlow';
 import { LEAGUE_CHECK_ITEMS } from '../../data/leagueCheckItems';
 import type { AgentIdentity } from '../missionFlow/missionFlowContext';
 
-const { isSupabaseConfigured, getSupabaseClient, getSelectedPersonId, mockUserIdForPerson, upsert } = vi.hoisted(() => ({
+const { isSupabaseConfigured, getSupabaseClient, getSelectedPersonId, setSelectedPersonId, mockUserIdForPerson, upsert } = vi.hoisted(() => ({
   isSupabaseConfigured: vi.fn(),
   getSupabaseClient: vi.fn(),
   getSelectedPersonId: vi.fn(),
+  setSelectedPersonId: vi.fn(),
   mockUserIdForPerson: { current: null as string | null },
   upsert: vi.fn(),
 }));
 
 vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured, getSupabaseClient }));
-vi.mock('../mission-hunt/personStorage', () => ({ getSelectedPersonId }));
+vi.mock('../mission-hunt/personStorage', () => ({ getSelectedPersonId, setSelectedPersonId }));
 
 function buildFakeClient() {
   return {
@@ -24,6 +25,7 @@ function buildFakeClient() {
             eq: () => ({
               maybeSingle: async () => (mockUserIdForPerson.current ? { data: { user_id: mockUserIdForPerson.current }, error: null } : { data: null, error: null }),
             }),
+            order: async () => ({ data: ROSTER, error: null }),
           }),
         };
       }
@@ -31,6 +33,10 @@ function buildFakeClient() {
     },
   };
 }
+
+const ROSTER = [
+  { id: 'profile-anna', user_id: 'user-anna', display_name: 'Anna de Vries', email_normalized: 'anna@example.nl', role: 'member', active: true, created_at: '2026-09-01T00:00:00Z' },
+];
 
 const AGENT: AgentIdentity = { agentName: 'Bernard', agentRole: 'AM', professionalName: 'Tim Jansen' };
 const THREE_OF_SIX: Record<string, boolean> = Object.fromEntries(LEAGUE_CHECK_ITEMS.slice(0, 3).map((item) => [item.id, true]));
@@ -45,6 +51,7 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     getSupabaseClient.mockClear();
     isSupabaseConfigured.mockReset();
     getSelectedPersonId.mockReset();
+    setSelectedPersonId.mockReset();
     mockUserIdForPerson.current = null;
   });
 
@@ -157,5 +164,27 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
 
     expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /download receipt/i })).toBeEnabled();
+  });
+
+  it('no name selected yet: the WIE BEN JIJ? picker appears under the receipt, and picking a name registers that same receipt', async () => {
+    isSupabaseConfigured.mockReturnValue(true);
+    getSupabaseClient.mockReturnValue(buildFakeClient());
+    getSelectedPersonId.mockReturnValue(null);
+
+    render(
+      <MissionReceiptFlow beforeCheck={null} agent={AGENT} checkedItems={THREE_OF_SIX} checkedCount={3} total={6} receiptId="session-g" />,
+    );
+    await screen.findByRole('button', { name: /generate receipt/i });
+    clickGenerate();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Anna de Vries' }));
+    mockUserIdForPerson.current = 'user-anna';
+    fireEvent.click(screen.getByRole('button', { name: /registreer receipt/i }));
+
+    await waitFor(() =>
+      expect(upsert).toHaveBeenCalledWith({ id: 'session-g', checked_count: 3, total_checks: 6, created_by: 'user-anna' }),
+    );
+    expect(setSelectedPersonId).toHaveBeenCalledWith('profile-anna');
+    await waitFor(() => expect(screen.queryByText(/nog geen naam gekozen/i)).not.toBeInTheDocument());
   });
 });

@@ -1,1 +1,1 @@
-export type AppView = 'home' | 'calculator' | 'league-check' | 'mission-control' | 'mission-updates' | 'mission-hunt';
+export type AppView = 'home' | 'calculator' | 'league-check' | 'mission-control' | 'mission-updates';

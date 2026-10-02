@@ -7,6 +7,7 @@ import { formatFoundPoints, formatVcdbValue } from '../../utils/format';
 import { AfterCheckEditor } from './AfterCheckEditor';
 import { MissionReceipt } from './MissionReceipt';
 import { ReceiptActions } from './ReceiptActions';
+import { ReceiptPersonPicker } from './ReceiptPersonPicker';
 import { useAfterCheck } from './useAfterCheck';
 import type { AgentIdentity, BeforeCheckSnapshot } from '../missionFlow/missionFlowContext';
 
@@ -28,8 +29,8 @@ interface MissionReceiptFlowProps {
 /**
  * Registers this receipt in League Check Intelligence (the team-wide
  * quality-control counter in the Calculator) if — and only if — someone has
- * selected their name via Mission Hunt's WIE BEN JIJ? picker on this
- * device (see personStorage.ts); there is no separate sign-in step
+ * selected their name via the WIE BEN JIJ? picker on this device (see
+ * ReceiptPersonPicker.tsx and personStorage.ts); there is no separate sign-in step
  * anymore, and no anon-agnostic write policy limitation either — the
  * remaining gate is purely "do we know who to attribute this to". Never
  * blocks or delays the on-screen receipt: this fires alongside it, not
@@ -38,14 +39,22 @@ interface MissionReceiptFlowProps {
  * identically either way).
  */
 function useRegisterReceipt(receiptId: string, checkedCount: number, total: number) {
-  const { userId, ready } = useSelectedMissionHuntPerson();
+  const { userId, ready, selectPerson } = useSelectedMissionHuntPerson();
 
   function register() {
     if (!userId) return;
     void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId });
   }
 
-  return { register, signedIn: userId !== null, authReady: ready };
+  /** Picking a name after the receipt was already generated registers that
+   * same receipt right away — no second GENERATE RECEIPT click needed. */
+  async function registerAs(personId: string) {
+    const selectedUserId = await selectPerson(personId);
+    if (!selectedUserId) return;
+    void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId: selectedUserId });
+  }
+
+  return { register, registerAs, signedIn: userId !== null, authReady: ready };
 }
 
 function GenerateReceiptButton({ missionApproved, onClick }: { missionApproved: boolean; onClick: () => void }) {
@@ -53,17 +62,6 @@ function GenerateReceiptButton({ missionApproved, onClick }: { missionApproved: 
     <GoldButton onClick={onClick} icon={<Sparkles size={16} />}>
       {missionApproved ? 'Mission Approved — View Receipt' : 'Generate Receipt'}
     </GoldButton>
-  );
-}
-
-/** Shown only once a receipt has been generated while nobody has selected
- * a name yet on this device — the receipt itself already printed above
- * this, unaffected either way. */
-function NotRegisteredNote() {
-  return (
-    <p className="text-center font-mono text-[10px] uppercase tracking-wider text-ink-dim">
-      Nog geen naam gekozen — receipt nog niet team-breed geregistreerd. Selecteer jezelf via Mission Hunt om mee te tellen in League Check Intelligence.
-    </p>
   );
 }
 
@@ -106,7 +104,7 @@ function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, ch
   const missionApproved = checkedCount === total;
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
-  const { register, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
+  const { register, registerAs, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
 
   function handleGenerate() {
     setReceiptGenerated(true);
@@ -159,7 +157,7 @@ function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, ch
             checkedCount={checkedCount}
             total={total}
           />
-          {authReady && !signedIn && <NotRegisteredNote />}
+          {authReady && !signedIn && <ReceiptPersonPicker onSelect={registerAs} />}
         </>
       )}
     </div>
@@ -181,7 +179,7 @@ function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total
   const missionApproved = checkedCount === total;
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
-  const { register, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
+  const { register, registerAs, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
 
   function handleGenerate() {
     setReceiptGenerated(true);
@@ -220,7 +218,7 @@ function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total
             checkedCount={checkedCount}
             total={total}
           />
-          {authReady && !signedIn && <NotRegisteredNote />}
+          {authReady && !signedIn && <ReceiptPersonPicker onSelect={registerAs} />}
         </>
       )}
     </div>
