@@ -56,15 +56,15 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
   // This screenshot carried a reliable Power BI "last refresh" time — a
   // full ISO datetime with an explicit +02:00 (CEST) offset, per the
   // existing IntelligenceStatusSection.test.tsx convention — so it renders
-  // as "01 OCT 2026 · 04:38" rather than a bare date.
-  updatedAt: '2026-10-01T04:38:00+02:00',
+  // as "02 OCT 2026 · 04:41" rather than a bare date.
+  updatedAt: '2026-10-02T04:41:00+02:00',
 
   virtualPosition: 1,
 
   vcdbRanking: 1,
-  vcdbScore: 21192.65,
+  vcdbScore: 21146.2,
 
-  placementsInScope: 116,
+  placementsInScope: 117,
   placementsExtraHoursRule: 6,
 
   netFteRanking: 9,
@@ -73,22 +73,22 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
 
   // The Final Ranking table's own Final Score for Zwolle — NOT the Power
   // BI "Top Team" card, which shows the VCDB Score again by coincidence
-  // (21,192.65). The real Final Score is VCDB x Factor: 21,192.65 x 1.3 =
-  // 27,550.45 (per the official standings, not a re-derivation here).
-  finalScore: 27550.45,
+  // (21,146.20). The real Final Score is VCDB x Factor: 21,146.20 x 1.3 =
+  // 27,490.06 (per the official standings, not a re-derivation here).
+  finalScore: 27490.06,
 
   currentNumberOneBenchmark: -23,
 
   fteMilestones: [
     { position: 8, team: 'Alkmaar', netFte: -57.35 },
     { position: 5, team: 'Utrecht', netFte: -38.8 },
-    { position: 3, team: 'Groningen', netFte: -25.3 },
+    { position: 3, team: 'Groningen', netFte: -24.7 },
     { position: 1, team: 'Middelburg', netFte: -23 },
   ],
 
   topThree: [
-    { position: 1, team: 'Zwolle', finalScore: 27550.45 },
-    { position: 2, team: 'Rotterdam', finalScore: 19390.24 },
-    { position: 3, team: 'Maastricht', finalScore: 18502.36 },
+    { position: 1, team: 'Zwolle', finalScore: 27490.06 },
+    { position: 2, team: 'Rotterdam', finalScore: 19312 },
+    { position: 3, team: 'Maastricht', finalScore: 18636.45 },
   ],
 };
