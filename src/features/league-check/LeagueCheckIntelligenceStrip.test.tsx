@@ -23,6 +23,8 @@ describe('LeagueCheckIntelligenceStrip — compact quality indicator, never a le
       openCount: 0,
       openChecks: 0,
       completionPercentage: 0,
+      totalFoundPoints: 0,
+      totalMissionValue: 0,
     };
     fetchLeagueCheckReceiptStats.mockResolvedValue(stats);
     render(<LeagueCheckIntelligenceStrip />);
@@ -44,6 +46,8 @@ describe('LeagueCheckIntelligenceStrip — compact quality indicator, never a le
       openCount: 3,
       openChecks: 7,
       completionPercentage: 87,
+      totalFoundPoints: 0,
+      totalMissionValue: 0,
     };
     fetchLeagueCheckReceiptStats.mockResolvedValue(stats);
     render(<LeagueCheckIntelligenceStrip />);

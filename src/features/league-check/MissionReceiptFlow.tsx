@@ -26,6 +26,15 @@ interface MissionReceiptFlowProps {
   receiptId: string;
 }
 
+/** What the receipt printed — stored with it for Mission Control's totals. */
+interface ReceiptPoints {
+  foundPoints: number;
+  missionValue: number;
+}
+
+/** A standalone League Check prints no score, so it adds no points. */
+const NO_POINTS: ReceiptPoints = { foundPoints: 0, missionValue: 0 };
+
 /**
  * Registers this receipt in League Check Intelligence (the team-wide
  * quality-control counter in the Calculator) if — and only if — someone has
@@ -38,12 +47,12 @@ interface MissionReceiptFlowProps {
  * receipt (the receipt itself, its download and its share still work
  * identically either way).
  */
-function useRegisterReceipt(receiptId: string, checkedCount: number, total: number) {
+function useRegisterReceipt(receiptId: string, checkedCount: number, total: number, points: ReceiptPoints) {
   const { userId, ready, selectPerson } = useSelectedMissionHuntPerson();
 
   function register() {
     if (!userId) return;
-    void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId });
+    void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId, ...points });
   }
 
   /** Picking a name after the receipt was already generated registers that
@@ -51,7 +60,7 @@ function useRegisterReceipt(receiptId: string, checkedCount: number, total: numb
   async function registerAs(personId: string) {
     const selectedUserId = await selectPerson(personId);
     if (!selectedUserId) return;
-    void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId: selectedUserId });
+    void upsertLeagueCheckReceipt({ id: receiptId, checkedCount, totalChecks: total, userId: selectedUserId, ...points });
   }
 
   return { register, registerAs, signedIn: userId !== null, authReady: ready };
@@ -104,7 +113,10 @@ function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, ch
   const missionApproved = checkedCount === total;
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
-  const { register, registerAs, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
+  const { register, registerAs, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total, {
+    foundPoints: afterCheck.found.foundLeaguePoints,
+    missionValue: afterCheck.result.finalScore,
+  });
 
   function handleGenerate() {
     setReceiptGenerated(true);
@@ -179,7 +191,7 @@ function MissionReceiptFlowStandalone({ agent, checkedItems, checkedCount, total
   const missionApproved = checkedCount === total;
   const [receiptGenerated, setReceiptGenerated] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
-  const { register, registerAs, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total);
+  const { register, registerAs, signedIn, authReady } = useRegisterReceipt(receiptId, checkedCount, total, NO_POINTS);
 
   function handleGenerate() {
     setReceiptGenerated(true);

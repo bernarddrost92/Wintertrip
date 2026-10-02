@@ -98,7 +98,7 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
 
     expect(screen.getByText('Mission Receipt')).toBeInTheDocument();
     await waitFor(() =>
-      expect(upsert).toHaveBeenCalledWith({ id: 'session-c', checked_count: 3, total_checks: 6, created_by: 'user-123' }),
+      expect(upsert).toHaveBeenCalledWith({ id: 'session-c', checked_count: 3, total_checks: 6, created_by: 'user-123', found_points: 0, mission_value: 0 }),
     );
     expect(screen.queryByText(/nog geen naam gekozen/i)).not.toBeInTheDocument();
   });
@@ -123,7 +123,7 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     clickGenerate();
 
     await waitFor(() => expect(upsert).toHaveBeenCalledTimes(2));
-    expect(upsert).toHaveBeenLastCalledWith({ id: 'session-d', checked_count: 4, total_checks: 6, created_by: 'user-123' });
+    expect(upsert).toHaveBeenLastCalledWith({ id: 'session-d', checked_count: 4, total_checks: 6, created_by: 'user-123', found_points: 0, mission_value: 0 });
   });
 
   it('resilience: getSupabaseClient() throws synchronously (the production incident) — League Check still renders and the receipt still generates', async () => {
@@ -182,7 +182,7 @@ describe('MissionReceiptFlow — League Check Intelligence registration on Gener
     fireEvent.click(screen.getByRole('button', { name: /registreer receipt/i }));
 
     await waitFor(() =>
-      expect(upsert).toHaveBeenCalledWith({ id: 'session-g', checked_count: 3, total_checks: 6, created_by: 'user-anna' }),
+      expect(upsert).toHaveBeenCalledWith({ id: 'session-g', checked_count: 3, total_checks: 6, created_by: 'user-anna', found_points: 0, mission_value: 0 }),
     );
     expect(setSelectedPersonId).toHaveBeenCalledWith('profile-anna');
     await waitFor(() => expect(screen.queryByText(/nog geen naam gekozen/i)).not.toBeInTheDocument());

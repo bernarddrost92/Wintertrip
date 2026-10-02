@@ -1,57 +1,25 @@
-import { AlertTriangle, WifiOff } from 'lucide-react';
 import { SectionHeader } from '../../components/SectionHeader';
 import { formatFactor, formatVcdbValue } from '../../utils/format';
-import type { TeamProductionTotal } from '../../services/productionAggregate';
 import type { PowerBiIntelligenceSnapshot } from '../../types/missionSnapshot';
 
 interface ScoreIntelligenceSectionProps {
-  team: TeamProductionTotal;
-  mock: boolean;
-  degraded: boolean;
   powerBi: PowerBiIntelligenceSnapshot;
   currentFteFactor: number | null;
 }
 
 /**
- * Where our points come from, at a glance — three side-by-side stat
- * blocks, each carrying its own data-source label so Base League Points
- * (live Marre production feed, services/productionAggregate.ts) is never
- * mistaken for the same figure/formula as Power BI's VCDB Score or Virtual
- * Final Score (a separate, official snapshot). No arrows or formulas
- * connect the three — they are independent readings, not a pipeline.
+ * Where our points stand, at a glance — Power BI's VCDB Score and Virtual
+ * Final Score side by side, both from the official manual snapshot. Base
+ * League Points (from Marre's production feed) used to sit next to them;
+ * that feed is no longer maintained, so it has been removed rather than
+ * left showing stale or mock numbers.
  */
-export function ScoreIntelligenceSection({ team, mock, degraded, powerBi, currentFteFactor }: ScoreIntelligenceSectionProps) {
+export function ScoreIntelligenceSection({ powerBi, currentFteFactor }: ScoreIntelligenceSectionProps) {
   return (
     <div className="panel p-4 sm:p-5">
       <SectionHeader eyebrow="007 · Mission Control" title="Score Intelligence" />
 
-      {(degraded || mock) && (
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-          {degraded && (
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold/80">
-              <WifiOff size={12} className="shrink-0 text-gold" aria-hidden />
-              Data Connection Degraded
-            </p>
-          )}
-          {mock && (
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold/80">
-              <AlertTriangle size={12} className="shrink-0 text-gold" aria-hidden />
-              Mock Data — Not The Actual Zwolle Production
-            </p>
-          )}
-        </div>
-      )}
-
-      <div className="mt-4 grid grid-cols-1 gap-px border border-white/10 bg-white/5 sm:grid-cols-3">
-        <div className="bg-mission-panel px-4 py-3">
-          <p className="label-classified text-gold/70">Mission Control</p>
-          <p className="text-[11px] text-ink-muted">Base League Points</p>
-          <p className="mt-1 font-display text-2xl font-bold tabular-nums text-gold sm:text-3xl">{formatVcdbValue(team.totalBaseLeaguePoints)}</p>
-          <p className="label-classified mt-1">Live Production Feed</p>
-          <p className="mt-1 text-[11px] text-ink-muted">
-            {team.qualifyingDeals} Qualifying · {team.scoringPending} Pending
-          </p>
-        </div>
+      <div className="mt-4 grid grid-cols-1 gap-px border border-white/10 bg-white/5 sm:grid-cols-2">
         <div className="bg-mission-panel px-4 py-3">
           <p className="label-classified text-gold/70">Power BI</p>
           <p className="text-[11px] text-ink-muted">VCDB Score</p>

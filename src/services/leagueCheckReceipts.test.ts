@@ -28,6 +28,8 @@ describe('computeLeagueCheckReceiptStats — pure aggregation, never a league sc
       openCount: 0,
       openChecks: 0,
       completionPercentage: 0,
+      totalFoundPoints: 0,
+      totalMissionValue: 0,
     });
     expect(Number.isNaN(stats.completionPercentage)).toBe(false);
     expect(Number.isFinite(stats.completionPercentage)).toBe(true);
@@ -87,6 +89,18 @@ describe('computeLeagueCheckReceiptStats — pure aggregation, never a league sc
     expect(stats.approvedCount + stats.openCount).toBe(stats.totalReceipts);
   });
 
+  it('sums found points and mission value; receipts without stored points add 0', () => {
+    const rows: LeagueCheckReceiptRow[] = [
+      { ...row(6), found_points: 50, mission_value: 820.4 },
+      { ...row(4), found_points: -12.5, mission_value: 300 },
+      row(2),
+    ];
+    const stats = computeLeagueCheckReceiptStats(rows);
+    expect(stats.totalReceipts).toBe(3);
+    expect(stats.totalFoundPoints).toBe(37.5);
+    expect(stats.totalMissionValue).toBeCloseTo(1120.4, 6);
+  });
+
   it('completionPercentage rounds to a whole percent', () => {
     // 1/3 -> 33.33...% rounds to 33.
     const stats = computeLeagueCheckReceiptStats([row(1, 3)]);
@@ -120,13 +134,23 @@ describe('fetchLeagueCheckReceiptStats — returns null instead of throwing when
     isSupabaseConfigured.mockReturnValue(true);
     const rpc = vi.fn().mockReturnValue({
       single: async () => ({
-        data: { receipt_count: 2, completed_checks: 9, max_checks: 12, approved_count: 1, open_count: 1, completion_percentage: 75 },
+        data: {
+          receipt_count: 2,
+          completed_checks: 9,
+          max_checks: 12,
+          approved_count: 1,
+          open_count: 1,
+          completion_percentage: 75,
+          // Postgres numeric can come back as a string — mapped to a number.
+          total_found_points: '53.225',
+          total_mission_value: 1240.5,
+        },
         error: null,
       }),
     });
     getSupabaseClient.mockReturnValue({ rpc });
     const result = await fetchLeagueCheckReceiptStats();
-    expect(rpc).toHaveBeenCalledWith('get_league_check_stats');
+    expect(rpc).toHaveBeenCalledWith('get_league_check_points_stats');
     expect(result).toEqual({
       totalReceipts: 2,
       completedChecks: 9,
@@ -135,6 +159,8 @@ describe('fetchLeagueCheckReceiptStats — returns null instead of throwing when
       openCount: 1,
       openChecks: 3,
       completionPercentage: 75,
+      totalFoundPoints: 53.225,
+      totalMissionValue: 1240.5,
     });
   });
 });
@@ -147,7 +173,7 @@ describe('upsertLeagueCheckReceipt — never throws, reports success as a boolea
 
   it('Supabase not configured: resolves false without calling getSupabaseClient', async () => {
     isSupabaseConfigured.mockReturnValue(false);
-    const ok = await upsertLeagueCheckReceipt({ id: 'r1', checkedCount: 3, totalChecks: 6, userId: 'u1' });
+    const ok = await upsertLeagueCheckReceipt({ id: 'r1', checkedCount: 3, totalChecks: 6, userId: 'u1', foundPoints: 50, missionValue: 820.4 });
     expect(ok).toBe(false);
     expect(getSupabaseClient).not.toHaveBeenCalled();
   });
@@ -156,7 +182,7 @@ describe('upsertLeagueCheckReceipt — never throws, reports success as a boolea
     isSupabaseConfigured.mockReturnValue(true);
     const upsert = vi.fn().mockResolvedValue({ error: new Error('rejected by RLS') });
     getSupabaseClient.mockReturnValue({ from: () => ({ upsert }) });
-    const ok = await upsertLeagueCheckReceipt({ id: 'r1', checkedCount: 3, totalChecks: 6, userId: 'u1' });
+    const ok = await upsertLeagueCheckReceipt({ id: 'r1', checkedCount: 3, totalChecks: 6, userId: 'u1', foundPoints: 50, missionValue: 820.4 });
     expect(ok).toBe(false);
   });
 
@@ -164,8 +190,8 @@ describe('upsertLeagueCheckReceipt — never throws, reports success as a boolea
     isSupabaseConfigured.mockReturnValue(true);
     const upsert = vi.fn().mockResolvedValue({ error: null });
     getSupabaseClient.mockReturnValue({ from: () => ({ upsert }) });
-    const ok = await upsertLeagueCheckReceipt({ id: 'r1', checkedCount: 3, totalChecks: 6, userId: 'u1' });
+    const ok = await upsertLeagueCheckReceipt({ id: 'r1', checkedCount: 3, totalChecks: 6, userId: 'u1', foundPoints: 50, missionValue: 820.4 });
     expect(ok).toBe(true);
-    expect(upsert).toHaveBeenCalledWith({ id: 'r1', checked_count: 3, total_checks: 6, created_by: 'u1' });
+    expect(upsert).toHaveBeenCalledWith({ id: 'r1', checked_count: 3, total_checks: 6, created_by: 'u1', found_points: 50, mission_value: 820.4 });
   });
 });
