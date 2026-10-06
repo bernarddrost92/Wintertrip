@@ -35,8 +35,8 @@ describe('MissionUpdatesPage — Latest Transmission uses the newest date', () =
   it("shows the catalog's newest update as Latest Transmission, regardless of array order", () => {
     renderPage();
     expect(screen.getByText(/latest transmission/i)).toBeInTheDocument();
-    expect(screen.getByText('Stoptober')).toBeInTheDocument();
-    expect(screen.getByText(/01 okt 2026/i)).toBeInTheDocument();
+    expect(screen.getByText('Locktober')).toBeInTheDocument();
+    expect(screen.getByText(/06 okt 2026/i)).toBeInTheDocument();
   });
 
   it('an image transmission shows a VIEW TRANSMISSION call to action', () => {
@@ -46,10 +46,13 @@ describe('MissionUpdatesPage — Latest Transmission uses the newest date', () =
 });
 
 describe('MissionUpdatesPage — Mission Archive', () => {
-  it('logs the older September video in the archive, numbered from the oldest', () => {
+  it('logs the older transmissions in the archive, newest first, numbered from the oldest', () => {
     renderPage();
     expect(screen.queryByText(/no additional transmissions logged/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Pak september mee')).toBeInTheDocument();
+    const stoptober = screen.getByText('Stoptober');
+    const september = screen.getByText('Pak september mee');
+    expect(stoptober.compareDocumentPosition(september) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('TRANSMISSION 002')).toBeInTheDocument();
     expect(screen.getByText('TRANSMISSION 001')).toBeInTheDocument();
   });
 });
@@ -62,7 +65,7 @@ describe('MissionUpdatesPage — opening/closing the player', () => {
     await user.click(screen.getByRole('button', { name: /^view transmission$/i }));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Stoptober' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Locktober' })).toBeInTheDocument();
     expect(document.querySelector('video')).not.toBeInTheDocument();
   });
 

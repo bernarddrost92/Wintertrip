@@ -29,6 +29,13 @@ export interface MissionUpdate {
 
 export const missionUpdates: MissionUpdate[] = [
   {
+    id: 'locktober',
+    date: '2026-10-06',
+    title: 'Locktober',
+    subtitle: 'Lock de winst in — 1 plusje in oktober',
+    imageSrc: withBase('mission-updates/mission-update-locktober.webp'),
+  },
+  {
     id: 'stoptober',
     date: '2026-10-01',
     title: 'Stoptober',
