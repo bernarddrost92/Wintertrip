@@ -35,17 +35,17 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
   });
 
   it('VCDB score/ranking and the Power BI Virtual Final Score are carried through, distinct from Base League Points', () => {
-    expect(result.powerBi.vcdbScore).toBe(21151.68);
+    expect(result.powerBi.vcdbScore).toBe(22177.48);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(27497.18);
+    expect(result.powerBi.finalScore).toBe(28830.72);
   });
 
   it('Virtual Top 3 is carried through unchanged', () => {
     expect(result.powerBi.topThree).toEqual(MANUAL_POWER_BI_SNAPSHOT.topThree);
   });
 
-  it('snapshot timestamp (a reliable refresh time this time) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-06T05:21:00+02:00');
-    expect(result.powerBi.updatedAt).toBe('2026-10-06T05:21:00+02:00');
+  it('snapshot timestamp (date-only — no reliable refresh time in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-07');
+    expect(result.powerBi.updatedAt).toBe('2026-10-07');
   });
 });

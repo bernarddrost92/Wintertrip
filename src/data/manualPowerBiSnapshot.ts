@@ -53,19 +53,19 @@ export interface ManualPowerBiSnapshot {
 }
 
 export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
-  // This screenshot carried a reliable Power BI "last refresh" time — a
-  // full ISO datetime with an explicit +02:00 (CEST) offset, per the
-  // existing IntelligenceStatusSection.test.tsx convention — so it renders
-  // as "06 OCT 2026 · 05:21" rather than a bare date.
-  updatedAt: '2026-10-06T05:21:00+02:00',
+  // Date-only: this screenshot carried no reliable Power BI "last refresh"
+  // time, so updatedAt stays a bare date rather than a fabricated time —
+  // see IntelligenceStatusSection.tsx's formatPowerBiTime, which renders a
+  // date-only string without a time suffix.
+  updatedAt: '2026-10-07',
 
   virtualPosition: 1,
 
   vcdbRanking: 1,
-  vcdbScore: 21151.68,
+  vcdbScore: 22177.48,
 
-  placementsInScope: 121,
-  placementsExtraHoursRule: 7,
+  placementsInScope: 126,
+  placementsExtraHoursRule: 8,
 
   netFteRanking: 9,
   netFte: -81.51,
@@ -73,9 +73,9 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
 
   // The Final Ranking table's own Final Score for Zwolle — NOT the Power
   // BI "Top Team" card, which shows the VCDB Score again by coincidence
-  // (21,151.68). The real Final Score is VCDB x Factor: 21,151.68 x 1.3 =
-  // 27,497.18 (per the official standings, not a re-derivation here).
-  finalScore: 27497.18,
+  // (22,177.48). The real Final Score is VCDB x Factor: 22,177.48 x 1.3 =
+  // 28,830.72 (per the official standings, not a re-derivation here).
+  finalScore: 28830.72,
 
   currentNumberOneBenchmark: -23,
 
@@ -87,8 +87,8 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
   ],
 
   topThree: [
-    { position: 1, team: 'Zwolle', finalScore: 27497.18 },
-    { position: 2, team: 'Rotterdam', finalScore: 20237.46 },
+    { position: 1, team: 'Zwolle', finalScore: 28830.72 },
+    { position: 2, team: 'Rotterdam', finalScore: 20765.14 },
     { position: 3, team: 'Maastricht', finalScore: 19615.6 },
   ],
 };
