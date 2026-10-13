@@ -50,6 +50,15 @@ export function buildReceiptFilename(date: Date = new Date()): string {
   return `operatie-wintertrip-2027-receipt-${y}-${m}-${d}.png`;
 }
 
+/** "operatie-wintertrip-2027-fte-bon-2026-10-13.png" — the FTE-bonnetje's
+ * PNG, likewise without the professional's name in the filename. */
+export function buildFteBonFilename(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = pad2(date.getMonth() + 1);
+  const d = pad2(date.getDate());
+  return `operatie-wintertrip-2027-fte-bon-${y}-${m}-${d}.png`;
+}
+
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

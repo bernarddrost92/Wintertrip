@@ -170,4 +170,59 @@ describe('NetFtePage', () => {
     expect(within(highlighted).getByText('positie #1')).toBeInTheDocument();
     expect(within(ladder).getByText('+7,61 FTE').closest('li')!.className).not.toContain('bg-gold/10');
   });
+
+  it('after saving, "Bonnetje uitdraaien" prints the FTE receipt: professional, contract type, FTE added and the total FTE stand', async () => {
+    const user = userEvent.setup();
+    fetchFteBonnen.mockResolvedValue([]);
+    createFteBon.mockResolvedValue(bon({ id: 'new', label: 'P. van Heerde', type: 'PO_NAAR_CONTRACT', fteDelta: 1.4, owner: 'BD' }));
+    render(<NetFtePage />);
+    await screen.findByText(/nog geen open bonnen/i);
+
+    await user.click(screen.getByRole('radio', { name: 'PO → contract' }));
+    await user.type(screen.getByLabelText('Groei in FTE'), '1,4');
+    await user.type(screen.getByLabelText('Naam / label'), 'P. van Heerde');
+    await user.click(screen.getByRole('button', { name: /bon opslaan/i }));
+    await user.click(await screen.findByRole('button', { name: /bonnetje uitdraaien/i }));
+
+    const receipt = within(screen.getByRole('dialog', { name: /fte-bonnetje p\. van heerde/i }));
+    expect(receipt.getByText('FTE Receipt')).toBeInTheDocument();
+    expect(receipt.getByText('P. van Heerde')).toBeInTheDocument();
+    expect(receipt.getByText('PO → contract')).toBeInTheDocument();
+    expect(receipt.getByText('BD')).toBeInTheDocument();
+    expect(receipt.getByText(/totale fte-stand zwolle/i).nextElementSibling).toHaveTextContent('-6,38');
+    expect(receipt.getByText('Deze bon').nextElementSibling).toHaveTextContent('+1,40');
+    expect(receipt.getByText('FTE-rank').nextElementSibling).toHaveTextContent('#10 → #9');
+    expect(receipt.getByRole('button', { name: /download bonnetje/i })).toBeInTheDocument();
+  });
+
+  it('every bon in the list can print its receipt; with other open bonnen it also shows the stand with all of them', async () => {
+    const user = userEvent.setup();
+    fetchFteBonnen.mockResolvedValue([bon({ id: 'a', label: 'AB', fteDelta: 0.8 }), bon({ id: 'b', label: 'CD', type: 'NIEUWE_CONTRACTANT', fteDelta: 0.6 })]);
+    render(<NetFtePage />);
+    const list = screen.getByRole('region', { name: /open fte-bonnen/i });
+    await within(list).findByText('CD');
+
+    await user.click(within(list).getAllByRole('button', { name: /bonnetje/i })[1]);
+
+    const receipt = within(screen.getByRole('dialog', { name: /fte-bonnetje cd/i }));
+    expect(receipt.getByText('Nieuwe contractant')).toBeInTheDocument();
+    expect(receipt.getByText(/totale fte-stand zwolle/i).nextElementSibling).toHaveTextContent('-7,18');
+    expect(receipt.getByText('Met alle open bonnen').nextElementSibling).toHaveTextContent('-6,38');
+  });
+
+  it('the receipt closes with Sluiten or Escape', async () => {
+    const user = userEvent.setup();
+    fetchFteBonnen.mockResolvedValue([bon({ id: 'a', label: 'AB', fteDelta: 0.8 })]);
+    render(<NetFtePage />);
+    const list = screen.getByRole('region', { name: /open fte-bonnen/i });
+    await within(list).findByText('AB');
+
+    await user.click(within(list).getByRole('button', { name: /bonnetje/i }));
+    await user.click(screen.getByRole('button', { name: /sluiten/i }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(within(list).getByRole('button', { name: /bonnetje/i }));
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

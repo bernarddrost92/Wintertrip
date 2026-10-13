@@ -1,16 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarClock, FileSignature, RefreshCw, UserPlus } from 'lucide-react';
 import { CommandFrame } from '../../components/CommandFrame';
 import { StandBadge } from '../../components/StandBadge';
 import { StatTile } from '../../components/StatTile';
 import { OWN_TEAM } from '../../data/manualPowerBiSnapshot';
 import { useFteBonnen } from '../../hooks/useFteBonnen';
+import type { FteBon } from '../../services/fteBonnen';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { hiddenNetFteRanks, projectStandings } from '../../services/netFteProjection';
 import { formatFactor, formatVcdbValue } from '../../utils/format';
 import { formatPowerBiTime } from '../../utils/snapshotTime';
 import { FactorLadder } from './FactorLadder';
 import { FteBonCalculator } from './FteBonCalculator';
+import { FteBonReceiptDialog } from './FteBonReceiptDialog';
 import { OpenBonnenPanel } from './OpenBonnenPanel';
 
 const FOCUS = [
@@ -32,6 +34,8 @@ export function NetFtePage() {
   const own = standings.find((row) => row.team === OWN_TEAM)!;
   const netFteTeamCount = standings.length + hiddenNetFteRanks(standings).length;
   const projection = useMemo(() => projectStandings(standings, OWN_TEAM, bonnen.openFte), [standings, bonnen.openFte]);
+  const [receiptBon, setReceiptBon] = useState<FteBon | null>(null);
+  const officialDate = formatPowerBiTime(updatedAt);
 
   return (
     <CommandFrame>
@@ -41,7 +45,7 @@ export function NetFtePage() {
             <p className="label-classified">007 · Missie Net FTE</p>
             <h1 className="mt-1 font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Net FTE</h1>
           </div>
-          <StandBadge kind="official" detail={`Power BI ${formatPowerBiTime(updatedAt)}`} />
+          <StandBadge kind="official" detail={`Power BI ${officialDate}`} />
         </header>
 
         <div className="grid grid-cols-2 gap-px border border-gold/20 bg-gold/10 lg:grid-cols-4">
@@ -66,7 +70,7 @@ export function NetFtePage() {
           </ul>
         </div>
 
-        <FteBonCalculator standings={standings} openFte={bonnen.openFte} storeStatus={bonnen.status} saving={bonnen.saving} onSave={bonnen.add} />
+        <FteBonCalculator standings={standings} openFte={bonnen.openFte} storeStatus={bonnen.status} saving={bonnen.saving} onSave={bonnen.add} onPrintReceipt={setReceiptBon} />
 
         <OpenBonnenPanel
           status={bonnen.status}
@@ -76,10 +80,21 @@ export function NetFtePage() {
           onRealize={bonnen.markRealized}
           onReopen={bonnen.reopen}
           onRemove={bonnen.remove}
+          onReceipt={setReceiptBon}
         />
 
         <FactorLadder standings={standings} baseFte={bonnen.openFte} />
       </div>
+
+      {receiptBon && (
+        <FteBonReceiptDialog
+          bon={receiptBon}
+          standings={standings}
+          openFte={bonnen.openFte}
+          officialDate={officialDate}
+          onClose={() => setReceiptBon(null)}
+        />
+      )}
     </CommandFrame>
   );
 }

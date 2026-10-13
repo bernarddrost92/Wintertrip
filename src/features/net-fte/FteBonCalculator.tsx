@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Plus, Ticket } from 'lucide-react';
+import { Plus, Receipt, Ticket } from 'lucide-react';
 import { FormField, TextInput } from '../../components/FormField';
 import { GoldButton } from '../../components/GoldButton';
 import { StandBadge } from '../../components/StandBadge';
 import { OWN_TEAM, type PowerBiStandingRow } from '../../data/manualPowerBiSnapshot';
-import { FTE_BON_TYPES, type FteBonType, type NewFteBon } from '../../services/fteBonnen';
+import { FTE_BON_TYPES, type FteBon, type FteBonType, type NewFteBon } from '../../services/fteBonnen';
 import { projectStandings } from '../../services/netFteProjection';
 import { formatSignedFte, formatVcdbValue } from '../../utils/format';
 import { parseDutchNumber } from '../../utils/parseDutchNumber';
@@ -19,7 +19,9 @@ interface FteBonCalculatorProps {
   openFte: number;
   storeStatus: FteBonnenStatus;
   saving: boolean;
-  onSave: (bon: NewFteBon) => Promise<boolean>;
+  onSave: (bon: NewFteBon) => Promise<FteBon | null>;
+  /** Opens the FTE-bonnetje for a saved bon. */
+  onPrintReceipt: (bon: FteBon) => void;
 }
 
 function toFteInput(value: number): string {
@@ -32,13 +34,14 @@ function toFteInput(value: number): string {
  * this bon). Only the FTE number is needed for the result; a label is only
  * needed to save it to the shared open-bonnen list.
  */
-export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSave }: FteBonCalculatorProps) {
+export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSave, onPrintReceipt }: FteBonCalculatorProps) {
   const [label, setLabel] = useState('');
   const [type, setType] = useState<FteBonType>('VERLENGING');
   const [fteRaw, setFteRaw] = useState('');
   const [owner, setOwner] = useState('');
   const [note, setNote] = useState('');
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+  const [savedBon, setSavedBon] = useState<FteBon | null>(null);
 
   const parsed = parseDutchNumber(fteRaw);
   /** null unless the input is a usable, non-zero FTE change. */
@@ -56,9 +59,10 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     if (!canSave || fte === null) return;
-    const ok = await onSave({ label, type, fteDelta: fte, owner, note });
-    if (ok) {
-      setMessage({ tone: 'ok', text: `Bon opgeslagen: ${label.trim()} · ${formatSignedFte(fte)} FTE` });
+    const saved = await onSave({ label, type, fteDelta: fte, owner, note });
+    setSavedBon(saved);
+    if (saved) {
+      setMessage({ tone: 'ok', text: `Bon opgeslagen: ${saved.label} · ${formatSignedFte(saved.fteDelta)} FTE` });
       setLabel('');
       setFteRaw('');
       setOwner('');
@@ -168,6 +172,11 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
             <p role="status" className={`text-sm font-semibold ${message.tone === 'ok' ? 'text-status-go' : 'text-red-300'}`}>
               {message.text}
             </p>
+          )}
+          {message?.tone === 'ok' && savedBon && (
+            <GoldButton type="button" variant="ghost" icon={<Receipt size={16} />} className="w-full" onClick={() => onPrintReceipt(savedBon)}>
+              Bonnetje uitdraaien
+            </GoldButton>
           )}
         </div>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ListChecks, RotateCcw, Trash2 } from 'lucide-react';
+import { Check, ListChecks, Receipt, RotateCcw, Trash2 } from 'lucide-react';
 import { StandBadge } from '../../components/StandBadge';
 import { StatTile } from '../../components/StatTile';
 import { fteBonTypeLabel, type FteBon } from '../../services/fteBonnen';
@@ -16,9 +16,10 @@ interface OpenBonnenPanelProps {
   onRealize: (id: string) => void;
   onReopen: (id: string) => void;
   onRemove: (id: string) => void;
+  onReceipt: (bon: FteBon) => void;
 }
 
-function BonRow({ bon, onRealize, onReopen, onRemove }: { bon: FteBon } & Pick<OpenBonnenPanelProps, 'onRealize' | 'onReopen' | 'onRemove'>) {
+function BonRow({ bon, onRealize, onReopen, onRemove, onReceipt }: { bon: FteBon } & Pick<OpenBonnenPanelProps, 'onRealize' | 'onReopen' | 'onRemove' | 'onReceipt'>) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const open = bon.status === 'open';
   return (
@@ -35,6 +36,15 @@ function BonRow({ bon, onRealize, onReopen, onRemove }: { bon: FteBon } & Pick<O
         {formatSignedFte(bon.fteDelta)}
       </span>
       <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onReceipt(bon)}
+          className="inline-flex items-center gap-1 border border-white/15 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-muted transition-colors hover:border-gold/50 hover:text-gold"
+          title="FTE-bonnetje uitdraaien"
+        >
+          <Receipt size={12} aria-hidden />
+          Bonnetje
+        </button>
         {open ? (
           <button
             type="button"
@@ -84,7 +94,7 @@ function BonRow({ bon, onRealize, onReopen, onRemove }: { bon: FteBon } & Pick<O
  * every open bon = the projection. Gerealiseerd bonnen leave the projection
  * (they're in the official Net FTE by then) but stay visible below.
  */
-export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize, onReopen, onRemove }: OpenBonnenPanelProps) {
+export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize, onReopen, onRemove, onReceipt }: OpenBonnenPanelProps) {
   const open = bonnen.filter((bon) => bon.status === 'open');
   const realized = bonnen.filter((bon) => bon.status !== 'open');
   const next = nextNetFteTarget(projection);
@@ -126,7 +136,7 @@ export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize
       {open.length > 0 && (
         <ul className="mt-4 divide-y divide-white/10 border border-white/10 bg-mission-panel">
           {open.map((bon) => (
-            <BonRow key={bon.id} bon={bon} onRealize={onRealize} onReopen={onReopen} onRemove={onRemove} />
+            <BonRow key={bon.id} bon={bon} onRealize={onRealize} onReopen={onReopen} onRemove={onRemove} onReceipt={onReceipt} />
           ))}
         </ul>
       )}
@@ -138,7 +148,7 @@ export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize
           </summary>
           <ul className="mt-2 divide-y divide-white/10 border border-white/10 bg-mission-panel">
             {realized.map((bon) => (
-              <BonRow key={bon.id} bon={bon} onRealize={onRealize} onReopen={onReopen} onRemove={onRemove} />
+              <BonRow key={bon.id} bon={bon} onRealize={onRealize} onReopen={onReopen} onRemove={onRemove} onReceipt={onReceipt} />
             ))}
           </ul>
         </details>

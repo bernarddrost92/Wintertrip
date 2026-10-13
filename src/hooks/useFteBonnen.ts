@@ -10,7 +10,8 @@ export interface UseFteBonnenResult {
   /** Total FTE of open bonnen — 0 while loading or unavailable, so projections fall back to the official stand. */
   openFte: number;
   saving: boolean;
-  add: (bon: NewFteBon) => Promise<boolean>;
+  /** The saved bon, or null when saving failed. */
+  add: (bon: NewFteBon) => Promise<FteBon | null>;
   markRealized: (id: string) => Promise<void>;
   reopen: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -42,10 +43,10 @@ export function useFteBonnen(): UseFteBonnenResult {
     setSaving(true);
     const created = await createFteBon(input);
     setSaving(false);
-    if (!created) return false;
+    if (!created) return null;
     setBonnen((prev) => [created, ...prev]);
     setStatus('ready');
-    return true;
+    return created;
   }, []);
 
   const setStatusFor = useCallback(async (id: string, next: FteBon['status']) => {
