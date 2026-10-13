@@ -65,7 +65,8 @@ describe('NetFtePage', () => {
     expect(within(overview).getByText('#10')).toBeInTheDocument();
     expect(within(overview).getByText('van 12 teams')).toBeInTheDocument();
     expect(within(overview).getByText('1,3x')).toBeInTheDocument();
-    expect(screen.getByText(/september vs januari/i)).toBeInTheDocument();
+    expect(screen.getByText(/31 januari 2027 vs 1 september 2026/i)).toBeInTheDocument();
+    expect(screen.getByText('Meetdatum')).toBeInTheDocument();
     for (const focus of ['Verlengingen', 'PO → contract', 'BPT verlengen', 'Nieuwe contractanten']) {
       expect(screen.getAllByText(focus).length).toBeGreaterThan(0);
     }
@@ -211,6 +212,8 @@ describe('NetFtePage', () => {
     expect(receipt.getByText(/totale fte-stand zwolle/i).nextElementSibling).toHaveTextContent('-6,38');
     expect(receipt.getByText('Deze bon').nextElementSibling).toHaveTextContent('+1,40');
     expect(receipt.getByText('FTE-rank').nextElementSibling).toHaveTextContent('#10 → #9');
+    expect(receipt.getByText('Meetdatum').nextElementSibling).toHaveTextContent('31 JAN 2027');
+    expect(receipt.getByText('vs startmeting').nextElementSibling).toHaveTextContent('01 SEP 2026');
     expect(receipt.getByRole('button', { name: /download bonnetje/i })).toBeInTheDocument();
   });
 

@@ -1,5 +1,7 @@
 import { Crosshair, Target } from 'lucide-react';
 import { StandBadge } from '../../components/StandBadge';
+import { LEAGUE_PERIOD } from '../../config/leagueRules';
+import { formatIsoDateNl } from '../../utils/dates';
 import { OWN_TEAM, type PowerBiStandingRow } from '../../data/manualPowerBiSnapshot';
 import { useFteBonnen } from '../../hooks/useFteBonnen';
 import { nextFinalRankingTarget, nextNetFteTarget, projectStandings } from '../../services/netFteProjection';
@@ -59,6 +61,9 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
       <h2 id="zwolle-projection" className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-ink">
         Waar komen we uit?
       </h2>
+      <p className="mt-1 text-sm text-ink-muted">
+        Net FTE-meetdatum <span className="font-semibold text-gold">{formatIsoDateNl(LEAGUE_PERIOD.end)}</span> vs {formatIsoDateNl(LEAGUE_PERIOD.start)}
+      </p>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <FigureColumn kind="official" detail="Power BI" figures={official} />

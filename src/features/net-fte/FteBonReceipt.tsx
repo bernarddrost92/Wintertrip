@@ -1,4 +1,6 @@
 import { forwardRef } from 'react';
+import { LEAGUE_PERIOD } from '../../config/leagueRules';
+import { formatIsoDateReceipt } from '../../utils/dates';
 import { fteBonTypeLabel, type FteBon } from '../../services/fteBonnen';
 import type { StandingsProjection } from '../../services/netFteProjection';
 import { formatSignedFte, formatVcdbValue } from '../../utils/format';
@@ -111,6 +113,13 @@ export const FteBonReceipt = forwardRef<HTMLDivElement, FteBonReceiptProps>(func
           <Row label="Nieuwe stand" value={formatVcdbValue(withBon.own.netFte)} />
           <Row label="FTE-rank" value={`#${official.netFteRanking} → #${withBon.own.netFteRanking}`} />
           {withAllOpen && <Row label="Met alle open bonnen" value={formatVcdbValue(withAllOpen.own.netFte)} valueClassName="text-ink-muted" />}
+        </div>
+
+        <Divider />
+
+        <div className="space-y-1.5">
+          <Row label="Meetdatum" value={formatIsoDateReceipt(LEAGUE_PERIOD.end)} valueClassName="text-gold" />
+          <Row label="vs startmeting" value={formatIsoDateReceipt(LEAGUE_PERIOD.start)} />
         </div>
 
         {bon.note && (

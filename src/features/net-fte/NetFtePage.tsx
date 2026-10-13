@@ -13,6 +13,7 @@ import { formatPowerBiTime } from '../../utils/snapshotTime';
 import { FactorLadder } from './FactorLadder';
 import { FteBonCalculator } from './FteBonCalculator';
 import { FteBonReceiptDialog } from './FteBonReceiptDialog';
+import { MeasurementDates } from './MeasurementDates';
 import { OpenBonnenPanel } from './OpenBonnenPanel';
 
 const FOCUS = [
@@ -57,9 +58,12 @@ export function NetFtePage() {
 
         <div className="border border-gold/20 bg-gold/5 px-4 py-4 sm:px-5">
           <p className="font-display text-lg font-bold uppercase tracking-wide text-ink sm:text-xl">
-            September vs januari: de totale FTE van onze contractanten beslist.
+            31 januari 2027 vs 1 september 2026: de totale FTE van onze contractanten beslist.
           </p>
-          <p className="mt-1 text-sm text-ink-muted">Elke FTE die we vasthouden of erbij halen, telt in de factor over al onze punten. Volle focus op:</p>
+          <div className="mt-3">
+            <MeasurementDates />
+          </div>
+          <p className="mt-3 text-sm text-ink-muted">Elke FTE die we vasthouden of erbij halen, telt in de factor over al onze punten. Volle focus op:</p>
           <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {FOCUS.map(({ label, icon: Icon }) => (
               <li key={label} className="flex items-center gap-2 border border-white/10 bg-mission-panel px-3 py-2 text-sm font-semibold text-ink">
