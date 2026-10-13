@@ -75,7 +75,7 @@ export const FteBonReceipt = forwardRef<HTMLDivElement, FteBonReceiptProps>(func
           </div>
           {bon.owner && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AM / TM</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Talent Manager</p>
               <p className="mt-0.5 break-words text-base font-semibold text-ink">{bon.owner}</p>
             </div>
           )}

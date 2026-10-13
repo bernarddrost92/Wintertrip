@@ -105,9 +105,10 @@ describe('NetFtePage', () => {
     await user.click(screen.getByRole('radio', { name: 'PO → contract' }));
     await user.type(screen.getByLabelText('Groei in FTE'), '1,4');
     await user.type(screen.getByLabelText('Naam / label'), 'PvH');
+    await user.type(screen.getByLabelText(/talent manager/i), 'RP');
     await user.click(screen.getByRole('button', { name: /bon opslaan/i }));
 
-    expect(createFteBon).toHaveBeenCalledWith(expect.objectContaining({ label: 'PvH', type: 'PO_NAAR_CONTRACT', fteDelta: 1.4 }));
+    expect(createFteBon).toHaveBeenCalledWith(expect.objectContaining({ label: 'PvH', type: 'PO_NAAR_CONTRACT', fteDelta: 1.4, owner: 'RP' }));
     const list = screen.getByRole('region', { name: /open fte-bonnen/i });
     await waitFor(() => expect(within(list).getByText('PvH')).toBeInTheDocument());
     expect(within(list).getByText('Projectie', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('-6,38');
@@ -116,14 +117,31 @@ describe('NetFtePage', () => {
     expect(screen.getByLabelText('Groei in FTE')).toHaveValue('');
   });
 
-  it('the label is only needed to save — the calculation works without it', async () => {
+  it('label and Talent Manager are only needed to save — the calculation works without them', async () => {
     const user = userEvent.setup();
     fetchFteBonnen.mockResolvedValue([]);
     render(<NetFtePage />);
     await user.type(screen.getByLabelText('Groei in FTE'), '1');
 
     expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeDisabled();
-    expect(screen.getByText(/geef de bon een label/i)).toBeInTheDocument();
+    expect(screen.getByText(/vul nog naam \/ label en talent manager in/i)).toBeInTheDocument();
+  });
+
+  it('the Talent Manager is required: a bon without one cannot be saved', async () => {
+    const user = userEvent.setup();
+    fetchFteBonnen.mockResolvedValue([]);
+    render(<NetFtePage />);
+    await screen.findByText(/nog geen open bonnen/i);
+
+    expect(screen.getByLabelText(/talent manager/i)).toBeRequired();
+    await user.type(screen.getByLabelText('Groei in FTE'), '1');
+    await user.type(screen.getByLabelText('Naam / label'), 'PvH');
+
+    expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeDisabled();
+    expect(screen.getByText(/vul nog talent manager in/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/talent manager/i), 'RP');
+    expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeEnabled();
   });
 
   it('open bonnen add up; a realised bon leaves the projection', async () => {
@@ -181,6 +199,7 @@ describe('NetFtePage', () => {
     await user.click(screen.getByRole('radio', { name: 'PO → contract' }));
     await user.type(screen.getByLabelText('Groei in FTE'), '1,4');
     await user.type(screen.getByLabelText('Naam / label'), 'P. van Heerde');
+    await user.type(screen.getByLabelText(/talent manager/i), 'BD');
     await user.click(screen.getByRole('button', { name: /bon opslaan/i }));
     await user.click(await screen.findByRole('button', { name: /bonnetje uitdraaien/i }));
 

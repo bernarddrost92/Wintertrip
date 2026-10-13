@@ -54,7 +54,8 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
     [standings, fte, openFte],
   );
 
-  const canSave = fteValid && label.trim() !== '' && storeStatus !== 'unavailable' && !saving;
+  const missing = [label.trim() === '' && 'naam / label', owner.trim() === '' && 'Talent Manager'].filter(Boolean) as string[];
+  const canSave = fteValid && missing.length === 0 && storeStatus !== 'unavailable' && !saving;
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
@@ -147,14 +148,24 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
             />
           </FormField>
 
+          <FormField id="fte-bon-owner" label="Talent Manager *">
+            <TextInput
+              id="fte-bon-owner"
+              autoComplete="off"
+              required
+              aria-required="true"
+              maxLength={40}
+              value={owner}
+              onChange={(e) => setOwner(e.target.value)}
+              placeholder="Initialen Talent Manager"
+            />
+          </FormField>
+
           <details className="group border border-white/10 px-3 py-2">
             <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted group-open:text-gold">
-              Meer: AM/TM en notitie (optioneel)
+              Notitie (optioneel)
             </summary>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <FormField id="fte-bon-owner" label="Verantwoordelijke AM/TM">
-                <TextInput id="fte-bon-owner" maxLength={40} value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="Initialen" />
-              </FormField>
+            <div className="mt-3">
               <FormField id="fte-bon-note" label="Notitie">
                 <TextInput id="fte-bon-note" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Bijv. start 1 nov" />
               </FormField>
@@ -167,7 +178,9 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
           {storeStatus === 'unavailable' && (
             <p className="text-xs text-ink-muted">Opslaan is nu niet beschikbaar — de berekening werkt wel.</p>
           )}
-          {fteValid && label.trim() === '' && storeStatus !== 'unavailable' && <p className="text-xs text-ink-muted">Geef de bon een label om hem op te slaan.</p>}
+          {fteValid && missing.length > 0 && storeStatus !== 'unavailable' && (
+            <p className="text-xs text-ink-muted">Vul nog {missing.join(' en ')} in om de bon op te slaan.</p>
+          )}
           {message && (
             <p role="status" className={`text-sm font-semibold ${message.tone === 'ok' ? 'text-status-go' : 'text-red-300'}`}>
               {message.text}
