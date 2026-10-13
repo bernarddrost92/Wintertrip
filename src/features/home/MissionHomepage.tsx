@@ -1,4 +1,4 @@
-import { Calculator, LayoutDashboard, Radio, ShieldCheck } from 'lucide-react';
+import { Calculator, LayoutDashboard, Radio, TrendingUp } from 'lucide-react';
 import { missionUpdates } from '../../data/missionUpdates';
 import type { AppView } from '../../types/navigation';
 import { MissionChoiceCard } from './MissionChoiceCard';
@@ -10,8 +10,8 @@ interface MissionHomepageProps {
 /**
  * The cinematic mission briefing — a poster, not a form. Deliberately a
  * different register from the calculator's dense control room: big
- * typography sitting directly on the environment, three "mission terminal"
- * choices rather than a settings page, calculator visually the largest.
+ * typography sitting directly on the environment, four "mission terminal"
+ * choices rather than a settings page, Score Check visually the largest.
  */
 export function MissionHomepage({ onSelect }: MissionHomepageProps) {
   const updateCount = missionUpdates.length;
@@ -21,7 +21,7 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
     <div className="relative mx-auto flex max-w-[1200px] flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-20">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[60vh]"
-        style={{ background: 'radial-gradient(60% 55% at 50% 30%, rgba(3,4,5,0.6), transparent 72%)' }}
+        style={{ background: 'radial-gradient(60% 55% at 50% 30%, rgba(20,23,28,0.35), transparent 72%)' }}
         aria-hidden
       />
 
@@ -46,21 +46,21 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
       <div className="mt-16 grid w-full gap-4 sm:mt-20">
         <MissionChoiceCard
           code="01"
-          title="Mission Calculator"
-          subtitle="Bereken wat je deal oplevert."
-          cta="Calculate"
+          title="Score Check"
+          subtitle="Bereken je deal en check direct de league impact."
+          cta="Start Score Check"
           icon={Calculator}
           size="lg"
-          onClick={() => onSelect('calculator')}
+          onClick={() => onSelect('score-check')}
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <MissionChoiceCard
             code="02"
-            title="League Check"
-            subtitle="2 paar ogen. 0 punten laten liggen."
-            cta="Run Check"
-            icon={ShieldCheck}
-            onClick={() => onSelect('league-check')}
+            title="Net FTE"
+            subtitle="Zie wat elke FTE doet voor ranking en factor."
+            cta="Open Net FTE"
+            icon={TrendingUp}
+            onClick={() => onSelect('net-fte')}
           />
           <MissionChoiceCard
             code="03"

@@ -1,12 +1,12 @@
-import { Calculator, Home, LayoutDashboard, Radio, ShieldCheck, Target } from 'lucide-react';
+import { Calculator, Home, LayoutDashboard, Radio, Target, TrendingUp } from 'lucide-react';
 import type { AppView } from '../types/navigation';
 import { StatusLed } from './MissionSerial';
 import { SoundtrackControl } from './SoundtrackControl';
 
 const NAV_ITEMS: { view: AppView; label: string; icon: typeof Calculator }[] = [
   { view: 'home', label: 'Mission Home', icon: Home },
-  { view: 'calculator', label: 'Calculator', icon: Calculator },
-  { view: 'league-check', label: 'League Check', icon: ShieldCheck },
+  { view: 'score-check', label: 'Score Check', icon: Calculator },
+  { view: 'net-fte', label: 'Net FTE', icon: TrendingUp },
   { view: 'mission-control', label: 'Mission Control', icon: LayoutDashboard },
   { view: 'mission-updates', label: 'Mission Updates', icon: Radio },
 ];
@@ -37,7 +37,7 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
           </span>
         </button>
 
-        <div className="hidden items-center gap-6 border-l border-gold/10 px-5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted lg:flex">
+        <div className="hidden items-center gap-6 border-l border-gold/10 px-5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted 2xl:flex">
           <span>
             League window <span className="text-gold/80">01 sep — 31 jan</span>
           </span>
@@ -59,14 +59,14 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
                   type="button"
                   onClick={() => onNavigate(view)}
                   aria-current={active ? 'page' : undefined}
-                  className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200 sm:text-xs ${
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 ${
                     active
                       ? 'border-gold/50 bg-gold/10 text-gold'
                       : 'border-transparent text-ink-muted hover:border-white/15 hover:text-ink'
                   }`}
                 >
                   <Icon size={13} aria-hidden />
-                  <span className="hidden sm:inline">{label}</span>
+                  <span className="hidden md:inline">{label}</span>
                 </button>
               );
             })}

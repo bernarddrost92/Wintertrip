@@ -6,15 +6,15 @@ import { CommandFrame } from './components/CommandFrame';
 import { ControlRoomEnvironment } from './components/ControlRoomEnvironment';
 import { Footer } from './components/Footer';
 import { Navbar } from './components/Navbar';
-import { MissionControlCalculator } from './features/calculator/MissionControlCalculator';
 import { MissionHomepage } from './features/home/MissionHomepage';
 import { AccessTransition } from './features/home/AccessTransition';
 import { hasSeenIntro, markIntroSeen } from './features/intro/introStorage';
 import { MissionGate } from './features/intro/MissionGate';
 import { MissionIntroSequence } from './features/intro/MissionIntroSequence';
-import { LeagueCheckPage } from './features/league-check/LeagueCheckPage';
 import { MissionControlPage } from './features/mission-control/MissionControlPage';
 import { MissionUpdatesPage } from './features/mission-updates/MissionUpdatesPage';
+import { NetFtePage } from './features/net-fte/NetFtePage';
+import { ScoreCheckPage } from './features/score-check/ScoreCheckPage';
 import { MissionFlowProvider } from './features/missionFlow/MissionFlowProvider';
 import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
 import type { AppView } from './types/navigation';
@@ -24,8 +24,8 @@ type GatePhase = 'gate' | 'intro' | 'ready';
 
 const ACCESS_LABEL: Record<AppView, string> = {
   home: 'ACCESSING MISSION HOME...',
-  calculator: 'ACCESSING MISSION CALCULATOR...',
-  'league-check': 'ACCESSING LEAGUE CHECK...',
+  'score-check': 'ACCESSING SCORE CHECK...',
+  'net-fte': 'ACCESSING NET FTE...',
   'mission-control': 'ACCESSING MISSION CONTROL...',
   'mission-updates': 'ACCESSING MISSION UPDATES...',
 };
@@ -92,9 +92,8 @@ export default function App() {
     setGatePhase('intro');
   }
 
-  /** A short "ACCESSING…" beat before landing in a section — used both for
-   * the mission-briefing choice cards and for RUN LEAGUE CHECK continuing
-   * the mission from the calculator. Header navigation switches views
+  /** A short "ACCESSING…" beat before landing in a section from the
+   * mission-briefing choice cards. Header navigation switches views
    * instantly — that transition is for the "entering the operation" moment,
    * not every click thereafter. */
   function handleNavigate(target: AppView) {
@@ -133,12 +132,8 @@ export default function App() {
                   <Navbar current={view} onNavigate={setView} />
                   <main className="flex-1">
                     {view === 'home' && <MissionHomepage onSelect={handleNavigate} />}
-                    {view === 'calculator' && <MissionControlCalculator onRunLeagueCheck={() => handleNavigate('league-check')} />}
-                    {view === 'league-check' && (
-                      <CommandFrame>
-                        <LeagueCheckPage />
-                      </CommandFrame>
-                    )}
+                    {view === 'score-check' && <ScoreCheckPage />}
+                    {view === 'net-fte' && <NetFtePage />}
                     {view === 'mission-control' && (
                       <CommandFrame>
                         <MissionControlPage />

@@ -1,3 +1,4 @@
+import { OWN_TEAM } from '../../data/manualPowerBiSnapshot';
 import { calculateScoreLead, getPodiumState } from '../../services/podiumStatus';
 import type { PodiumState } from '../../services/podiumStatus';
 import { formatFactor, formatVcdbValue } from '../../utils/format';
@@ -30,6 +31,8 @@ interface CommandBriefingCardProps {
   ranking: RankingSnapshot;
   powerBi: PowerBiIntelligenceSnapshot;
   fte: FteSnapshot;
+  /** The team directly above Zwolle in the Final Ranking — null at #1. */
+  teamAbove?: { team: string; position: number; finalScore: number } | null;
 }
 
 /**
@@ -42,11 +45,13 @@ interface CommandBriefingCardProps {
  * much taller cards. Never fabricates a position or score: with no
  * snapshot loaded this reads Awaiting Intelligence instead.
  */
-export function CommandBriefingCard({ ranking, powerBi, fte }: CommandBriefingCardProps) {
+export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }: CommandBriefingCardProps) {
   const state = getPodiumState(ranking.virtualPosition);
   const leader = powerBi.topThree[0] ?? null;
   const second = powerBi.topThree[1] ?? null;
-  const lead = calculateScoreLead(powerBi.finalScore, second?.finalScore ?? null);
+  // At #1: the lead over #2. Below #1: the gap to the team directly above.
+  const lead = ranking.virtualPosition === 1 ? calculateScoreLead(powerBi.finalScore, second?.finalScore ?? null) : null;
+  const gapAbove = teamAbove ? calculateScoreLead(teamAbove.finalScore, powerBi.finalScore) : null;
 
   if (state === 'awaiting') {
     return (
@@ -96,11 +101,16 @@ export function CommandBriefingCard({ ranking, powerBi, fte }: CommandBriefingCa
         </div>
       </div>
 
-      {(lead !== null || fte.netFteRanking != null || fte.currentFteFactor != null) && (
+      {(lead !== null || gapAbove !== null || fte.netFteRanking != null || fte.currentFteFactor != null) && (
         <div className="relative mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs">
           {lead !== null && second && (
             <p className="font-semibold uppercase tracking-wide text-gold">
               +{formatVcdbValue(lead)} vs #2 {second.team}
+            </p>
+          )}
+          {gapAbove !== null && teamAbove && (
+            <p className="font-semibold uppercase tracking-wide text-gold">
+              −{formatVcdbValue(gapAbove)} vs #{teamAbove.position} {teamAbove.team}
             </p>
           )}
           {(fte.netFteRanking != null || fte.currentFteFactor != null) && (
@@ -117,14 +127,15 @@ export function CommandBriefingCard({ ranking, powerBi, fte }: CommandBriefingCa
         <ul className="relative mt-3 divide-y divide-white/10 border-t border-white/10">
           {powerBi.topThree.map((entry) => {
             const isLeader = entry.position === 1;
+            const isOwn = entry.team === OWN_TEAM;
             const deltaVsLeader = isLeader ? null : calculateScoreLead(leader?.finalScore ?? null, entry.finalScore);
             return (
               <li key={entry.position} className="flex items-center justify-between gap-3 py-1.5">
-                <span className={`text-xs font-semibold uppercase tracking-wide ${isLeader ? 'text-ink' : 'text-ink-muted'}`}>
+                <span className={`text-xs font-semibold uppercase tracking-wide ${isOwn ? 'text-gold' : 'text-ink-muted'}`}>
                   {entry.position} · {entry.team}
                 </span>
                 <span className="text-right">
-                  <span className={`font-display text-sm font-semibold tabular-nums ${isLeader ? 'text-gold' : 'text-ink-muted'}`}>
+                  <span className={`font-display text-sm font-semibold tabular-nums ${isOwn ? 'text-gold' : 'text-ink'}`}>
                     {formatVcdbValue(entry.finalScore)}
                   </span>
                   {deltaVsLeader !== null && <span className="ml-2 text-[11px] text-ink-muted">−{formatVcdbValue(deltaVsLeader)}</span>}

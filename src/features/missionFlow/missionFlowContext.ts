@@ -38,6 +38,9 @@ export const INITIAL_AGENT_IDENTITY: AgentIdentity = {
 
 export interface MissionFlowContextValue {
   beforeCheck: BeforeCheckSnapshot | null;
+  /** Bumped on every new snapshot, so League Check can restart its After
+   * Check editor when the Calculator was re-run with different numbers. */
+  beforeCheckVersion: number;
   setBeforeCheck: (snapshot: BeforeCheckSnapshot) => void;
   clearBeforeCheck: () => void;
   agent: AgentIdentity;

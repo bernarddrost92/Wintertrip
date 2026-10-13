@@ -101,9 +101,9 @@ export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePane
           trails off into a flat void when its neighbours run taller. */}
       <div className="relative flex flex-1 flex-col items-center justify-center gap-3 border-t border-gold/10 px-6 py-8 text-center">
         <TacticalGrid className="opacity-20" />
-        <p className="label-classified relative text-ink-muted">Volgende stap</p>
+        <p className="label-classified relative text-ink-muted">Stap 2 · League impact</p>
         <GoldButton className="relative" onClick={onRunLeagueCheck} icon={<ShieldCheck size={16} />}>
-          Run League Check
+          Door naar League Check
           <ArrowRight size={15} aria-hidden />
         </GoldButton>
       </div>

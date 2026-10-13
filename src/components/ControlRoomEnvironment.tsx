@@ -110,9 +110,9 @@ export function ControlRoomEnvironment() {
       >
         <defs>
           <linearGradient id="crBaseGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0d0f12" />
-            <stop offset="45%" stopColor="#07080a" />
-            <stop offset="100%" stopColor="#030405" />
+            <stop offset="0%" stopColor="#2a2f38" />
+            <stop offset="45%" stopColor="#1d2128" />
+            <stop offset="100%" stopColor="#15181d" />
           </linearGradient>
           <radialGradient id="crWarmFloor" cx="50%" cy="100%" r="75%">
             <stop offset="0%" stopColor="#7a5019" stopOpacity="0.18" />
@@ -219,7 +219,7 @@ export function ControlRoomEnvironment() {
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(130% 62% at 50% 46%, rgba(3,4,5,0) 55%, rgba(3,4,5,0.45) 100%)',
+          background: 'radial-gradient(130% 62% at 50% 46%, rgba(20,23,28,0) 55%, rgba(20,23,28,0.25) 100%)',
         }}
       />
     </div>

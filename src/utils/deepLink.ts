@@ -11,6 +11,9 @@ import type { AppView } from '../types/navigation';
  */
 const DEEP_LINK_VIEWS: Record<string, AppView> = {
   'mission-updates': 'mission-updates',
+  'score-check': 'score-check',
+  'net-fte': 'net-fte',
+  'mission-control': 'mission-control',
 };
 
 export function readDeepLinkView(search: string = window.location.search): AppView | null {

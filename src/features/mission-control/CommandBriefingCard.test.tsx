@@ -93,4 +93,22 @@ describe('CommandBriefingCard', () => {
     expect(screen.queryByText(/vs #2/i)).not.toBeInTheDocument();
     expect(screen.getAllByText('#1').length).toBeGreaterThan(0);
   });
+
+  it('virtualPosition = 2 -> the gap to the team above, never a lead over itself', () => {
+    const topThree = [
+      { position: 1, team: 'Maastricht', finalScore: 39797.68 },
+      { position: 2, team: 'Zwolle', finalScore: 28731.19 },
+      { position: 3, team: 'Arnhem', finalScore: 22002.7 },
+    ];
+    render(
+      <CommandBriefingCard
+        ranking={ranking(2)}
+        powerBi={powerBi({ finalScore: 28731.19, topThree })}
+        fte={fte()}
+        teamAbove={{ team: 'Maastricht', position: 1, finalScore: 39797.68 }}
+      />,
+    );
+    expect(screen.getByText(/−11\.066,49 vs #1 maastricht/i)).toBeInTheDocument();
+    expect(screen.queryByText(/vs #2/i)).not.toBeInTheDocument();
+  });
 });

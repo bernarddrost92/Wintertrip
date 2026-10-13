@@ -25,11 +25,25 @@ describe('MissionHomepage — Mission Updates terminal', () => {
     expect(onSelect).toHaveBeenCalledWith('mission-updates');
   });
 
-  it('leaves the existing three terminals untouched', () => {
+  it('shows the new structure: Score Check, Net FTE and Mission Control — no separate Calculator/League Check', () => {
     render(<MissionHomepage onSelect={vi.fn()} />);
-    expect(screen.getByText('Mission Calculator')).toBeInTheDocument();
-    expect(screen.getByText('League Check')).toBeInTheDocument();
+    expect(screen.getByText('Score Check')).toBeInTheDocument();
+    expect(screen.getByText('Net FTE')).toBeInTheDocument();
     expect(screen.getByText('Mission Control')).toBeInTheDocument();
+    expect(screen.queryByText('Mission Calculator')).not.toBeInTheDocument();
+    expect(screen.queryByText('League Check')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [/start score check/i, 'score-check'],
+    [/open net fte/i, 'net-fte'],
+  ])('the %s terminal navigates to %s', async (cta, view) => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<MissionHomepage onSelect={onSelect} />);
+
+    await user.click(screen.getByText(cta));
+    expect(onSelect).toHaveBeenCalledWith(view);
   });
 });
 

@@ -1,5 +1,6 @@
 const NL_INTEGER = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 0 });
 const NL_DECIMAL = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 1, minimumFractionDigits: 0 });
+const NL_FACTOR = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 /** Presentation-only rounding to 2 decimals, trimmed to a bare integer when exact (1.000 not 1.000,00). */
 const NL_SCORE = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
 /** Always exactly 2 decimals — used for the transparent per-month VCDB math. */
@@ -17,8 +18,9 @@ export function formatSignedPoints(value: number): string {
   return `${sign}${NL_INTEGER.format(Math.abs(rounded))}`;
 }
 
+/** Always one decimal, like Power BI's own Factor column ("1,0x", "2,0x", "1,3x"). */
 export function formatFactor(value: number): string {
-  return `${NL_DECIMAL.format(value)}x`;
+  return `${NL_FACTOR.format(value)}x`;
 }
 
 export function formatHours(value: number): string {
@@ -46,6 +48,11 @@ export function formatFoundPoints(value: number): string {
   const rounded = Math.round(value * 100) / 100;
   const sign = rounded < 0 ? '−' : '+';
   return `${sign}${formatVcdbValue(Math.abs(rounded))}`;
+}
+
+/** Net FTE with its sign always shown ("+1,40", "−7,78", "+0,00") — for FTE changes and gaps. */
+export function formatSignedFte(value: number): string {
+  return formatFoundPoints(value);
 }
 
 /** Fixed 2-decimal VCDB value, as used throughout the Show Calculation breakdown. */

@@ -11,10 +11,12 @@ import { INITIAL_AGENT_IDENTITY, MissionFlowContext, type AgentIdentity, type Be
  */
 export function MissionFlowProvider({ children }: { children: ReactNode }) {
   const [beforeCheck, setBeforeCheckState] = useState<BeforeCheckSnapshot | null>(null);
+  const [beforeCheckVersion, setBeforeCheckVersion] = useState(0);
   const [agent, setAgent] = useState<AgentIdentity>(INITIAL_AGENT_IDENTITY);
 
   function setBeforeCheck(snapshot: BeforeCheckSnapshot) {
     setBeforeCheckState(snapshot);
+    setBeforeCheckVersion((v) => v + 1);
   }
 
   function clearBeforeCheck() {
@@ -30,7 +32,7 @@ export function MissionFlowProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <MissionFlowContext.Provider value={{ beforeCheck, setBeforeCheck, clearBeforeCheck, agent, updateAgent, resetAgent }}>
+    <MissionFlowContext.Provider value={{ beforeCheck, beforeCheckVersion, setBeforeCheck, clearBeforeCheck, agent, updateAgent, resetAgent }}>
       {children}
     </MissionFlowContext.Provider>
   );

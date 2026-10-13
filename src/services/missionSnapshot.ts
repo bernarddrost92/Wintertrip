@@ -1,5 +1,5 @@
-import { MANUAL_POWER_BI_SNAPSHOT } from '../data/manualPowerBiSnapshot';
-import { calculateFteMilestones } from './fteRoad';
+import { MANUAL_POWER_BI_SNAPSHOT, OWN_TEAM, type PowerBiStandingRow } from '../data/manualPowerBiSnapshot';
+import { factorSteps } from './netFteProjection';
 import { EMPTY_FTE_SNAPSHOT } from '../types/missionSnapshot';
 import type { FteSnapshot, PowerBiIntelligenceSnapshot, RankingSnapshot } from '../types/missionSnapshot';
 
@@ -7,44 +7,50 @@ export interface MissionSnapshot {
   ranking: RankingSnapshot;
   fte: FteSnapshot;
   powerBi: PowerBiIntelligenceSnapshot;
+  /** The full official Final Ranking table, sorted by Final Ranking. */
+  standings: PowerBiStandingRow[];
+  updatedAt: string;
 }
 
 /**
- * The single place Mission Control's virtual-position/FTE/Power BI
- * snapshot comes from — today a manual Power BI screenshot
- * (data/manualPowerBiSnapshot.ts). Update ONLY that data file for a new
- * day's numbers; this mapping never needs to change. targetFteOnJan31
- * stays null on purpose — there is no fixed FTE target yet, so the FTE
- * card's benchmark comparison (see fteRoad.ts) is against the CURRENT #1
- * team, never presented as a fixed organisational goal.
+ * The single place Mission Control's position/FTE/Power BI snapshot comes
+ * from — today a manual Power BI screenshot (data/manualPowerBiSnapshot.ts).
+ * Update ONLY that data file's table for a new day; everything Zwolle-
+ * specific is read from Zwolle's own row, and the FTE milestones are the
+ * next factor tiers (services/netFteProjection.ts), so nothing is typed in
+ * twice. targetFteOnJan31 stays null on purpose — there is no fixed FTE
+ * target, only the current ranking.
  */
 export function getMissionSnapshot(): MissionSnapshot {
-  const snapshot = MANUAL_POWER_BI_SNAPSHOT;
+  const { updatedAt } = MANUAL_POWER_BI_SNAPSHOT;
+  const standings = [...MANUAL_POWER_BI_SNAPSHOT.standings].sort((a, b) => a.finalRanking - b.finalRanking);
+  const own = standings.find((row) => row.team === OWN_TEAM);
+  if (!own) throw new Error(`${OWN_TEAM} is missing from the Power BI snapshot`);
 
   const ranking: RankingSnapshot = {
-    virtualPosition: snapshot.virtualPosition,
-    snapshotUpdatedAt: snapshot.updatedAt,
+    virtualPosition: own.finalRanking,
+    snapshotUpdatedAt: updatedAt,
   };
 
   const fte: FteSnapshot = {
     ...EMPTY_FTE_SNAPSHOT,
-    snapshotUpdatedAt: snapshot.updatedAt,
-    currentNetFte: snapshot.netFte,
-    netFteRanking: snapshot.netFteRanking,
-    currentNumberOneBenchmark: snapshot.currentNumberOneBenchmark,
-    currentFteFactor: snapshot.factor,
-    fteMilestones: calculateFteMilestones(snapshot.netFte, snapshot.fteMilestones),
+    snapshotUpdatedAt: updatedAt,
+    currentNetFte: own.netFte,
+    netFteRanking: own.netFteRanking,
+    currentNumberOneBenchmark: standings.find((row) => row.netFteRanking === 1)?.netFte ?? null,
+    currentFteFactor: own.factor,
+    fteMilestones: factorSteps(standings, OWN_TEAM, 0).map((step) => ({ position: step.rank, team: step.team, gapFte: step.fteNeeded })),
   };
 
   const powerBi: PowerBiIntelligenceSnapshot = {
-    vcdbRanking: snapshot.vcdbRanking,
-    vcdbScore: snapshot.vcdbScore,
-    placementsInScope: snapshot.placementsInScope,
-    placementsExtraHoursRule: snapshot.placementsExtraHoursRule,
-    finalScore: snapshot.finalScore,
-    topThree: snapshot.topThree,
-    updatedAt: snapshot.updatedAt,
+    vcdbRanking: own.vcdbRanking,
+    vcdbScore: own.vcdbScore,
+    placementsInScope: own.placementsInScope,
+    placementsExtraHoursRule: own.placementsExtraHoursRule,
+    finalScore: own.finalScore,
+    topThree: standings.slice(0, 3).map((row) => ({ position: row.finalRanking, team: row.team, finalScore: row.finalScore })),
+    updatedAt,
   };
 
-  return { ranking, fte, powerBi };
+  return { ranking, fte, powerBi, standings, updatedAt };
 }

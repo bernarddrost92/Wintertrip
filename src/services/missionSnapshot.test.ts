@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { getMissionSnapshot } from './missionSnapshot';
 import { MANUAL_POWER_BI_SNAPSHOT } from '../data/manualPowerBiSnapshot';
 
-describe('getMissionSnapshot — maps the manual Power BI snapshot without a second formula', () => {
+describe('getMissionSnapshot — derives everything from the official standings table', () => {
   const result = getMissionSnapshot();
 
-  it('Virtual Position: #1, matching the snapshot', () => {
-    expect(result.ranking.virtualPosition).toBe(1);
+  it('Virtual Position: #2, read from Zwolle’s own Final Ranking row', () => {
+    expect(result.ranking.virtualPosition).toBe(2);
     expect(result.ranking.snapshotUpdatedAt).toBe(MANUAL_POWER_BI_SNAPSHOT.updatedAt);
   });
 
-  it('Net FTE: -81.51, ranking #9, current factor 1.3', () => {
-    expect(result.fte.currentNetFte).toBe(-81.51);
-    expect(result.fte.netFteRanking).toBe(9);
+  it('Net FTE: -7.78, ranking #10, current factor 1.3', () => {
+    expect(result.fte.currentNetFte).toBe(-7.78);
+    expect(result.fte.netFteRanking).toBe(10);
     expect(result.fte.currentFteFactor).toBe(1.3);
   });
 
@@ -20,32 +20,43 @@ describe('getMissionSnapshot — maps the manual Power BI snapshot without a sec
     expect(result.fte.targetFteOnJan31).toBeNull();
   });
 
-  it('current #1 benchmark is -23.00, gap is computed centrally to 58.51 FTE', () => {
-    expect(result.fte.currentNumberOneBenchmark).toBe(-23);
-    expect(result.fte.fteMilestones).toContainEqual({ position: 1, team: 'Middelburg', gapFte: 58.51 });
+  it('current #1 benchmark is the Net FTE of whoever holds Net FTE rank #1 (Maastricht, 4.05)', () => {
+    expect(result.fte.currentNumberOneBenchmark).toBe(4.05);
   });
 
-  it('FTE milestones cover the reference positions from the snapshot, team names carried through', () => {
+  it('FTE milestones are the next factor tiers, with the FTE needed to pass each', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 8, team: 'Alkmaar', gapFte: 24.16 },
-      { position: 5, team: 'Utrecht', gapFte: 42.71 },
-      { position: 3, team: 'Groningen', gapFte: 56.81 },
-      { position: 1, team: 'Middelburg', gapFte: 58.51 },
+      { position: 5, team: 'Arnhem', gapFte: 7.61 },
+      { position: 4, team: 'Groningen', gapFte: 7.79 },
+      { position: 3, team: 'Middelburg', gapFte: 9.79 },
+      { position: 2, team: 'Breda', gapFte: 10.84 },
+      { position: 1, team: 'Maastricht', gapFte: 11.84 },
     ]);
   });
 
-  it('VCDB score/ranking and the Power BI Virtual Final Score are carried through, distinct from Base League Points', () => {
-    expect(result.powerBi.vcdbScore).toBe(22177.48);
+  it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
+    expect(result.powerBi.vcdbScore).toBe(22100.91);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(28830.72);
+    expect(result.powerBi.finalScore).toBe(28731.19);
+    expect(result.powerBi.placementsInScope).toBe(128);
+    expect(result.powerBi.placementsExtraHoursRule).toBe(6);
   });
 
-  it('Virtual Top 3 is carried through unchanged', () => {
-    expect(result.powerBi.topThree).toEqual(MANUAL_POWER_BI_SNAPSHOT.topThree);
+  it('Top 3 is the first three rows of the Final Ranking', () => {
+    expect(result.powerBi.topThree).toEqual([
+      { position: 1, team: 'Maastricht', finalScore: 39797.68 },
+      { position: 2, team: 'Zwolle', finalScore: 28731.19 },
+      { position: 3, team: 'Arnhem', finalScore: 22002.7 },
+    ]);
   });
 
-  it('snapshot timestamp (date-only — no reliable refresh time in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-07');
-    expect(result.powerBi.updatedAt).toBe('2026-10-07');
+  it('the full table is passed through, sorted by Final Ranking', () => {
+    expect(result.standings).toHaveLength(11);
+    expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
+
+  it('snapshot timestamp (date-only — the refresh line was cut off) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-13');
+    expect(result.powerBi.updatedAt).toBe('2026-10-13');
   });
 });

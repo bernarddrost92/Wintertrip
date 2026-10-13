@@ -64,5 +64,21 @@ export const FACTOR_OPTIONS: FactorOption[] = [
   { position: '#1', label: '1e positie', value: 2.5 },
 ];
 
+/**
+ * The same ladder as FACTOR_OPTIONS, keyed by Net FTE ranking position —
+ * used to project which factor a team gets at a given rank. Any rank below
+ * the last tier (#11 and lower) gets the base factor 1.0.
+ */
+export const NET_FTE_FACTOR_LADDER: { fromRank: number; toRank: number; factor: number }[] = [
+  { fromRank: 1, toRank: 1, factor: 2.5 },
+  { fromRank: 2, toRank: 2, factor: 2.0 },
+  { fromRank: 3, toRank: 3, factor: 1.7 },
+  { fromRank: 4, toRank: 4, factor: 1.5 },
+  { fromRank: 5, toRank: 5, factor: 1.4 },
+  { fromRank: 6, toRank: 10, factor: 1.3 },
+];
+
+export const BASE_NET_FTE_FACTOR = 1.0;
+
 /** The calculator always opens on the pure base score — 1.0x, never a ranking factor. */
 export const DEFAULT_FACTOR = FACTOR_OPTIONS[0];

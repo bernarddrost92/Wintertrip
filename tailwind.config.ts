@@ -5,11 +5,13 @@ export default {
   theme: {
     extend: {
       colors: {
+        /* Deep anthracite rather than pitch black: still a night-time
+           command centre, but lighter and calmer to read. */
         mission: {
-          void: '#030405',
-          panel: '#06080A',
-          raised: '#0B0E12',
-          line: '#11151A',
+          void: '#14171C',
+          panel: '#1B1F26',
+          raised: '#242932',
+          line: '#2D333D',
         },
         gold: {
           deep: '#B8862A',
@@ -29,12 +31,18 @@ export default {
           bright: '#E0A868',
         },
         ink: {
-          DEFAULT: '#F1EFE8',
-          muted: '#8F949D',
-          dim: '#5C6169',
+          DEFAULT: '#F4F2EC',
+          muted: '#A9AFB8',
+          dim: '#7D838D',
         },
         status: {
           go: '#3FAE6B',
+        },
+        /** Projections ("what if") — a cool steel blue, so a projected number
+         * can never be mistaken for the official gold/ink stand. */
+        intel: {
+          DEFAULT: '#8CC2E6',
+          deep: '#4E87AE',
         },
       },
       fontFamily: {

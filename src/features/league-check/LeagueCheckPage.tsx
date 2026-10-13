@@ -19,8 +19,14 @@ function bareCode(code: string): string {
   return code.replace(/^\d+\s*/, '');
 }
 
-export function LeagueCheckPage() {
-  const { beforeCheck, agent, updateAgent, resetAgent, clearBeforeCheck } = useMissionFlow();
+interface LeagueCheckPageProps {
+  /** Score Check passes this so NEW MISSION also clears the Calculator and
+   * returns to step 1; League Check's own reset still runs first. */
+  onNewMission?: () => void;
+}
+
+export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
+  const { beforeCheck, beforeCheckVersion, agent, updateAgent, resetAgent, clearBeforeCheck } = useMissionFlow();
   const { state, update, toggleItem, reset, checkedCount, total, missionApproved, receiptId } = useLeagueCheck();
   const openItems = LEAGUE_CHECK_ITEMS.filter((item) => !state.checkedItems[item.id]);
   /** Bumped on New Mission so MissionReceiptFlow — which owns its own local
@@ -33,6 +39,7 @@ export function LeagueCheckPage() {
     clearBeforeCheck();
     resetAgent();
     setResetKey((k) => k + 1);
+    onNewMission?.();
   }
 
   return (
@@ -167,7 +174,7 @@ export function LeagueCheckPage() {
       </div>
 
       <MissionReceiptFlow
-        key={resetKey}
+        key={`${resetKey}-${beforeCheckVersion}`}
         beforeCheck={beforeCheck}
         agent={agent}
         checkedItems={state.checkedItems}

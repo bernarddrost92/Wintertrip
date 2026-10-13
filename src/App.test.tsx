@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -245,6 +245,14 @@ describe('App — Mission Hunt is no longer part of the site', () => {
 
   afterEach(() => {
     window.history.pushState({}, '', '/');
+  });
+
+  it('the header shows the new structure: Mission Home, Score Check, Net FTE, Mission Control, Mission Updates', async () => {
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
+    const nav = within(screen.getByRole('navigation', { name: /hoofdnavigatie/i }));
+    expect(nav.getAllByRole('button').map((b) => b.textContent)).toEqual(['Mission Home', 'Score Check', 'Net FTE', 'Mission Control', 'Mission Updates']);
   });
 
   it('the header has no Mission Hunt entry', async () => {
