@@ -20,33 +20,33 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.fte.targetFteOnJan31).toBeNull();
   });
 
-  it('current #1 benchmark is the Net FTE of whoever holds Net FTE rank #1 (Maastricht, 4.05)', () => {
-    expect(result.fte.currentNumberOneBenchmark).toBe(4.05);
+  it('current #1 benchmark is the Net FTE of whoever holds Net FTE rank #1 (Maastricht, 4.95)', () => {
+    expect(result.fte.currentNumberOneBenchmark).toBe(4.95);
   });
 
   it('FTE milestones are the next factor tiers, with the FTE needed to pass each', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 5, team: 'Arnhem', gapFte: 7.61 },
+      { position: 5, team: 'Eindhoven', gapFte: 5.14 },
       { position: 4, team: 'Groningen', gapFte: 7.79 },
       { position: 3, team: 'Middelburg', gapFte: 9.79 },
       { position: 2, team: 'Breda', gapFte: 10.84 },
-      { position: 1, team: 'Maastricht', gapFte: 11.84 },
+      { position: 1, team: 'Maastricht', gapFte: 12.74 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
-    expect(result.powerBi.vcdbScore).toBe(22100.91);
+    expect(result.powerBi.vcdbScore).toBe(22922.55);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(28731.19);
-    expect(result.powerBi.placementsInScope).toBe(128);
+    expect(result.powerBi.finalScore).toBe(29799.31);
+    expect(result.powerBi.placementsInScope).toBe(134);
     expect(result.powerBi.placementsExtraHoursRule).toBe(6);
   });
 
   it('Top 3 is the first three rows of the Final Ranking', () => {
     expect(result.powerBi.topThree).toEqual([
-      { position: 1, team: 'Maastricht', finalScore: 39797.68 },
-      { position: 2, team: 'Zwolle', finalScore: 28731.19 },
-      { position: 3, team: 'Arnhem', finalScore: 22002.7 },
+      { position: 1, team: 'Maastricht', finalScore: 41252.84 },
+      { position: 2, team: 'Zwolle', finalScore: 29799.31 },
+      { position: 3, team: 'Arnhem', finalScore: 21125.7 },
     ]);
   });
 
@@ -55,8 +55,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
-  it('snapshot timestamp (date-only — the refresh line was cut off) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-13');
-    expect(result.powerBi.updatedAt).toBe('2026-10-13');
+  it('snapshot timestamp (date-only — no refresh line in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-15');
+    expect(result.powerBi.updatedAt).toBe('2026-10-15');
   });
 });

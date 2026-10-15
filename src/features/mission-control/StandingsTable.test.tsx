@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MANUAL_POWER_BI_SNAPSHOT } from '../../data/manualPowerBiSnapshot';
+import { hiddenNetFteRanks } from '../../services/netFteProjection';
 import { StandingsTable } from './StandingsTable';
 
 describe('StandingsTable', () => {
@@ -23,6 +24,7 @@ describe('StandingsTable', () => {
   it('is labelled as the official stand and notes the hidden Net FTE rank', () => {
     render(<StandingsTable standings={standings} updatedAt={updatedAt} />);
     expect(screen.getByText('Officieel')).toBeInTheDocument();
-    expect(screen.getByText(/net fte-rang #6 hoort bij een team dat niet in de eindstand staat/i)).toBeInTheDocument();
+    const hidden = hiddenNetFteRanks(standings).map((r) => `#${r}`).join(', ');
+    expect(screen.getByText(`Net FTE-rang ${hidden} hoort bij een team dat niet in de eindstand staat.`)).toBeInTheDocument();
   });
 });
