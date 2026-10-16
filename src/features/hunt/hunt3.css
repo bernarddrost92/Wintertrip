@@ -1,0 +1,92 @@
+/* HUNT MODE 3 — the approved Hunt Mode design (Wintertrip_Hunt_Mode_Redesign_Pack,
+   preview/index.html). Every rule is scoped to .hunt3-* classes, which only Hunt
+   Mode renders, so Quiet Mode is untouched. Starter: implementation/hunt-redesign.css. */
+/* Positioning comes from the overlay itself (fixed, inset-0) — the shell only
+   carries the palette, so it never fights the modal's fixed layer. */
+.hunt3-shell{--hunt-bg:#0b1016;--hunt-gold:#d6ae55;--hunt-gold-bright:#e7c875;--hunt-ink:#f4f2ec;--hunt-muted:#9aa3ad;overflow-x:hidden;background:var(--hunt-bg);color:var(--hunt-ink)}
+.hunt3-backdrop{position:fixed;inset:0;z-index:-2;overflow:hidden;background:#0b1016}
+.hunt3-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.56}
+.hunt3-video-fallback{position:absolute;inset:0;background:radial-gradient(75% 58% at 50% 28%,rgba(214,174,85,.10),transparent 65%),linear-gradient(180deg,#111923 0%,#0b1016 58%,#07090d 100%)}
+.hunt3-radar{position:absolute;width:min(980px,70vw);right:-260px;top:-300px;opacity:.28}
+.hunt3-target-art{position:absolute;width:min(720px,62vw);left:50%;top:50%;transform:translate(-50%,-50%);opacity:.14}
+.hunt3-network{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.72}
+.hunt3-horizon{position:absolute;left:0;bottom:0;width:100%;opacity:.74}
+.hunt3-vignette{position:absolute;inset:0;background:radial-gradient(90% 72% at 50% 42%,transparent 30%,rgba(0,0,0,.72) 100%)}
+.hunt3-hero{min-height:calc(100dvh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:56px 24px 42px}
+.hunt3-kicker{font-family:"JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.34em;color:rgba(231,200,117,.78);font-size:11px;font-weight:700}
+.hunt3-title{margin:20px 0 0;font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(4rem,9vw,9rem);font-weight:900;text-transform:uppercase;line-height:.78;letter-spacing:-.025em}
+.hunt3-title span{display:block;color:var(--hunt-gold-bright);text-shadow:0 0 42px rgba(214,174,85,.14)}
+.hunt3-live-strip{margin-top:48px;width:min(1000px,100%);display:grid;grid-template-columns:1fr 1.35fr 1fr;border-top:1px solid rgba(214,174,85,.22);border-bottom:1px solid rgba(214,174,85,.22);background:rgba(6,9,13,.22);backdrop-filter:blur(5px)}
+.hunt3-metric,.hunt3-target{padding:20px 18px}.hunt3-live-strip>*+*{border-left:1px solid rgba(214,174,85,.16)}
+.hunt3-metric-label{display:flex;align-items:center;justify-content:center;gap:6px;font-family:"JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.24em;color:var(--hunt-muted);font-size:10px;font-weight:700}
+.hunt3-rank{margin-top:8px;font-family:"Barlow Condensed",Impact,sans-serif;font-size:68px;line-height:.86;font-weight:900}.hunt3-gold{color:var(--hunt-gold-bright)}
+.hunt3-target-name{margin-top:6px;font-family:"Barlow Condensed",Impact,sans-serif;font-size:42px;line-height:.95;text-transform:uppercase;font-weight:900}
+.hunt3-fte-needed{margin-top:8px;color:var(--hunt-gold-bright);font-family:"Barlow Condensed",Impact,sans-serif;font-size:44px;line-height:.9;font-weight:900}
+.hunt3-actions{margin-top:32px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.hunt3-button{min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid rgba(214,174,85,.48);padding:0 20px;font-family:"JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.15em;font-size:11px;font-weight:800;transition:background .16s ease,color .16s ease,border-color .16s ease}
+.hunt3-button-primary{background:var(--hunt-gold);color:#12161b}.hunt3-button-primary:hover{background:var(--hunt-gold-bright)}
+.hunt3-button-secondary{background:rgba(8,11,15,.36);color:var(--hunt-gold-bright)}.hunt3-button-secondary:hover{background:rgba(214,174,85,.10);border-color:rgba(231,200,117,.76)}
+.hunt3-moves{width:min(930px,calc(100% - 32px));margin:0 auto 34px;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid rgba(255,255,255,.08);background:rgba(7,10,14,.44);backdrop-filter:blur(5px)}
+.hunt3-move{display:flex;align-items:center;gap:10px;padding:12px 14px;min-width:0}.hunt3-move+.hunt3-move{border-left:1px solid rgba(255,255,255,.07)}
+.hunt3-move span{font-family:"Barlow Condensed",sans-serif;color:rgba(214,174,85,.62);font-size:20px;font-weight:800}.hunt3-move strong{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;font-size:15px;letter-spacing:.03em}
+.hunt3-reveal{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:28px;background:rgba(4,6,9,.94);overflow:hidden}
+.hunt3-reveal>img{position:absolute;width:min(760px,90vw);opacity:.14}.hunt3-reveal-inner{position:relative;z-index:1;text-align:center;max-width:1100px}
+.hunt3-reveal-inner>p{font-family:"JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.30em;color:rgba(231,200,117,.78);font-size:11px;font-weight:700}
+.hunt3-reveal blockquote{margin:24px auto 30px;font-family:"Barlow Condensed",Impact,sans-serif;font-weight:900;text-transform:uppercase;font-size:clamp(3.6rem,8vw,7rem);line-height:.88;max-width:1000px}
+.hunt3-reveal-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.hunt3-reveal-actions button{border:1px solid rgba(214,174,85,.5);padding:12px 18px;color:var(--hunt-gold-bright);font:800 11px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.14em}
+@media(max-width:720px){.hunt3-video{display:none}.hunt3-radar{opacity:.13;width:120vw;right:-60vw}.hunt3-target-art{width:125vw;opacity:.09}.hunt3-hero{justify-content:flex-start;padding-top:54px}.hunt3-live-strip{grid-template-columns:1fr 1fr;margin-top:32px}.hunt3-live-strip>*+*{border-left:0}.hunt3-target{grid-column:1/-1;grid-row:1;border-bottom:1px solid rgba(214,174,85,.16)}.hunt3-metric:last-child{border-left:1px solid rgba(214,174,85,.16)}.hunt3-rank{font-size:56px}.hunt3-target-name{font-size:34px}.hunt3-fte-needed{font-size:38px}.hunt3-actions{width:100%}.hunt3-button{flex:1 1 100%;width:100%}.hunt3-moves{grid-template-columns:1fr 1fr}.hunt3-move+.hunt3-move{border-left:0}.hunt3-move:nth-child(even){border-left:1px solid rgba(255,255,255,.07)}.hunt3-move:nth-child(n+3){border-top:1px solid rgba(255,255,255,.07)}}
+@media(prefers-reduced-motion:reduce){.hunt3-video{display:none}}
+
+/* ---- Additions on top of the starter ---- */
+
+/* The first viewport: hero + four moves + the bottom intelligence line,
+   together exactly one screen high (minus the Hunt top bar). */
+.hunt3-first{min-height:calc(100dvh - 60px);display:flex;flex-direction:column}
+.hunt3-first .hunt3-hero{flex:1;min-height:0}
+.hunt3-kicker-top{display:flex;align-items:center;gap:10px;font-family:"JetBrains Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.24em;color:var(--hunt-gold-bright);font-weight:700}
+.hunt3-led{width:8px;height:8px;border-radius:50%;background:#48bc78;box-shadow:0 0 18px #48bc78;flex-shrink:0}
+.hunt3-target{position:relative}
+.hunt3-target-sub{margin-top:6px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--hunt-muted)}
+.hunt3-bottom{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 42px 26px;font-family:"JetBrains Mono",monospace;color:#7d8692;font-size:10px;text-transform:uppercase;letter-spacing:.16em}
+.hunt3-pills{display:flex;gap:8px;flex-wrap:wrap}.hunt3-pill{border:1px solid rgba(255,255,255,.08);padding:6px 9px;background:rgba(7,10,14,.4)}
+.hunt3-pill-intel{color:#8cc2e6;border-color:rgba(140,194,230,.25)}
+.hunt3-rule{color:#9aa3ad}
+.hunt3-move strong{color:#d8dde3;font-size:13px}
+.hunt3-hero .hunt3-moves{margin:28px auto 0;width:min(930px,100%)}
+.hunt3-move{gap:8px;padding:12px}
+@media(min-width:721px){.hunt3-move strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+
+/* Secondary intelligence, below the fold — calm, compact. */
+.hunt3-secondary{width:min(1000px,calc(100% - 32px));margin:0 auto;padding:56px 0 72px}
+.hunt3-section-label{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:rgba(231,200,117,.72);font-weight:700}
+.hunt3-intel-grid{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(214,174,85,.18);border-bottom:1px solid rgba(214,174,85,.18)}
+.hunt3-intel{padding:16px 18px}.hunt3-intel:nth-child(3n+2),.hunt3-intel:nth-child(3n+3){border-left:1px solid rgba(255,255,255,.06)}.hunt3-intel:nth-child(n+4){border-top:1px solid rgba(255,255,255,.06)}
+.hunt3-intel dt{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--hunt-muted)}
+.hunt3-intel dd{margin:6px 0 0;font-family:"Barlow Condensed",Impact,sans-serif;font-size:30px;font-weight:900;line-height:1}
+.hunt3-intel small{display:block;margin-top:4px;font:500 12px Inter,sans-serif;color:var(--hunt-muted)}
+.hunt3-intel-blue dd{color:#8cc2e6}
+.hunt3-rule-block{margin-top:36px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px 28px;border-top:1px solid rgba(214,174,85,.18);padding-top:24px}
+.hunt3-rule-block p{margin:0;font-family:"Barlow Condensed",Impact,sans-serif;font-weight:900;text-transform:uppercase;line-height:1}
+.hunt3-rule-main{font-size:40px;color:var(--hunt-gold-bright)}.hunt3-rule-sub{font-size:24px}
+.hunt3-closing{margin-top:44px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(214,174,85,.3);background:rgba(7,10,14,.45);padding:20px 22px}
+.hunt3-closing p{margin:0;font-family:"Barlow Condensed",Impact,sans-serif;font-size:28px;font-weight:900;text-transform:uppercase}
+
+/* The reveal: a mission is a sentence, so it gets a smaller size than a
+   one-liner; the last sentence of a one-liner lights up gold. */
+.hunt3-reveal blockquote span{color:var(--hunt-gold-bright)}
+.hunt3-reveal blockquote.hunt3-reveal-mission{font-size:clamp(2.4rem,5vw,4.6rem);line-height:.95;text-transform:none}
+.hunt3-reveal-actions button:first-child{background:var(--hunt-gold);color:#12161b;border-color:var(--hunt-gold)}
+.hunt3-reveal-actions button:hover{border-color:rgba(231,200,117,.85)}
+.hunt3-reveal-inner>p.hunt3-reveal-hint{margin-top:18px;font:500 12px Inter,sans-serif;letter-spacing:.06em;color:var(--hunt-muted);text-transform:uppercase}
+
+@media(max-width:720px){
+  .hunt3-hero{padding:36px 16px 28px}
+  .hunt3-title{font-size:clamp(3.2rem,15vw,4.4rem)}
+  .hunt3-bottom{display:none}
+  .hunt3-button-primary{order:-1}
+  .hunt3-intel-grid{grid-template-columns:1fr 1fr}
+  .hunt3-intel:nth-child(n){border-left:0;border-top:0}
+  .hunt3-intel:nth-child(even){border-left:1px solid rgba(255,255,255,.06)}
+  .hunt3-intel:nth-child(n+3){border-top:1px solid rgba(255,255,255,.06)}
+  .hunt3-rule-main{font-size:32px}
+}

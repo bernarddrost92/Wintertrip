@@ -22,8 +22,8 @@ export function HuntLayer({ onPakFteBon }: HuntLayerProps) {
     <>
       {active && (
         <HuntModeOverlay
-          key={activationId}
-          showIntro={activationId > 0}
+          key={`overlay-${activationId}`}
+          fromActivation={activationId > 0}
           onExit={exit}
           onPakFteBon={() => {
             exit();
@@ -31,7 +31,7 @@ export function HuntLayer({ onPakFteBon }: HuntLayerProps) {
           }}
         />
       )}
-      {active && activationId > 0 && confettiDoneFor !== activationId && <HuntActivation key={activationId} onDone={finishConfetti} />}
+      {active && activationId > 0 && confettiDoneFor !== activationId && <HuntActivation key={`activation-${activationId}`} onDone={finishConfetti} />}
     </>
   );
 }

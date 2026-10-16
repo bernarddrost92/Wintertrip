@@ -290,14 +290,14 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('the switch opens Hunt Mode with its intro; Escape closes it back to Quiet', async () => {
+  it('the switch opens Hunt Mode on the hero; Escape closes it back to Quiet', async () => {
     const user = userEvent.setup();
     render(<App />);
     await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
 
     await user.click(screen.getByRole('switch', { name: /hunt mode/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/team zwolle \/\/ classified/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /the net fte hunt is on/i })).toBeInTheDocument();
     expect(sessionStorage.getItem('ws27-hunt-mode')).toBe('1');
 
     await user.keyboard('{Escape}');
@@ -313,7 +313,6 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
     await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
 
     await user.click(screen.getByRole('switch', { name: /hunt mode/i }));
-    await user.click(screen.getByRole('button', { name: /intro overslaan/i }));
     await user.click(screen.getByRole('button', { name: /pak je fte-bon/i }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -321,6 +320,22 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
     await waitFor(() => expect(screen.getByLabelText(/groei in fte/i)).toHaveFocus());
     expect(scrollIntoView).toHaveBeenCalled();
     scrollIntoView.mockRestore();
+  });
+
+  it('a deliberate switch plays the MISSION ACTIVATED moment, then lands on the hero', async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+    const user = userEvent.setup();
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
+    await user.click(screen.getByRole('switch', { name: /hunt mode/i }));
+    expect(screen.getByTestId('hunt-activation')).toHaveTextContent(/mission activated/i);
+    expect(screen.getByTestId('gold-confetti')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /the net fte hunt is on/i })).toBeInTheDocument();
   });
 
   it('the ribbon’s PAK FTE-BON goes to the calculator too', async () => {
@@ -331,11 +346,11 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
     expect(screen.getByRole('heading', { name: 'Net FTE' })).toBeInTheDocument();
   });
 
-  it('a reload within the session restores Hunt Mode without replaying the intro', async () => {
+  it('a reload within the session restores Hunt Mode without replaying the activation', async () => {
     sessionStorage.setItem('ws27-hunt-mode', '1');
     render(<App />);
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-    expect(screen.queryByText(/team zwolle \/\/ classified/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hunt-activation')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /the net fte hunt is on/i })).toBeInTheDocument();
   });
 });

@@ -66,8 +66,10 @@ export function SoundtrackProvider({ children }: { children: ReactNode }) {
     const start = audio.volume;
     const startTime = performance.now();
     const step = (now: number) => {
-      const t = Math.min(1, (now - startTime) / FADE_MS);
-      audio.volume = start + (target - start) * t;
+      // rAF's timestamp can be a hair before startTime — never let t (and so
+      // the volume) dip outside [0, 1], which HTMLMediaElement rejects.
+      const t = Math.min(1, Math.max(0, (now - startTime) / FADE_MS));
+      audio.volume = Math.min(1, Math.max(0, start + (target - start) * t));
       if (t < 1) {
         fadeFrame.current = requestAnimationFrame(step);
       } else {
