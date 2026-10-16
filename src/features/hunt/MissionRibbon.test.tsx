@@ -16,6 +16,16 @@ vi.mock('../../data/manualPowerBiSnapshot', async (importOriginal) => {
 });
 
 describe('MissionRibbon', () => {
+  it('lists the segments in instrument order, with the CTA last in the DOM (right on desktop)', async () => {
+    fetchFteBonnen.mockResolvedValue([]);
+    render(<MissionRibbon onPakFteBon={vi.fn()} />);
+    const text = screen.getByTestId('mission-ribbon').textContent ?? '';
+    const order = ['Net FTE Hunt', 'VCDB #1', 'Net FTE #10', 'Next target #9 Utrecht', '+0,19 FTE nodig', 'Factor 1,3x', 'Projectie #10', 'Pak FTE-bon'].map((part) => text.indexOf(part));
+    order.forEach((index) => expect(index).toBeGreaterThanOrEqual(0));
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    await waitFor(() => expect(fetchFteBonnen).toHaveBeenCalled());
+  });
+
   it('shows the live hunt numbers from the current standings', async () => {
     fetchFteBonnen.mockResolvedValue([]);
     render(<MissionRibbon onPakFteBon={vi.fn()} />);
@@ -24,7 +34,9 @@ describe('MissionRibbon', () => {
     expect(ribbon).toHaveTextContent('Net FTE #10');
     expect(ribbon).toHaveTextContent('Next target #9 Utrecht');
     expect(ribbon).toHaveTextContent('+0,19 FTE nodig');
-    expect(HUNT_ONE_LINERS.some((line) => ribbon.textContent?.includes(line))).toBe(true);
+    expect(ribbon).toHaveTextContent('Factor 1,3x');
+    expect(ribbon).toHaveTextContent('Projectie #10');
+    expect(HUNT_ONE_LINERS).toContain(screen.getByTestId('mission-ribbon-line').textContent);
     await waitFor(() => expect(fetchFteBonnen).toHaveBeenCalled());
   });
 
@@ -33,6 +45,7 @@ describe('MissionRibbon', () => {
     render(<MissionRibbon onPakFteBon={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId('mission-ribbon')).toHaveTextContent('Next target #8 Leeuwarden'));
     expect(screen.getByTestId('mission-ribbon')).toHaveTextContent('+2,39 FTE nodig');
+    expect(screen.getByTestId('mission-ribbon')).toHaveTextContent('Projectie #9');
   });
 
   it('PAK FTE-BON calls through to the calculator', async () => {
