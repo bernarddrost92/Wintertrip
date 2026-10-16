@@ -1,3 +1,6 @@
+import { formatSignedFte } from '../../utils/format';
+import type { HuntIntel } from './huntIntel';
+
 /**
  * Hunt Mode copy — local, client-side, no API. The one-liners motivate, the
  * missions are short, concrete sales actions toward contract-FTE.
@@ -60,4 +63,30 @@ export function pickDifferent<T>(items: readonly T[], current: T | null, random:
   if (items.length === 1) return items[0];
   const pool = current === null ? items : items.filter((item) => item !== current);
   return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+}
+
+/** WAR ROOM one-liners — short, punchy, flown at the viewer. The live
+ * "TARGET ACQUIRED" line is added from the standings at runtime. */
+export const WAR_ROOM_LINES = [
+  'VCDB #1 IS MOOI. NU VERZILVEREN.',
+  'MEER CONTRACTANTEN. MEER FACTOR.',
+  'ELKE FTE TELT.',
+  'PAK JE BON.',
+  'VERLENG. ZET VAST. HOOG OP.',
+  'GEEN PRAATJES. BONNETJES.',
+  'DE FACTOR IS GEEN CADEAU.',
+  'BPT + VD. DAAR TELT HET.',
+  'PO → CONTRACT. NU.',
+  'ÉÉN MOVE. ÉÉN PLEK.',
+  'DE JACHT STOPT OP 31 JANUARI.',
+  'TEAM ZWOLLE. DOORPAKKEN.',
+] as const;
+
+/** The lines for this War Room: the live target lines first, then the fixed set. */
+export function warRoomLines(intel: HuntIntel): string[] {
+  const target = intel.nextTarget;
+  const live = target
+    ? [`TARGET ACQUIRED: ${target.team.toUpperCase()}`, `${formatSignedFte(target.fteNeeded)} FTE. DAN IS ${target.team.toUpperCase()} VAN ONS.`]
+    : ['#1 IN NET FTE. VASTHOUDEN.'];
+  return [...live, ...WAR_ROOM_LINES];
 }

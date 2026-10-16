@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { GoldConfetti } from './GoldConfetti';
+import { HuntActivation } from './HuntActivation';
 import { HuntModeOverlay } from './HuntModeOverlay';
 import { useHuntMode } from './huntModeContext';
 
@@ -9,8 +9,8 @@ interface HuntLayerProps {
 }
 
 /**
- * Everything HUNT MODE adds on top of the app: the confetti burst on a
- * deliberate activation and the fullscreen Hunt overlay. Renders nothing
+ * Everything HUNT MODE adds on top of the app: the MISSION ACTIVATED
+ * moment (flash, confetti, target lock) on a deliberate activation and the fullscreen Hunt overlay. Renders nothing
  * in QUIET MODE, so the daily screens stay exactly as they are.
  */
 export function HuntLayer({ onPakFteBon }: HuntLayerProps) {
@@ -31,7 +31,7 @@ export function HuntLayer({ onPakFteBon }: HuntLayerProps) {
           }}
         />
       )}
-      {active && activationId > 0 && confettiDoneFor !== activationId && <GoldConfetti key={activationId} onDone={finishConfetti} />}
+      {active && activationId > 0 && confettiDoneFor !== activationId && <HuntActivation key={activationId} onDone={finishConfetti} />}
     </>
   );
 }

@@ -336,6 +336,6 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
     render(<App />);
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
     expect(screen.queryByText(/team zwolle \/\/ classified/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /the fte hunt is on/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /the net fte hunt is on/i })).toBeInTheDocument();
   });
 });

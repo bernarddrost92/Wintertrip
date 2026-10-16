@@ -202,6 +202,19 @@ export default {
           '0%': { opacity: '0', transform: 'translate3d(0, 18px, 0) scale(0.98)' },
           '100%': { opacity: '1', transform: 'translate3d(0, 0, 0) scale(1)' },
         },
+        'activation-stamp': {
+          '0%': { opacity: '0', transform: 'scale(1.35)' },
+          '18%': { opacity: '1', transform: 'scale(1)' },
+          '72%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '0', transform: 'scale(0.96)' },
+        },
+        /* War Room one-liners flying toward the viewer. */
+        'war-fly': {
+          '0%': { opacity: '0', transform: 'translate3d(-50%, -50%, 0) scale(0.35)' },
+          '18%': { opacity: '0.95' },
+          '70%': { opacity: '0.85' },
+          '100%': { opacity: '0', transform: 'translate3d(-50%, -50%, 0) scale(1.9)' },
+        },
       },
       animation: {
         'radar-spin': 'radar-spin 18s linear infinite',
@@ -223,6 +236,8 @@ export default {
         'hunt-scan': 'hunt-scan 7s linear infinite',
         'hunt-ping': 'hunt-ping 2.2s ease-out infinite',
         'hunt-rise': 'hunt-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        'activation-stamp': 'activation-stamp 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        'war-fly': 'war-fly 6.4s cubic-bezier(0.4, 0, 0.9, 0.6) infinite both',
       },
     },
   },

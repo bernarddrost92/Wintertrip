@@ -18,24 +18,24 @@ export function HuntModeToggle() {
         aria-label="Hunt Mode"
         title={active ? 'Terug naar Quiet Mode' : 'Start Hunt Mode'}
         onClick={toggle}
-        className={`group inline-flex items-center gap-2 px-1.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] transition-colors duration-200 ${
-          active ? 'text-gold' : 'text-ink-muted hover:text-ink'
+        className={`group inline-flex items-center gap-2 border px-2 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] transition-colors duration-200 ${
+          active ? 'border-gold bg-gold text-mission-deep' : 'border-gold/40 text-gold-bright hover:border-gold hover:bg-gold/10'
         }`}
       >
-        <span className={`hidden 2xl:inline ${active ? 'text-ink-dim' : 'text-ink'}`}>Quiet</span>
+        <span className={`hidden 2xl:inline ${active ? 'text-mission-deep/60' : 'text-ink'}`}>Quiet</span>
         <span
           className={`relative hidden h-4 w-8 shrink-0 border transition-colors duration-200 md:inline-block ${
-            active ? 'border-gold bg-gold/25' : 'border-white/20 bg-mission-panel'
+            active ? 'border-mission-deep/60 bg-mission-deep/20' : 'border-gold/40 bg-mission-panel'
           }`}
           aria-hidden
         >
           <span
             className={`absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 transition-transform duration-200 ${
-              active ? 'translate-x-[17px] bg-gold' : 'translate-x-[2px] bg-ink-dim'
+              active ? 'translate-x-[17px] bg-mission-deep' : 'translate-x-[2px] bg-gold/70'
             }`}
           />
         </span>
-        <Crosshair size={14} className={`md:hidden ${active ? 'text-gold' : ''}`} aria-hidden />
+        <Crosshair size={14} className="md:hidden" aria-hidden />
         <span>Hunt</span>
       </button>
     </div>

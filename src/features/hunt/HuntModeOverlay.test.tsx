@@ -24,16 +24,26 @@ function renderOverlay(props: Partial<Parameters<typeof HuntModeOverlay>[0]> = {
 
 describe('HuntModeOverlay', () => {
   beforeEach(() => {
+    // jsdom has no matchMedia; the War Room asks for prefers-reduced-motion.
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
     fetchFteBonnen.mockReset();
     fetchFteBonnen.mockResolvedValue([]);
   });
 
   it('is a modal dialog with live data: VCDB #1, Net FTE #10, next target #9 Utrecht +0,19 FTE', async () => {
     renderOverlay();
-    const dialog = screen.getByRole('dialog', { name: /the fte hunt is on/i });
+    const dialog = screen.getByRole('dialog', { name: /the net fte hunt is on/i });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(within(within(dialog).getByLabelText('A · Onze kracht')).getByText('#1')).toBeInTheDocument();
-    expect(within(within(dialog).getByLabelText('B · De missie')).getByText('#10')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Onze kracht')).toHaveTextContent('VCDB #1');
+    expect(within(dialog).getByLabelText('Onze hefboom')).toHaveTextContent('Net FTE #10');
+    expect(within(dialog).getByLabelText('Target')).toHaveTextContent('#9 Utrecht');
+    expect(within(dialog).getByLabelText('Nodig')).toHaveTextContent('+0,19 FTE nodig');
+    expect(within(dialog).getByText('Verlengen · PO → contract · Nieuwe contractant · Uren ophogen')).toBeInTheDocument();
     const target = screen.getByTestId('hunt-next-target');
     expect(target).toHaveTextContent('#9 Utrecht');
     expect(target).toHaveTextContent('+0,19 FTE nodig');
@@ -59,7 +69,7 @@ describe('HuntModeOverlay', () => {
     expect(screen.getByText('VCDB #1')).toBeInTheDocument();
     expect(screen.getByText('Net FTE #10')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /intro overslaan/i }));
-    expect(screen.getByRole('heading', { name: /the fte hunt is on/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /the net fte hunt is on/i })).toBeInTheDocument();
   });
 
   it('the intro opens the Hunt Room by itself after a short beat', () => {
@@ -89,9 +99,12 @@ describe('HuntModeOverlay', () => {
     const exit = screen.getByRole('button', { name: /exit hunt mode/i });
     expect(exit).toHaveFocus();
     await user.tab({ shift: true });
+    const warRoom = screen.getByRole('button', { name: /open war room/i });
+    expect(warRoom).toHaveFocus();
+    await user.tab({ shift: true });
     expect(screen.getByRole('button', { name: /pak je fte-bon/i })).toHaveFocus();
     await user.tab();
-    expect(exit).toHaveFocus();
+    expect(warRoom).toHaveFocus();
   });
 
   it('GEEF ME NOG ÉÉN shows a different one-liner each click', async () => {
@@ -119,11 +132,34 @@ describe('HuntModeOverlay', () => {
     expect(screen.getByTestId('hunt-mission').textContent).not.toBe(first);
   });
 
-  it('PAK JE FTE-BON hands off to the FTE Bon Calculator', async () => {
+  it('PAK FTE-BON (hero) and PAK JE FTE-BON (bottom) both hand off to the FTE Bon Calculator', async () => {
     const user = userEvent.setup();
     const { onPakFteBon } = renderOverlay();
+    await user.click(within(screen.getByLabelText('Hunt status')).getByRole('button', { name: /pak fte-bon/i }));
     await user.click(screen.getByRole('button', { name: /pak je fte-bon/i }));
+    expect(onPakFteBon).toHaveBeenCalledTimes(2);
+  });
+
+  it('ACTIVATE WAR ROOM opens the War Room on top; Escape closes only the War Room', async () => {
+    const user = userEvent.setup();
+    const { onExit } = renderOverlay();
+    await user.click(screen.getByRole('button', { name: /activate war room/i }));
+    const warRoom = screen.getByRole('dialog', { name: /war room/i });
+    expect(within(warRoom).getByTestId('war-room-line')).toHaveTextContent('TARGET ACQUIRED: UTRECHT');
+    expect(within(warRoom).getByRole('button', { name: /sluit war room/i })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByTestId('war-room')).not.toBeInTheDocument();
+    expect(onExit).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: /the net fte hunt is on/i })).toBeInTheDocument();
+  });
+
+  it('the War Room’s PAK FTE-BON hands off too', async () => {
+    const user = userEvent.setup();
+    const { onPakFteBon } = renderOverlay();
+    await user.click(screen.getByRole('button', { name: /open war room/i }));
+    await user.click(within(screen.getByTestId('war-room')).getByRole('button', { name: /pak fte-bon/i }));
     expect(onPakFteBon).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('war-room')).not.toBeInTheDocument();
   });
 
   it('locks the page scroll while open and restores it on close', () => {
