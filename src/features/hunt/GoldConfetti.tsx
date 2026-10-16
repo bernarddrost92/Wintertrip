@@ -35,6 +35,8 @@ function makePieces(random: () => number): Piece[] {
 interface GoldConfettiProps {
   /** Called once the burst is over, so the parent can unmount it. */
   onDone: () => void;
+  /** Start the burst this much later (the Hunt activation fires it at 0.9s). */
+  delayMs?: number;
   random?: () => number;
 }
 
@@ -44,20 +46,20 @@ interface GoldConfettiProps {
  * canvas, no loop: it calls onDone after ~2s and the parent removes it.
  * With prefers-reduced-motion it renders nothing and finishes immediately.
  */
-export function GoldConfetti({ onDone, random = Math.random }: GoldConfettiProps) {
+export function GoldConfetti({ onDone, delayMs = 0, random = Math.random }: GoldConfettiProps) {
   const reduced = usePrefersReducedMotion();
   const pieces = useMemo(() => makePieces(random), [random]);
 
   useEffect(() => {
-    const timer = window.setTimeout(onDone, reduced ? 0 : BURST_MS);
+    const timer = window.setTimeout(onDone, reduced ? 0 : delayMs + BURST_MS);
     return () => window.clearTimeout(timer);
-  }, [onDone, reduced]);
+  }, [onDone, reduced, delayMs]);
 
   if (reduced) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[80] overflow-hidden" aria-hidden data-testid="gold-confetti">
-      <div className="absolute inset-0 animate-gold-flash" style={{ background: 'radial-gradient(80% 70% at 50% 40%, rgba(242,222,160,0.9), rgba(214,174,85,0.45) 55%, transparent 80%)' }} />
+    <div className="pointer-events-none fixed inset-0 z-[88] overflow-hidden" aria-hidden data-testid="gold-confetti">
+      <div className="absolute inset-0 animate-gold-flash" style={{ animationDelay: `${delayMs}ms`, background: 'radial-gradient(80% 70% at 50% 40%, rgba(242,222,160,0.9), rgba(214,174,85,0.45) 55%, transparent 80%)' }} />
       {pieces.map((piece, i) => (
         <span
           key={i}
@@ -70,7 +72,7 @@ export function GoldConfetti({ onDone, random = Math.random }: GoldConfettiProps
               background: piece.color,
               boxShadow: '0 0 6px rgba(231,200,117,0.35)',
               animationDuration: `${piece.duration}ms`,
-              animationDelay: `${piece.delay}ms`,
+              animationDelay: `${delayMs + piece.delay}ms`,
               '--confetti-drift': `${piece.drift}px`,
               '--confetti-spin': `${piece.spin}deg`,
             } as CSSProperties

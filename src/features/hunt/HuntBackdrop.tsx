@@ -1,67 +1,80 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { CINEMATIC, isMobileViewport, posterAvailable, videoAvailable } from './cinematicAssets';
 
 const BASE = import.meta.env.BASE_URL;
-const VIDEO_WEBM = `${BASE}cinematic/hunt-room-loop.webm`;
-const VIDEO_MP4 = `${BASE}cinematic/hunt-room-loop.mp4`;
-const POSTER = `${BASE}cinematic/hunt-room-poster.webp`;
-const MOBILE_QUERY = '(max-width: 720px)';
 
-/** One check per page session: does the cinematic loop exist yet? Until it
- * does (public/cinematic/ is only reserved), Hunt Mode never renders a
- * <video> — no broken element, no repeated 404s, just the SVG/CSS scene. */
-let cinematicCheck: Promise<boolean> | null = null;
-
-async function headOk(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, { method: 'HEAD' });
-    return res.ok && (res.headers.get('content-type') ?? '').startsWith('video/');
-  } catch {
-    return false;
-  }
-}
-
-function cinematicAvailable(): Promise<boolean> {
-  if (typeof fetch !== 'function') return Promise.resolve(false);
-  cinematicCheck ??= headOk(VIDEO_WEBM).then((ok) => ok || headOk(VIDEO_MP4));
-  return cinematicCheck;
-}
-
-function isMobile(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_QUERY).matches;
+interface HuntBackdropProps {
+  /** Fresh from the switch: fade the whole room in at 1.45s of the activation. */
+  entering: boolean;
 }
 
 /**
- * The Hunt Mode scene behind the hero (supplied HuntBackdrop direction):
- * the future cinematic loop when it exists — desktop only, never with
- * reduced motion — over the approved SVG/CSS fallback: radar orbit, target
- * lock, hero network, horizon and a vignette. Static; no text or figures in
- * any background layer.
+ * The room every Hunt Mode layer plays in. Layers, bottom to top:
+ * SVG/CSS fallback (always there) → poster (if it exists) → cinematic loop
+ * (desktop only, never with reduced motion, never on ≤720px) → dark shade
+ * for legibility → supplied radar / target / network / horizon art →
+ * vignette. Poster and video start at opacity 0 and fade in only once they
+ * have actually loaded, so nothing ever pops, flashes black or shifts; if
+ * either fails, the layer below simply stays.
+ *
+ * Memoised and props-stable: mission/motivation reveals, the War Room and
+ * any other Hunt Mode state never re-render or restart it — the loop plays
+ * on as the space the UI lives in.
  */
-export function HuntBackdrop() {
+export const HuntBackdrop = memo(function HuntBackdrop({ entering }: HuntBackdropProps) {
   const reduced = usePrefersReducedMotion();
-  const [video, setVideo] = useState(false);
+  const [poster, setPoster] = useState<'none' | 'loading' | 'ready'>('none');
+  const [video, setVideo] = useState<'none' | 'loading' | 'ready'>('none');
 
   useEffect(() => {
-    if (reduced || isMobile()) return;
     let cancelled = false;
-    void cinematicAvailable().then((ok) => {
-      if (!cancelled) setVideo(ok);
+    void posterAvailable().then((ok) => {
+      if (!cancelled && ok) setPoster('loading');
     });
+    if (!reduced && !isMobileViewport()) {
+      void videoAvailable().then((ok) => {
+        if (!cancelled && ok) setVideo('loading');
+      });
+    }
     return () => {
       cancelled = true;
     };
   }, [reduced]);
 
   return (
-    <div className="hunt3-backdrop" aria-hidden data-testid="hunt-backdrop">
+    <div className={`hunt3-backdrop ${entering ? 'hunt3-enter-room' : ''}`} aria-hidden data-testid="hunt-backdrop">
       <div className="hunt3-video-fallback" />
-      {video && (
-        <video className="hunt3-video" autoPlay muted loop playsInline poster={POSTER} preload="metadata" onError={() => setVideo(false)}>
-          <source src={VIDEO_WEBM} type="video/webm" />
-          <source src={VIDEO_MP4} type="video/mp4" onError={() => setVideo(false)} />
+      {poster !== 'none' && (
+        <img
+          src={CINEMATIC.poster}
+          alt=""
+          className={`hunt3-poster ${poster === 'ready' ? 'is-ready' : ''}`}
+          onLoad={() => setPoster('ready')}
+          onError={() => setPoster('none')}
+          data-testid="hunt-poster"
+        />
+      )}
+      {video !== 'none' && (
+        <video
+          className={`hunt3-video ${video === 'ready' ? 'is-ready' : ''}`}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden
+          tabIndex={-1}
+          onLoadedData={() => setVideo('ready')}
+          onCanPlay={() => setVideo('ready')}
+          onError={() => setVideo('none')}
+          data-testid="hunt-video"
+        >
+          <source src={CINEMATIC.webm} type="video/webm" />
+          <source src={CINEMATIC.mp4} type="video/mp4" onError={() => setVideo('none')} />
         </video>
       )}
+      <div className="hunt3-video-shade" />
       <img src={`${BASE}hunt-assets/hunt-radar-orbit.svg`} alt="" className="hunt3-radar" />
       <img src={`${BASE}hunt-assets/hunt-target-lock.svg`} alt="" className="hunt3-target-art" />
       <img src={`${BASE}hunt-assets/hunt-hero-network.svg`} alt="" className="hunt3-network" />
@@ -69,4 +82,4 @@ export function HuntBackdrop() {
       <div className="hunt3-vignette" />
     </div>
   );
-}
+});

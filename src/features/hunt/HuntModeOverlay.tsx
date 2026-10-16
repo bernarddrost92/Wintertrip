@@ -13,6 +13,7 @@ import { HUNT_MISSIONS, HUNT_ONE_LINERS, pickDifferent } from './huntLines';
 import { HuntMovesStrip } from './HuntMovesStrip';
 import { HuntRevealOverlay } from './HuntRevealOverlay';
 import { HuntSecondaryIntel } from './HuntSecondaryIntel';
+import { huntEntryDelays } from './huntTimeline';
 import { WarRoom } from './WarRoom';
 import './hunt3.css';
 
@@ -51,6 +52,8 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
   const intel = getHuntIntel(standings, OWN_TEAM, openFte);
   const reduced = usePrefersReducedMotion();
   const officialDate = formatPowerBiTime(updatedAt);
+  const delays = huntEntryDelays(fromActivation, reduced);
+  const entering = fromActivation && !reduced;
   const [reveal, setReveal] = useState<Reveal>(null);
   const [warRoom, setWarRoom] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -61,10 +64,13 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    exitRef.current?.focus();
+    // Hunt Mode always opens at the top; the app keeps its own scroll
+    // position underneath (body scroll is only locked, never moved).
+    if (dialogRef.current) dialogRef.current.scrollTop = 0;
+    exitRef.current?.focus({ preventScroll: true });
     return () => {
       document.body.style.overflow = overflow;
-      previous?.focus?.();
+      previous?.focus?.({ preventScroll: true });
     };
   }, []);
 
@@ -102,44 +108,39 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
       aria-labelledby="hunt-title"
       onKeyDown={handleKeyDown}
       data-testid="hunt-mode"
-      className="hunt3-shell fixed inset-0 z-[70] overflow-y-auto animate-[intro-quickfade_0.6s_ease-out_both]"
+      className={`hunt3-shell fixed inset-0 z-[70] overflow-y-auto ${entering ? '' : 'animate-[intro-quickfade_0.4s_ease-out_both]'}`}
     >
-      <HuntBackdrop />
+      <HuntBackdrop entering={entering} />
 
-      <div className="sticky top-0 z-10 border-b border-gold/20 bg-black/55 backdrop-blur-md">
-        <div className="flex h-[60px] items-center justify-between gap-3 px-4 sm:px-[42px]">
+      {/* Top bar: deliberately quieter than the hero — the hero always wins. */}
+      <div className={`hunt3-topbar sticky top-0 z-10 ${entering ? 'hunt3-enter-room' : ''}`}>
+        <div className="flex h-[52px] items-center justify-between gap-3 px-4 sm:h-[56px] sm:px-[42px]">
           <p className="hunt3-kicker-top min-w-0">
             <span className="hunt3-led" aria-hidden />
-            <span className="truncate">Team Zwolle // live intelligence</span>
+            <span className="truncate">
+              Team Zwolle<span className="hidden sm:inline"> // live intelligence</span>
+            </span>
           </p>
           <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-gold-bright/80 xl:inline">Hunt mode active · Power BI {officialDate}</span>
-            <button
-              type="button"
-              onClick={() => setWarRoom(true)}
-              className="hidden items-center gap-2 border border-gold/45 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-gold-bright transition-colors hover:bg-gold/10 sm:inline-flex"
-            >
+            <span className="hunt3-topbar-meta hidden xl:inline">Hunt mode active · Power BI {officialDate}</span>
+            <button type="button" onClick={() => setWarRoom(true)} className="hunt3-topbar-button" aria-label="Open War Room" title="Open War Room">
               <Flame size={14} aria-hidden />
-              Open War Room
+              <span className="hidden sm:inline">Open War Room</span>
             </button>
-            <button
-              ref={exitRef}
-              type="button"
-              onClick={onExit}
-              className="inline-flex items-center gap-2 border border-gold/45 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-gold-bright transition-colors hover:bg-gold/10"
-            >
+            <button ref={exitRef} type="button" onClick={onExit} className="hunt3-topbar-button">
               <X size={14} aria-hidden />
-              Exit Hunt Mode
+              Exit<span className="hidden sm:inline"> Hunt Mode</span>
             </button>
           </div>
         </div>
       </div>
 
       <div className="hunt3-first">
-        <HuntHero intel={intel} fromActivation={fromActivation && !reduced} onMission={nextMission} onMotivation={nextLine} onPakFteBon={onPakFteBon}>
+        <HuntHero intel={intel} delays={delays} onMission={nextMission} onMotivation={nextLine} onPakFteBon={onPakFteBon}>
           <HuntMovesStrip />
+          <p className="hunt3-rule hunt3-rule-mobile">Net FTE = BPT + VD · PO telt niet mee</p>
         </HuntHero>
-        <div className="hunt3-bottom">
+        <div className="hunt3-bottom animate-hunt-rise" style={{ animationDelay: `${delays.moves}ms` }}>
           <div className="hunt3-pills">
             <span className="hunt3-pill">Factor {formatFactor(intel.factor)}</span>
             <span className="hunt3-pill hunt3-pill-intel">Projectie #{intel.projectedNetFteRank}</span>

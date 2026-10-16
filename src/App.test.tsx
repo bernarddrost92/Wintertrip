@@ -338,6 +338,31 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
     expect(screen.getByRole('heading', { name: /the net fte hunt is on/i })).toBeInTheDocument();
   });
 
+  it('soundtrack: the switch uses the existing start flow once; reveals and the War Room never restart or pause it', async () => {
+    const play = window.HTMLMediaElement.prototype.play as unknown as ReturnType<typeof vi.fn>;
+    const pause = window.HTMLMediaElement.prototype.pause as unknown as ReturnType<typeof vi.fn>;
+    const user = userEvent.setup();
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('Missie #1')).toBeInTheDocument());
+    play.mockClear();
+    pause.mockClear();
+
+    await user.click(screen.getByRole('switch', { name: /hunt mode/i }));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+    expect(document.querySelectorAll('audio')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /geef mij een missie/i }));
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: /geef me vuur/i }));
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: /open war room/i }));
+    await user.keyboard('{Escape}');
+
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(pause).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('audio')).toHaveLength(1);
+  });
+
   it('the ribbon’s PAK FTE-BON goes to the calculator too', async () => {
     const user = userEvent.setup();
     render(<App />);

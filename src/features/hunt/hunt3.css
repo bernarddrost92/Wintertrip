@@ -3,7 +3,9 @@
    Mode renders, so Quiet Mode is untouched. Starter: implementation/hunt-redesign.css. */
 /* Positioning comes from the overlay itself (fixed, inset-0) — the shell only
    carries the palette, so it never fights the modal's fixed layer. */
-.hunt3-shell{--hunt-bg:#0b1016;--hunt-gold:#d6ae55;--hunt-gold-bright:#e7c875;--hunt-ink:#f4f2ec;--hunt-muted:#9aa3ad;overflow-x:hidden;background:var(--hunt-bg);color:var(--hunt-ink)}
+.hunt3-shell{--hunt-bg:#0b1016;--hunt-gold:#d6ae55;--hunt-gold-bright:#e7c875;--hunt-ink:#f4f2ec;--hunt-muted:#9aa3ad;overflow-x:hidden;background:transparent;color:var(--hunt-ink)}
+/* The room's surface is the (opaque) backdrop alone, so on activation the app
+   dims and the room fades in — the shell itself never pops in a dark plane. */
 .hunt3-backdrop{position:fixed;inset:0;z-index:-2;overflow:hidden;background:#0b1016}
 .hunt3-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.56}
 .hunt3-video-fallback{position:absolute;inset:0;background:radial-gradient(75% 58% at 50% 28%,rgba(214,174,85,.10),transparent 65%),linear-gradient(180deg,#111923 0%,#0b1016 58%,#07090d 100%)}
@@ -89,4 +91,90 @@
   .hunt3-intel:nth-child(even){border-left:1px solid rgba(255,255,255,.06)}
   .hunt3-intel:nth-child(n+3){border-top:1px solid rgba(255,255,255,.06)}
   .hunt3-rule-main{font-size:32px}
+}
+
+/* ==== FINAL POLISH + CINEMATIC READINESS ================================ */
+
+/* Activation timeline (HuntActivation): one sequence, transform/opacity only. */
+@keyframes hunt3-act-dim{0%{opacity:0}12.5%{opacity:.82}80%{opacity:.82}100%{opacity:0}}
+@keyframes hunt3-act-lock{0%,15.6%{opacity:0;transform:scale(1.25)}31%{opacity:1;transform:scale(1)}84%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.97)}}
+@keyframes hunt3-act-activated{0%,50%{opacity:0;transform:translateY(6px) scale(1.12)}59%{opacity:1;transform:translateY(0) scale(1)}84%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.98)}}
+.hunt3-act-dim{opacity:0;animation:hunt3-act-dim 2s cubic-bezier(.2,.8,.2,1) both}
+.hunt3-act-lock{animation:hunt3-act-lock 1.6s cubic-bezier(.2,.8,.2,1) both}
+.hunt3-act-activated{animation:hunt3-act-activated 1.6s cubic-bezier(.2,.8,.2,1) both}
+
+/* The Hunt Room (backdrop + top bar) fades in under the lifting dim at 1.45s. */
+@keyframes hunt3-fade-in{from{opacity:0}to{opacity:1}}
+/* The room is fully there (1.8s) before the dim above it lifts (1.6–2.0s), so
+   the app never shows through again. */
+.hunt3-enter-room{animation:hunt3-fade-in .35s ease-out 1.45s both}
+
+/* Cinematic layers: invisible until loaded, then a soft fade over the
+   fallback — never a black frame, never a pop. */
+.hunt3-poster,.hunt3-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;opacity:0;transition:opacity .7s ease}
+.hunt3-poster.is-ready{opacity:.62}
+.hunt3-video.is-ready{opacity:.56}
+.hunt3-video-shade{position:absolute;inset:0;background:rgba(5,8,12,.42);opacity:0;transition:opacity .7s ease;pointer-events:none}
+.hunt3-poster.is-ready~.hunt3-video-shade,.hunt3-video.is-ready~.hunt3-video-shade{opacity:1}
+
+/* Top bar: lower priority than the hero — more transparent, softer line. */
+.hunt3-topbar{background:rgba(5,7,10,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.05)}
+.hunt3-topbar .hunt3-kicker-top{font-size:10px;color:rgba(231,200,117,.7)}
+.hunt3-topbar .hunt3-led{width:6px;height:6px;box-shadow:none}
+.hunt3-topbar-meta{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(231,200,117,.5)}
+.hunt3-topbar-button{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.12);padding:7px 11px;font:700 10px "JetBrains Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:rgba(231,200,117,.75);transition:border-color .16s ease,color .16s ease}
+.hunt3-topbar-button:hover,.hunt3-topbar-button:focus-visible{border-color:rgba(214,174,85,.45);color:var(--hunt-gold-bright)}
+.hunt3-first{min-height:calc(100dvh - 56px)}
+
+/* Target acquired: locks once — ring 1.10 → 1, one scan line, FTE a beat
+   later — then stands still. */
+@keyframes hunt3-lock{0%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}45%{opacity:.85}100%{opacity:.16;transform:translate(-50%,-50%) scale(1)}}
+@keyframes hunt3-scan-once{0%{opacity:0;transform:translateY(-44px)}35%{opacity:.75}100%{opacity:0;transform:translateY(44px)}}
+@keyframes hunt3-rise-small{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.hunt3-lock-ring{position:absolute;left:50%;top:50%;width:150px;height:150px;border:1px solid rgba(214,174,85,.55);border-radius:50%;pointer-events:none;opacity:0;animation:hunt3-lock .7s cubic-bezier(.2,.8,.2,1) calc(var(--hunt3-lock-delay,0ms) + 100ms) both}
+.hunt3-lock-scan{position:absolute;left:12%;right:12%;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(231,200,117,.8),transparent);pointer-events:none;opacity:0;animation:hunt3-scan-once .8s ease-out calc(var(--hunt3-lock-delay,0ms) + 120ms) both}
+.hunt3-target>*:not(.hunt3-lock-ring):not(.hunt3-lock-scan){position:relative}
+.hunt3-after-lock{animation:hunt3-rise-small .45s cubic-bezier(.2,.8,.2,1) calc(var(--hunt3-lock-delay,0ms) + 140ms) both}
+
+/* Secondary actions: a quiet intelligence hover — stronger gold line, a
+   small tint, the icon nudges 2px. No scale. */
+.hunt3-button svg{transition:transform .18s ease}
+.hunt3-button-secondary:hover,.hunt3-button-secondary:focus-visible{border-color:rgba(231,200,117,.82);background:rgba(214,174,85,.12)}
+.hunt3-button-secondary:hover svg,.hunt3-button-secondary:focus-visible svg{transform:translateX(2px)}
+
+/* Four moves: sharper type, never louder than the target. */
+.hunt3-move span{font-size:18px;color:rgba(214,174,85,.55)}
+.hunt3-move strong{letter-spacing:.05em}
+.hunt3-rule{color:#aab2bb}
+.hunt3-rule-mobile{display:none}
+
+/* Reveal: the room stays faintly visible (~12%); lines leave and lock in. */
+.hunt3-reveal{background:rgba(4,6,9,.88);animation:hunt3-fade-in .3s ease-out both}
+.hunt3-reveal-inner>p.hunt3-reveal-eyebrow{animation:hunt3-rise-small .35s ease-out both}
+@keyframes hunt3-reveal-in{0%{opacity:0;transform:scale(1.06)}60%{opacity:1;transform:scale(.995)}100%{opacity:1;transform:scale(1)}}
+@keyframes hunt3-reveal-out{to{opacity:0;transform:translateY(-10px)}}
+.hunt3-reveal-in{animation:hunt3-reveal-in .5s cubic-bezier(.2,.8,.2,1) 80ms both}
+.hunt3-reveal-out{animation:hunt3-reveal-out .17s ease-in both}
+/* A one-liner's gold line: one sweep on entry, no loop. */
+@keyframes hunt3-sweep{0%{opacity:0;transform:translateX(-110%)}30%{opacity:1}100%{opacity:0;transform:translateX(110%)}}
+.hunt3-gold-line{position:relative;display:inline-block;overflow:hidden;vertical-align:top}
+.hunt3-gold-line::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(242,222,160,.38) 50%,transparent 80%);pointer-events:none;opacity:0;animation:hunt3-sweep 1s ease-out .45s both}
+
+/* Secondary intelligence: data, not a second dashboard. */
+.hunt3-intel{padding:14px 18px}
+.hunt3-intel dd{font-size:26px;color:rgba(244,242,236,.92)}
+.hunt3-intel-blue dd{color:#8cc2e6}
+.hunt3-rule-main{font-size:34px}
+.hunt3-closing{border-color:rgba(255,255,255,.08);background:rgba(7,10,14,.32)}
+
+@media(max-width:720px){
+  .hunt3-rule-mobile{display:block;margin:14px 0 0;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;text-align:center}
+  .hunt3-topbar-button{padding:7px 9px}
+  .hunt3-first{min-height:calc(100dvh - 52px)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .hunt3-act-dim,.hunt3-act-lock,.hunt3-act-activated,.hunt3-enter-room,.hunt3-after-lock,.hunt3-reveal,.hunt3-reveal-in,.hunt3-reveal-out,.hunt3-reveal-inner>p.hunt3-reveal-eyebrow{animation:none!important}
+  .hunt3-lock-ring,.hunt3-lock-scan,.hunt3-gold-line::after{display:none}
+  .hunt3-poster,.hunt3-video,.hunt3-video-shade{transition:none}
 }

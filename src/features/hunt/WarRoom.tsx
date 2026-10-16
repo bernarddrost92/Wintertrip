@@ -55,8 +55,8 @@ export function WarRoom({ intel, onClose, onPakFteBon }: WarRoomProps) {
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    closeRef.current?.focus();
-    return () => previous?.focus?.();
+    closeRef.current?.focus({ preventScroll: true });
+    return () => previous?.focus?.({ preventScroll: true });
   }, []);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
