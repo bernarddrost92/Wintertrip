@@ -4,7 +4,7 @@ import type { MissionType } from '../../types/scoring';
 const OPTIONS: { type: MissionType; label: string; icon: typeof CalendarPlus }[] = [
   { type: 'NEW_PLACEMENT', label: 'Nieuwe plaatsing', icon: CalendarPlus },
   { type: 'EXTENSION', label: 'Verlenging', icon: RefreshCw },
-  { type: 'HOURS_INCREASE', label: 'Urenuitbreiding', icon: Clock4 },
+  { type: 'HOURS_INCREASE', label: 'Uren ophogen', icon: Clock4 },
 ];
 
 interface MissionTypeToggleProps {
@@ -14,7 +14,7 @@ interface MissionTypeToggleProps {
 
 export function MissionTypeToggle({ value, onChange }: MissionTypeToggleProps) {
   return (
-    <div role="radiogroup" aria-label="Mission type" className="grid grid-cols-1 border border-white/10 bg-mission-panel sm:grid-cols-3">
+    <div role="radiogroup" aria-label="Kies actie" className="grid grid-cols-1 border border-white/10 bg-mission-panel sm:grid-cols-3">
       {OPTIONS.map(({ type, label, icon: Icon }, i) => {
         const selected = value === type;
         return (
@@ -24,7 +24,7 @@ export function MissionTypeToggle({ value, onChange }: MissionTypeToggleProps) {
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(type)}
-            className={`flex items-center justify-center gap-2 py-3 text-xs font-semibold uppercase tracking-[0.14em] transition-colors duration-200 sm:py-3.5 sm:text-sm ${
+            className={`flex min-h-12 items-center justify-center gap-2 py-3 text-sm font-semibold uppercase tracking-[0.06em] transition-colors duration-200 sm:min-h-14 sm:text-[15px] ${
               i > 0 ? 'border-t border-white/[0.07] sm:border-l sm:border-t-0' : ''
             } ${selected ? 'bg-gold text-mission-void' : 'text-ink-muted hover:bg-white/[0.03] hover:text-ink'}`}
           >

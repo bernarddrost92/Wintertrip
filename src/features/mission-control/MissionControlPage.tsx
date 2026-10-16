@@ -22,8 +22,8 @@ export function MissionControlPage() {
     <div className="relative">
       <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:space-y-7 sm:px-8 sm:py-12">
         <header>
-          <p className="label-classified">007 · Mission Control</p>
-          <h1 className="mt-1 font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Mission Control</h1>
+          <h1 className="font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Mission Control</h1>
+          <p className="mt-1 text-base text-ink-muted">Waar staan we?</p>
         </header>
         <CommandBriefingCard
           ranking={ranking}
@@ -31,9 +31,10 @@ export function MissionControlPage() {
           fte={fte}
           teamAbove={above ? { team: above.team, position: above.finalRanking, finalScore: above.finalScore } : null}
         />
+        {/* Where we stand and who is next first; the full table after. */}
+        <ZwolleProjectionPanel standings={standings} />
         <SoftDivider />
         <StandingsTable standings={standings} updatedAt={updatedAt} />
-        <ZwolleProjectionPanel standings={standings} />
         <LeagueCheckReceiptsSection />
         <IntelligenceStatusSection powerBiUpdatedAt={powerBi.updatedAt} />
       </section>

@@ -42,9 +42,9 @@ export function ProjectionReadout({ projection }: ProjectionReadoutProps) {
       <dl className="grid grid-cols-2 gap-px border border-white/10 bg-white/5 sm:grid-cols-5">
         {rows.map((row) => (
           <div key={row.label} className="bg-mission-panel px-3 py-2.5">
-            <dt className="label-classified">{row.label}</dt>
+            <dt className="text-[12px] font-medium text-ink-muted sm:text-[13px]">{row.label}</dt>
             <dd className="mt-1 flex flex-wrap items-baseline gap-x-1.5 tabular-nums">
-              <span className="text-xs text-ink-muted">{row.from}</span>
+              <span className="text-[13px] text-ink-muted">{row.from}</span>
               <ArrowRight size={11} className="text-ink-dim" aria-hidden />
               <span className="font-display text-lg font-bold text-intel">{row.to}</span>
               {row.shift && <span className="text-xs">{row.shift}</span>}

@@ -44,20 +44,11 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
-      <SectionHeader eyebrow="2 paar ogen principe" title="League Check" subtitle="2 paar ogen. 0 punten laten liggen." />
-
-      {/* Live, purely local session progress — separate from the team-wide
-          League Check Intelligence strip in the Calculator, which only
-          updates once a receipt is generated. */}
-      <div className="mt-3 flex justify-center">
-        <span className="border border-white/[0.07] bg-mission-panel px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
-          Current Mission <span className="text-gold">·</span> <span className="tabular-nums text-ink">{checkedCount}/{total}</span> Checks
-        </span>
-      </div>
+      <SectionHeader title="League Check" subtitle="Laat een collega meekijken: 6 checks, dan je bonnetje." />
 
       {beforeCheck && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 border border-white/[0.07] bg-mission-panel px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-ink-muted">
-          <span className="text-gold/80">Vanuit Calculator</span>
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1.5 border border-white/[0.07] bg-mission-panel px-4 py-3 text-sm text-ink-muted">
+          <span className="font-semibold text-gold/90">Vanuit Calculator</span>
           <span>{MISSION_TYPE_LABEL_NL[beforeCheck.form.missionType]}</span>
           <span>Base <span className="text-ink">{beforeCheck.result.baseScore.toLocaleString('nl-NL', { maximumFractionDigits: 2 })}</span></span>
           <span>Factor <span className="text-ink">{beforeCheck.form.factor.toLocaleString('nl-NL')}x</span></span>
@@ -80,7 +71,7 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
           />
         </FormField>
         <div>
-          <p className="label-classified mb-1.5">Role</p>
+          <p className="form-label mb-1.5">Rol</p>
           <RoleToggle value={agent.agentRole} onChange={(role) => updateAgent('agentRole', role)} />
         </div>
         <FormField id="professionalName" label="Professional">
@@ -104,8 +95,8 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
 
       <div className="mt-10">
         <div className="mb-3 flex items-center justify-between">
-          <p className="label-classified">Mission check</p>
-          <span className={`font-mono text-xs font-semibold tracking-wider ${missionApproved ? 'text-gold' : 'text-ink-muted'}`}>
+          <p className="form-label">Checks</p>
+          <span className={`text-sm font-semibold tabular-nums ${missionApproved ? 'text-gold' : 'text-ink-muted'}`}>
             {checkedCount} / {total}
           </span>
         </div>
@@ -158,7 +149,7 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
           </>
         ) : (
           <>
-            <p className="label-classified text-ink-muted">Open Opportunities</p>
+            <p className="form-label">Nog open</p>
             <p className="font-display text-4xl font-bold tabular-nums text-gold">{openItems.length}</p>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink">
               {openItems.map((item) => (
@@ -168,7 +159,7 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
                 </span>
               ))}
             </div>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-gold/80">Hier kan nog winst liggen</p>
+            <p className="mt-1 text-sm font-semibold text-gold/90">Hier kan nog winst liggen</p>
           </>
         )}
       </div>
@@ -189,17 +180,19 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
         </GoldButton>
       </div>
 
-      <div className="panel mt-10 p-5 sm:p-6">
-        <SectionHeader eyebrow="Teamafspraken" title="Waar we elkaar op scherp houden" />
-        <ul className="mt-4 space-y-2">
+      <details className="panel group mt-10">
+        <summary className="flex min-h-12 cursor-pointer select-none items-center px-5 text-sm font-medium text-ink-muted hover:text-ink group-open:text-ink">
+          Teamafspraken
+        </summary>
+        <ul className="space-y-2 border-t border-white/[0.07] px-5 py-4">
           {TEAM_AGREEMENTS.map((line) => (
-            <li key={line} className="flex items-start gap-2.5 text-sm text-ink">
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+            <li key={line} className="flex items-start gap-2.5 text-[15px] leading-relaxed text-ink">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
               {line}
             </li>
           ))}
         </ul>
-      </div>
+      </details>
     </div>
   );
 }

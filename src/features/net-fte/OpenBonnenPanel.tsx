@@ -26,7 +26,7 @@ function BonRow({ bon, onRealize, onReopen, onRemove, onReceipt }: { bon: FteBon
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2.5 sm:flex-nowrap">
       <div className="min-w-0 flex-1">
         <p className={`truncate text-sm font-semibold ${open ? 'text-ink' : 'text-ink-muted line-through'}`}>{bon.label}</p>
-        <p className="truncate text-xs text-ink-muted">
+        <p className="truncate text-[13px] text-ink-muted">
           {fteBonTypeLabel(bon.type)}
           {bon.owner && ` · ${bon.owner}`}
           {bon.note && ` · ${bon.note}`}
@@ -112,8 +112,9 @@ export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize
         <StandBadge kind="projection" detail="officieel + alle open bonnen" />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-px border border-white/10 bg-white/5 sm:grid-cols-5">
-        <StatTile label="Huidige Net FTE" value={formatVcdbValue(official.netFte)} sub={<StandBadge kind="official" />} />
+      {/* The official stand is already at the top of the page — here only
+          what the open bonnen add to it. */}
+      <div className="mt-4 grid grid-cols-2 gap-px border border-white/10 bg-white/5 sm:grid-cols-4">
         <StatTile label="Open FTE-bonnen" value={formatSignedFte(openFte)} tone="gold" sub={`${open.length} open`} />
         <StatTile label="Projectie" value={formatVcdbValue(projection.own.netFte)} tone="intel" />
         <StatTile label="Verwachte rank" value={`#${projection.own.netFteRanking}`} tone="intel" sub={`nu #${official.netFteRanking}`} />
@@ -143,7 +144,7 @@ export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize
 
       {realized.length > 0 && (
         <details className="mt-3">
-          <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          <summary className="flex min-h-10 cursor-pointer select-none items-center text-sm font-medium text-ink-muted">
             Gerealiseerd ({realized.length}) — telt niet meer mee in de projectie
           </summary>
           <ul className="mt-2 divide-y divide-white/10 border border-white/10 bg-mission-panel">

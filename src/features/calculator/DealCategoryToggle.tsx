@@ -8,7 +8,7 @@ interface DealCategoryToggleProps {
 
 export function DealCategoryToggle({ value, onChange }: DealCategoryToggleProps) {
   return (
-    <div role="radiogroup" aria-label="Deal category" className="grid grid-cols-2 border border-white/10 bg-mission-panel">
+    <div role="radiogroup" aria-label="Soort deal" className="grid grid-cols-2 border border-white/10 bg-mission-panel">
       {DEAL_CATEGORY_OPTIONS.map((option, i) => {
         const selected = value === option.value;
         return (
@@ -18,7 +18,7 @@ export function DealCategoryToggle({ value, onChange }: DealCategoryToggleProps)
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.value)}
-            className={`py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors duration-150 ${
+            className={`min-h-11 py-2 text-sm font-semibold uppercase tracking-[0.06em] transition-colors duration-150 ${
               i > 0 ? 'border-l border-white/[0.07]' : ''
             } ${selected ? 'bg-gold text-mission-void' : 'text-ink-muted hover:bg-white/[0.03] hover:text-ink'}`}
           >

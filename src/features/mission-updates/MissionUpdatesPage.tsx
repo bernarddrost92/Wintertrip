@@ -19,9 +19,8 @@ export function MissionUpdatesPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6 sm:py-14">
       <header>
-        <p className="label-classified">007 · Mission Archive</p>
-        <h1 className="mt-2 font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Mission Updates</h1>
-        <p className="mt-2 text-sm text-ink-muted">Classified communications van Team Zwolle — nieuwste bovenaan.</p>
+        <h1 className="font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Mission Updates</h1>
+        <p className="mt-1 text-base text-ink-muted">Nieuwste bovenaan.</p>
       </header>
 
       {latest ? (
@@ -33,7 +32,7 @@ export function MissionUpdatesPage() {
       )}
 
       <section>
-        <p className="label-classified mb-3">Mission Archive</p>
+        <p className="form-label mb-3">Archief</p>
         <div className="panel divide-y divide-white/[0.07]">
           {archive.length === 0 ? (
             <p className="px-4 py-6 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-ink-dim">
@@ -48,10 +47,10 @@ export function MissionUpdatesPage() {
                 className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors duration-150 hover:bg-white/[0.03]"
               >
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold/70">{formatIsoDateReceipt(update.date)}</p>
-                  <p className="mt-0.5 truncate font-display text-sm font-bold uppercase tracking-wide text-ink">{update.title}</p>
+                  <p className="text-[13px] font-medium text-gold/80">{formatIsoDateReceipt(update.date)}</p>
+                  <p className="mt-0.5 truncate font-display text-base font-bold uppercase tracking-wide text-ink">{update.title}</p>
                 </div>
-                <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+                <span className="shrink-0 text-[12px] text-ink-muted">
                   {getTransmissionLabel(update, sorted)}
                 </span>
               </button>
@@ -80,10 +79,9 @@ function LatestTransmissionCard({ update, onWatch }: { update: MissionUpdate; on
         </div>
 
         <div className="flex-1 text-center sm:text-left">
-          <p className="label-classified text-gold">Latest Transmission</p>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.25em] text-ink-muted">{formatIsoDateReceipt(update.date)}</p>
+          <p className="text-[13px] font-medium text-gold">Nieuwste · {formatIsoDateReceipt(update.date)}</p>
           <p className="mt-2 font-display text-2xl font-black uppercase leading-tight tracking-wide text-ink sm:text-3xl">{update.title}</p>
-          {update.subtitle && <p className="mt-2 text-sm text-ink-muted">{update.subtitle}</p>}
+          {update.subtitle && <p className="mt-2 text-[15px] text-ink-muted">{update.subtitle}</p>}
 
           <GoldButton className="mt-6 w-full sm:w-auto" icon={update.imageSrc ? <Eye size={17} /> : <PlayCircle size={17} />} onClick={onWatch}>
             {update.imageSrc ? 'View Transmission' : 'Watch Transmission'}

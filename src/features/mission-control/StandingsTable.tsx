@@ -31,8 +31,7 @@ export function StandingsTable({ standings, updatedAt }: StandingsTableProps) {
     <section className="panel p-5 sm:p-7" aria-labelledby="standings-table">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="label-classified">Ranking · Net FTE-bril</p>
-          <h2 id="standings-table" className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-ink">
+          <h2 id="standings-table" className="font-display text-2xl font-black uppercase tracking-tight text-ink">
             Eindstand
           </h2>
         </div>
@@ -44,7 +43,7 @@ export function StandingsTable({ standings, updatedAt }: StandingsTableProps) {
           <thead>
             <tr className="border-b border-white/10">
               {HEADERS.map((h) => (
-                <th key={h.label} scope="col" className={`px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-dim ${h.className}`}>
+                <th key={h.label} scope="col" className={`px-3 py-2.5 text-[12px] font-semibold text-ink-muted ${h.className}`}>
                   {h.label}
                 </th>
               ))}
@@ -73,7 +72,7 @@ export function StandingsTable({ standings, updatedAt }: StandingsTableProps) {
         </table>
       </div>
       {hidden.length > 0 && (
-        <p className="mt-2 text-[11px] text-ink-dim">
+        <p className="mt-2 text-[13px] text-ink-dim">
           Net FTE-rang {hidden.map((r) => `#${r}`).join(', ')} hoort bij een team dat niet in de eindstand staat.
         </p>
       )}

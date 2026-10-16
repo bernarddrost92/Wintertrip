@@ -36,7 +36,7 @@ export function LeagueCheckItem({ id, code, label, checked, onToggle }: LeagueCh
             </span>
             <span className={`h-px flex-1 ${checked ? 'bg-gold/35' : 'bg-white/10'}`} aria-hidden />
           </span>
-          <span className={`mt-1.5 block text-sm leading-snug ${checked ? 'text-ink' : 'text-ink-muted'}`}>{label}</span>
+          <span className={`mt-1.5 block text-[15px] leading-snug ${checked ? 'text-ink' : 'text-ink-muted'}`}>{label}</span>
         </span>
       </label>
     </li>

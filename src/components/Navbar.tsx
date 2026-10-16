@@ -4,12 +4,14 @@ import { StatusLed } from './MissionSerial';
 import { SoundtrackControl } from './SoundtrackControl';
 import { HuntModeToggle } from '../features/hunt/HuntModeToggle';
 
-const NAV_ITEMS: { view: AppView; label: string; icon: typeof Calculator }[] = [
+/** The three daily tools first and full weight; Mission Updates is the
+ * archive, so it stays quieter (icon + label only on wide screens). */
+const NAV_ITEMS: { view: AppView; label: string; icon: typeof Calculator; secondary?: boolean }[] = [
   { view: 'home', label: 'Mission Home', icon: Home },
   { view: 'score-check', label: 'Score Check', icon: Calculator },
   { view: 'net-fte', label: 'Net FTE', icon: TrendingUp },
   { view: 'mission-control', label: 'Mission Control', icon: LayoutDashboard },
-  { view: 'mission-updates', label: 'Mission Updates', icon: Radio },
+  { view: 'mission-updates', label: 'Mission Updates', icon: Radio, secondary: true },
 ];
 
 interface NavbarProps {
@@ -54,7 +56,7 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
           <SoundtrackControl />
 
           <nav aria-label="Hoofdnavigatie" className="flex items-stretch gap-0.5 self-stretch border-l border-white/[0.07] pl-2 sm:pl-3">
-            {NAV_ITEMS.map(({ view, label, icon: Icon }) => {
+            {NAV_ITEMS.map(({ view, label, icon: Icon, secondary }) => {
               const active = current === view;
               return (
                 <button
@@ -64,11 +66,11 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
                   aria-current={active ? 'page' : undefined}
                   title={label}
                   className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors duration-200 xl:px-2 xl:tracking-[0.06em] 2xl:px-2.5 2xl:tracking-[0.12em] ${
-                    active ? 'text-ink' : 'text-ink-muted hover:text-ink'
+                    active ? 'text-ink' : secondary ? 'text-ink-dim hover:text-ink' : 'text-ink-muted hover:text-ink'
                   }`}
                 >
                   <Icon size={13} className={active ? 'text-gold' : ''} aria-hidden />
-                  <span className="hidden xl:inline">{label}</span>
+                  <span className={secondary ? 'hidden 2xl:inline' : 'hidden xl:inline'}>{label}</span>
                   {active && <span className="absolute inset-x-2.5 -bottom-px h-px bg-gold xl:inset-x-2 2xl:inset-x-2.5" aria-hidden />}
                 </button>
               );

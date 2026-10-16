@@ -7,9 +7,9 @@ import { useMissionFlow } from '../missionFlow/missionFlowContext';
 
 type Step = 1 | 2;
 
-const STEPS: { step: Step; title: string; sub: string; icon: typeof Calculator }[] = [
-  { step: 1, title: 'Bereken score-impact', sub: 'Calculator', icon: Calculator },
-  { step: 2, title: 'Bekijk league impact', sub: 'League Check', icon: ShieldCheck },
+const STEPS: { step: Step; title: string; icon: typeof Calculator }[] = [
+  { step: 1, title: 'Bereken score', icon: Calculator },
+  { step: 2, title: 'League-impact', icon: ShieldCheck },
 ];
 
 function scrollToTop() {
@@ -50,15 +50,15 @@ export function ScoreCheckPage() {
       <div className="mx-auto max-w-[1240px] px-3 pt-6 sm:px-6 sm:pt-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="label-classified">007 · Score Check</p>
-            <h1 className="mt-1 font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Score Check</h1>
+            <h1 className="font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Score Check</h1>
+            <p className="mt-1 text-base text-ink-muted">Wat levert deze actie ons op?</p>
           </div>
           {step === 2 && (
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => goTo(1)}
-                className="inline-flex items-center gap-1.5 border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-white/25 hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 border border-white/10 px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-white/25 hover:text-ink"
               >
                 <ArrowLeft size={13} aria-hidden />
                 Terug naar berekening
@@ -66,7 +66,7 @@ export function ScoreCheckPage() {
               <button
                 type="button"
                 onClick={startNewCalculation}
-                className="inline-flex items-center gap-1.5 border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-white/25 hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 border border-white/10 px-3.5 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-white/25 hover:text-ink"
               >
                 <RotateCcw size={13} aria-hidden />
                 Nieuwe berekening
@@ -76,7 +76,7 @@ export function ScoreCheckPage() {
         </div>
 
         <ol aria-label="Score Check stappen" className="mt-5 grid grid-cols-2 gap-px border border-white/[0.07] bg-white/[0.05]">
-          {STEPS.map(({ step: s, title, sub, icon: Icon }) => {
+          {STEPS.map(({ step: s, title, icon: Icon }) => {
             const active = step === s;
             const done = s === 1 && beforeCheck !== null && step === 2;
             return (
@@ -98,13 +98,11 @@ export function ScoreCheckPage() {
                   >
                     {done ? <Check size={15} /> : s}
                   </span>
-                  <span className="min-w-0">
-                    <span className={`block truncate text-sm font-semibold uppercase tracking-wide ${active ? 'text-ink' : 'text-ink-dim'}`}>
-                      Stap {s} · {title}
-                    </span>
-                    <span className="flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-ink-dim">
-                      <Icon size={11} aria-hidden />
-                      {sub}
+                  <span className={`flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-[15px] ${active ? 'text-ink' : 'text-ink-muted'}`}>
+                    <Icon size={15} className="hidden shrink-0 sm:block" aria-hidden />
+                    <span className="truncate">
+                      <span className="sr-only sm:not-sr-only">Stap {s} · </span>
+                      {title}
                     </span>
                   </span>
                 </button>

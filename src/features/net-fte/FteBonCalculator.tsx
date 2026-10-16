@@ -82,13 +82,13 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
             FTE Bon Calculator
           </h2>
         </div>
-        <p className="text-xs text-ink-muted">Vul de FTE-groei in — het effect staat er direct.</p>
+        <p className="text-sm text-ink-muted">Vul de FTE in, het effect staat er direct.</p>
       </div>
 
       <form onSubmit={handleSave} className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="space-y-4">
           <div>
-            <p className="label-classified mb-1.5">Type actie</p>
+            <p className="form-label mb-1.5">Type actie</p>
             <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Type actie">
               {FTE_BON_TYPES.map((option) => {
                 const active = option.value === type;
@@ -99,7 +99,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
                     role="radio"
                     aria-checked={active}
                     onClick={() => setType(option.value)}
-                    className={`border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`min-h-10 border px-3 py-1.5 text-sm font-semibold transition-colors ${
                       active ? 'border-gold bg-gold/15 text-gold' : 'border-white/15 text-ink-muted hover:border-gold/40 hover:text-ink'
                     }`}
                   >
@@ -130,7 +130,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
                 key={value}
                 type="button"
                 onClick={() => setFteRaw(toFteInput(value))}
-                className="border border-white/15 px-2.5 py-1 font-mono text-xs text-ink-muted transition-colors hover:border-gold/50 hover:text-gold"
+                className="min-h-10 border border-white/15 px-3 py-1.5 font-mono text-sm text-ink-muted transition-colors hover:border-gold/50 hover:text-gold"
               >
                 +{toFteInput(value)}
               </button>
@@ -162,7 +162,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
           </FormField>
 
           <details className="group border border-white/10 px-3 py-2">
-            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted group-open:text-gold">
+            <summary className="flex min-h-10 cursor-pointer select-none items-center text-sm font-medium text-ink-muted group-open:text-gold">
               Notitie (optioneel)
             </summary>
             <div className="mt-3">
@@ -176,10 +176,10 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
             {saving ? 'Opslaan…' : 'Pak FTE-bon'}
           </GoldButton>
           {storeStatus === 'unavailable' && (
-            <p className="text-xs text-ink-muted">Opslaan is nu niet beschikbaar — de berekening werkt wel.</p>
+            <p className="text-[13px] text-ink-muted">Opslaan is nu niet beschikbaar — de berekening werkt wel.</p>
           )}
           {fteValid && missing.length > 0 && storeStatus !== 'unavailable' && (
-            <p className="text-xs text-ink-muted">Vul nog {missing.join(' en ')} in om de bon op te slaan.</p>
+            <p className="text-[13px] font-medium text-gold/90">Vul nog {missing.join(' en ')} in om de bon op te slaan.</p>
           )}
           {message && (
             <p role="status" className={`text-sm font-semibold ${message.tone === 'ok' ? 'text-status-go' : 'text-red-300'}`}>

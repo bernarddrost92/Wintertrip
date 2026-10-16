@@ -34,7 +34,7 @@ function FigureColumn({ kind, detail, figures }: { kind: 'official' | 'projectio
       <dl className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-x-3 gap-y-2">
         {items.map((item) => (
           <div key={item.label}>
-            <dt className="label-classified">{item.label}</dt>
+            <dt className="stat-label">{item.label}</dt>
             <dd className={`font-display text-xl font-bold tabular-nums ${tone}`}>{item.value}</dd>
           </div>
         ))}
@@ -57,8 +57,7 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
 
   return (
     <section className="panel p-5 sm:p-7" aria-labelledby="zwolle-projection">
-      <p className="label-classified">Zwolle · officieel vs projectie</p>
-      <h2 id="zwolle-projection" className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-ink">
+      <h2 id="zwolle-projection" className="font-display text-2xl font-black uppercase tracking-tight text-ink">
         Waar komen we uit?
       </h2>
       <p className="mt-1 text-sm text-ink-muted">
@@ -76,7 +75,7 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <div className="border border-gold/30 bg-gold/5 p-3">
-          <p className="flex items-center gap-1.5 label-classified">
+          <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink-muted">
             <Target size={12} aria-hidden /> Eerst te pakken · eindstand
           </p>
           {finalTarget ? (
@@ -101,7 +100,7 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
           )}
         </div>
         <div className="border border-white/10 p-3">
-          <p className="flex items-center gap-1.5 label-classified">
+          <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink-muted">
             <Crosshair size={12} aria-hidden /> Volgende in Net FTE
           </p>
           {fteTarget ? (

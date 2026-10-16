@@ -54,13 +54,13 @@ export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onCl
       <p className={`relative ${eyebrow ? 'mt-2' : 'mt-4'} font-display font-bold uppercase leading-tight tracking-[0.02em] text-ink ${isLarge ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
         {title}
       </p>
-      <div className={`relative mt-2 text-ink-muted ${isLarge ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'}`}>{subtitle}</div>
+      <div className={`relative mt-2 leading-relaxed text-ink-muted ${isLarge ? 'text-base sm:text-lg' : 'text-[15px]'}`}>{subtitle}</div>
 
       <span
         className={`relative mt-7 inline-flex w-fit items-center gap-2 font-mono font-bold uppercase tracking-[0.2em] transition-colors duration-200 ${
           isLarge
             ? 'bg-gold px-5 py-2.5 text-xs text-mission-deep group-hover:bg-gold-bright'
-            : 'text-[10px] text-ink-muted group-hover:text-gold'
+            : 'text-[12px] text-ink-muted group-hover:text-gold'
         }`}
       >
         {cta}

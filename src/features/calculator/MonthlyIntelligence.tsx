@@ -23,19 +23,18 @@ export function MonthlyIntelligence({ result }: MonthlyIntelligenceProps) {
   const fixedMonthlyMissionValue = result?.fixedMonthlyMissionValue ?? 0;
 
   return (
-    <div className="panel">
-      <header className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
-        <h2 className="label-classified text-ink">Monthly Intelligence — Qualifying Term</h2>
+    // Extra context, so on request: collapsed until someone wants it.
+    <details className="panel group">
+      <summary className="flex min-h-12 cursor-pointer select-none items-center justify-between gap-3 px-4 text-sm font-medium text-ink-muted hover:text-ink group-open:border-b group-open:border-white/[0.07] group-open:text-ink sm:px-5">
+        <span>Bekijk per maand</span>
         {segments.length > 0 && (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-ink-muted">
+          <span className="text-[13px] text-ink-dim">
             {segments[0].label} {segments[0].year} – {segments[segments.length - 1].label} {segments[segments.length - 1].year}
           </span>
         )}
-      </header>
+      </summary>
 
-      {segments.length === 0 ? (
-        <p className="px-4 py-10 text-center text-xs text-ink-muted">Vul de missiegegevens in om de maandelijkse intelligence te tonen.</p>
-      ) : (
+      {segments.length === 0 ? null : (
         <>
           {/* Mission-timeline rail: a connected chain of waypoints, one per
               qualifying-term month — lit gold for an ACTIVE LEAGUE MONTH
@@ -62,9 +61,7 @@ export function MonthlyIntelligence({ result }: MonthlyIntelligenceProps) {
                 <div key={s.monthKey} className="border-b border-white/[0.07] px-4 py-4 sm:border-b-0">
                   <div className="flex items-baseline justify-between">
                     <span className={`font-display text-lg font-bold tracking-wide ${active ? 'text-ink' : 'text-ink-dim'}`}>{s.label}</span>
-                    <span className={`font-mono text-[9px] uppercase tracking-wider ${active ? 'text-gold' : 'text-ink-dim'}`}>
-                      {active ? 'ACTIVE LEAGUE MONTH' : 'OUTSIDE LEAGUE'}
-                    </span>
+                    <span className={`text-[12px] font-medium ${active ? 'text-gold' : 'text-ink-dim'}`}>{active ? 'Telt mee' : 'Buiten league'}</span>
                   </div>
                   <p className={`mt-2 font-display text-2xl font-bold tabular-nums ${active ? 'text-gold' : 'text-ink-dim'}`}>
                     {active ? formatVcdbValue(fixedMonthlyMissionValue) : '—'}
@@ -75,15 +72,13 @@ export function MonthlyIntelligence({ result }: MonthlyIntelligenceProps) {
                       style={{ width: `${Math.min(100, s.fraction * 100)}%` }}
                     />
                   </div>
-                  <p className="mt-1.5 font-mono text-[10px] text-ink-muted">
-                    {dayStatus} · {s.overlapDays}/{s.daysInMonth} days
-                  </p>
+                  <p className="mt-1.5 text-[12px] text-ink-muted">{dayStatus === 'FULL' ? 'Hele maand' : `${s.overlapDays}/${s.daysInMonth} dagen`}</p>
                 </div>
               );
             })}
           </div>
         </>
       )}
-    </div>
+    </details>
   );
 }

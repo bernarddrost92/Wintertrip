@@ -31,9 +31,7 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
         className="soft-asset left-1/2 top-6 hidden w-[680px] max-w-[92%] -translate-x-1/2 opacity-[0.1] sm:block"
       />
 
-      <p className="label-classified">007 · Mission Briefing</p>
-
-      <h1 className="mt-6 max-w-full break-words font-display text-[9vw] font-black uppercase leading-[0.92] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+      <h1 className="max-w-full break-words font-display text-[9vw] font-black uppercase leading-[0.92] tracking-tight text-ink sm:text-6xl lg:text-7xl">
         Operatie
         <br />
         <span className="bg-gold-sweep bg-clip-text text-transparent">Wintertrip 2027</span>
@@ -88,7 +86,7 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
         <MissionChoiceCard
           code="04"
           title="Mission Updates"
-          subtitle="Classified transmissions from Team Zwolle."
+          subtitle="Nieuws en video's van het team."
           cta="View Archive"
           icon={Radio}
           badge={updateBadge}

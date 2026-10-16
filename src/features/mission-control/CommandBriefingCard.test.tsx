@@ -54,7 +54,7 @@ describe('CommandBriefingCard', () => {
     expect(screen.getByText('#1').closest('[data-podium-state]')).toHaveAttribute('data-podium-state', 'gold');
     expect(screen.getAllByText('16.646,21').length).toBeGreaterThan(0);
     expect(screen.getByText(/\+3\.937,36 vs #2 maastricht/i)).toBeInTheDocument();
-    expect(screen.getByText(/fte position #9/i)).toBeInTheDocument();
+    expect(screen.getByText(/net fte #9/i)).toBeInTheDocument();
     expect(screen.getByText(/factor 1,3x/i)).toBeInTheDocument();
   });
 

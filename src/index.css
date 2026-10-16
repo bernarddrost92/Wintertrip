@@ -62,6 +62,22 @@
 }
 
 @layer components {
+  /* Work labels for forms and toggles — plain, readable Dutch at 13–14px.
+     Quiet Mode rule: decoration small, action and information large;
+     label-classified is only for decorative microcopy. */
+  .form-label {
+    @apply text-[13px] font-medium leading-snug text-ink-muted sm:text-sm;
+  }
+
+  /* A metric's name — real information, so readable (not 10px mono). */
+  .stat-label {
+    @apply text-[12px] font-medium leading-snug text-ink-muted sm:text-[13px];
+  }
+
+  .form-hint {
+    @apply text-[13px] leading-snug text-ink-muted;
+  }
+
   /* Uppercase, wide-tracked mono microcopy — the app's classified-briefing voice. */
   .label-classified {
     @apply font-mono text-[10px] uppercase leading-normal tracking-[0.2em] text-gold-bright/70;

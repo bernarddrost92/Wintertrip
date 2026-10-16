@@ -23,7 +23,7 @@ export function MeasurementDates({ today = isoDateToday() }: MeasurementDatesPro
           <CalendarClock size={12} aria-hidden /> Startmeting
         </p>
         <p className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-ink sm:text-3xl">{formatIsoDateNl(LEAGUE_PERIOD.start)}</p>
-        <p className="text-xs text-ink-muted">FTE van onze contractanten bij de start</p>
+        <p className="text-[13px] text-ink-muted">FTE van onze contractanten bij de start</p>
       </div>
       <div className="flex items-center justify-center text-gold" aria-hidden>
         <ArrowRight size={22} className="rotate-90 sm:rotate-0" />
@@ -33,7 +33,7 @@ export function MeasurementDates({ today = isoDateToday() }: MeasurementDatesPro
           <CalendarCheck size={12} aria-hidden /> Meetdatum
         </p>
         <p className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-gold sm:text-3xl">{formatIsoDateNl(LEAGUE_PERIOD.end)}</p>
-        <p className="text-xs text-ink">
+        <p className="text-[13px] text-ink">
           {daysLeft > 0 ? (
             <>
               Nog <span className="font-semibold text-gold">{daysLeft} dagen</span> — dit is de FTE die telt

@@ -39,8 +39,8 @@ describe('ScoreCheckPage — Calculator and League Check as one flow', () => {
 
   it('opens on step 1 (Calculator) with both steps visible', () => {
     renderScoreCheck();
-    expect(steps().getByRole('button', { name: /stap 1 · bereken score-impact/i })).toHaveAttribute('aria-current', 'step');
-    expect(steps().getByRole('button', { name: /stap 2 · bekijk league impact/i })).not.toHaveAttribute('aria-current');
+    expect(steps().getByRole('button', { name: /stap 1 · bereken score/i })).toHaveAttribute('aria-current', 'step');
+    expect(steps().getByRole('button', { name: /stap 2 · league-impact/i })).not.toHaveAttribute('aria-current');
     expect(screen.getByLabelText('VCDB per volledige maand')).toBeVisible();
   });
 

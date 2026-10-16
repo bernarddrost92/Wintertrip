@@ -25,7 +25,7 @@ export function GoldButton({
 }: GoldButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors duration-200 ease-out focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANT_CLASSES[variant]} ${className}`}
+      className={`inline-flex min-h-12 items-center justify-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-[0.08em] sm:text-[15px] transition-colors duration-200 ease-out focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANT_CLASSES[variant]} ${className}`}
       {...props}
     >
       {icon && iconPosition === 'left' && <span aria-hidden>{icon}</span>}

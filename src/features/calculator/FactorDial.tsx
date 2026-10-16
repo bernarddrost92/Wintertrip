@@ -21,7 +21,7 @@ export function FactorDial({ value, onChange }: FactorDialProps) {
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.value)}
-            className={`relative flex w-full items-center justify-between py-2 pl-8 pr-3.5 text-left transition-colors duration-150 ${
+            className={`relative flex min-h-11 w-full items-center justify-between py-2 pl-8 pr-3.5 text-left transition-colors duration-150 ${
               i > 0 ? 'border-t border-white/[0.07]' : ''
             } ${selected ? 'bg-gold/[0.09]' : 'hover:bg-white/[0.03]'}`}
           >
@@ -39,7 +39,7 @@ export function FactorDial({ value, onChange }: FactorDialProps) {
               className={`absolute inset-y-0 left-0 w-[3px] transition-colors duration-150 ${selected ? 'bg-gold shadow-gold' : 'bg-transparent'}`}
               aria-hidden
             />
-            <span className={`text-xs font-semibold uppercase tracking-wider ${selected ? 'text-gold' : 'text-ink-muted'}`}>
+            <span className={`text-sm font-semibold ${selected ? 'text-gold' : 'text-ink-muted'}`}>
               {option.position}
             </span>
             <span className={`font-display text-lg font-semibold tabular-nums ${selected ? 'text-gold' : 'text-ink'}`}>

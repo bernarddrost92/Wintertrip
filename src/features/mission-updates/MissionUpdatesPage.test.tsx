@@ -22,21 +22,18 @@ function renderPage() {
 }
 
 describe('MissionUpdatesPage — page header', () => {
-  it('shows the 007 mission-archive header', () => {
+  it('shows a plain header: the title and one short line', () => {
     renderPage();
-    expect(screen.getByText(/007 · mission archive/i)).toBeInTheDocument();
-    expect(screen.getByText('Mission Updates')).toBeInTheDocument();
-    expect(screen.getByText(/classified communications/i)).toBeInTheDocument();
-    expect(screen.getByText(/team zwolle/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mission Updates' })).toBeInTheDocument();
+    expect(screen.getByText('Nieuwste bovenaan.')).toBeInTheDocument();
   });
 });
 
 describe('MissionUpdatesPage — Latest Transmission uses the newest date', () => {
-  it("shows the catalog's newest update as Latest Transmission, regardless of array order", () => {
+  it("shows the catalog's newest update as the latest one, regardless of array order", () => {
     renderPage();
-    expect(screen.getByText(/latest transmission/i)).toBeInTheDocument();
+    expect(screen.getByText(/nieuwste · 06 okt 2026/i)).toBeInTheDocument();
     expect(screen.getByText('Locktober')).toBeInTheDocument();
-    expect(screen.getByText(/06 okt 2026/i)).toBeInTheDocument();
   });
 
   it('an image transmission shows a VIEW TRANSMISSION call to action', () => {

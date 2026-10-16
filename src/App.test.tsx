@@ -222,7 +222,7 @@ describe('App — /mission-updates direct route (via the 404.html redirect param
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByText(/007 · mission archive/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Mission Updates' })).toBeInTheDocument());
     expect(screen.queryByText('Missie #1')).not.toBeInTheDocument();
   });
 

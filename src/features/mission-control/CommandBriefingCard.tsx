@@ -7,10 +7,10 @@ import type { FteSnapshot, PowerBiIntelligenceSnapshot, RankingSnapshot } from '
 type MedalState = Exclude<PodiumState, 'awaiting'>;
 
 const STATE_LABEL: Record<MedalState, string> = {
-  gold: 'Gold Position',
-  silver: 'Silver Position',
-  bronze: 'Bronze Position',
-  default: 'In Pursuit',
+  gold: 'Goud',
+  silver: 'Zilver',
+  bronze: 'Brons',
+  default: 'Op jacht',
 };
 
 const CARD_CLASSES: Record<MedalState, string> = {
@@ -80,14 +80,14 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
 
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="label-classified">Virtual Position</p>
+          <p className="stat-label">Positie</p>
           <p className={`mt-1 font-display text-5xl font-black leading-none tabular-nums sm:text-6xl ${NUMBER_CLASSES[state]}`}>
             #{ranking.virtualPosition}
           </p>
           <p className="label-classified mt-1">{STATE_LABEL[state]}</p>
         </div>
         <div className="text-right">
-          <p className="label-classified">Power BI Final</p>
+          <p className="stat-label">Final Score</p>
           <p className="mt-1 font-display text-3xl font-bold tabular-nums text-ink sm:text-4xl">
             {powerBi.finalScore != null ? formatVcdbValue(powerBi.finalScore) : '—'}
           </p>
@@ -97,20 +97,24 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
       {(lead !== null || gapAbove !== null || fte.netFteRanking != null || fte.currentFteFactor != null) && (
         <div className="relative mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs">
           {lead !== null && second && (
-            <p className="font-semibold uppercase tracking-wide text-gold">
+            <p className="text-sm font-semibold text-gold">
               +{formatVcdbValue(lead)} vs #2 {second.team}
             </p>
           )}
           {gapAbove !== null && teamAbove && (
-            <p className="font-semibold uppercase tracking-wide text-gold">
+            <p className="text-sm font-semibold text-gold">
               −{formatVcdbValue(gapAbove)} vs #{teamAbove.position} {teamAbove.team}
             </p>
           )}
           {(fte.netFteRanking != null || fte.currentFteFactor != null) && (
-            <p className="label-classified">
-              {fte.netFteRanking != null && `FTE Position #${fte.netFteRanking}`}
-              {fte.netFteRanking != null && fte.currentFteFactor != null && ' · '}
-              {fte.currentFteFactor != null && `Factor ${formatFactor(fte.currentFteFactor)}`}
+            <p className="text-[13px] font-medium text-ink-muted">
+              {[
+                powerBi.vcdbRanking != null && `VCDB #${powerBi.vcdbRanking}`,
+                fte.netFteRanking != null && `Net FTE #${fte.netFteRanking}`,
+                fte.currentFteFactor != null && `Factor ${formatFactor(fte.currentFteFactor)}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           )}
         </div>
@@ -124,7 +128,7 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
             const deltaVsLeader = isLeader ? null : calculateScoreLead(leader?.finalScore ?? null, entry.finalScore);
             return (
               <li key={entry.position} className="flex items-center justify-between gap-3 py-1.5">
-                <span className={`text-xs font-semibold uppercase tracking-wide ${isOwn ? 'text-gold' : 'text-ink-muted'}`}>
+                <span className={`text-sm font-semibold ${isOwn ? 'text-gold' : 'text-ink-muted'}`}>
                   {entry.position} · {entry.team}
                 </span>
                 <span className="text-right">

@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react';
 import { FormField, TextInput } from '../../components/FormField';
 import { formatIsoDateNl } from '../../utils/dates';
 import { DealCategoryToggle } from './DealCategoryToggle';
@@ -14,20 +13,9 @@ interface MissionInputPanelProps {
 export function MissionInputPanel({ form, update, output }: MissionInputPanelProps) {
   return (
     <div className="panel flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
-        <h2 className="label-classified text-ink">Mission Input</h2>
-        <span
-          className={`font-mono text-[11px] font-semibold tracking-wider ${
-            output.isInputComplete ? 'text-gold' : 'text-ink-muted'
-          }`}
-        >
-          {output.completeCount} / {output.totalCount} COMPLETE
-        </span>
-      </header>
-
-      <div className="flex-1 space-y-4 px-4 py-4">
+      <div className="flex-1 space-y-5 px-4 py-5 sm:px-5">
         <div>
-          <p className="label-classified mb-1.5">Deal Category</p>
+          <p className="form-label mb-1.5">Soort deal</p>
           <DealCategoryToggle value={form.dealCategory} onChange={(c) => update('dealCategory', c)} />
         </div>
 
@@ -61,22 +49,16 @@ export function MissionInputPanel({ form, update, output }: MissionInputPanelPro
             </FormField>
 
             {output.extensionTiming && (
-              <div className={`border px-3.5 py-3 ${output.extensionTiming.qualifies ? 'border-gold/35 bg-gold/[0.06]' : 'border-gold/60 bg-gold/10'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="label-classified text-gold/80">New Term Start</span>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
-                      output.extensionTiming.qualifies ? 'bg-gold/15 text-gold' : 'bg-gold/25 text-gold'
-                    }`}
-                  >
-                    {output.extensionTiming.qualifies ? 'Qualifies' : 'Too Late'}
+              <div className={`border px-3.5 py-3 ${output.extensionTiming.qualifies ? 'border-gold/35 bg-gold/[0.06]' : 'border-gold/60 bg-gold/10'}`} role="status">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[13px] text-ink-muted">Nieuwe termijn start</span>
+                  <span className="bg-gold/15 px-2 py-0.5 text-[13px] font-semibold text-gold">
+                    {output.extensionTiming.qualifies ? 'Telt mee' : 'Te laat'}
                   </span>
                 </div>
-                <p className="mt-1.5 font-display text-xl font-bold tabular-nums text-ink">{formatIsoDateNl(output.extensionTiming.newTermStart)}</p>
-                <p className="mt-1 text-[11px] text-ink-muted">
-                  {output.extensionTiming.qualifies
-                    ? 'Qualified before measurement date — volledige nieuwe termijn telt mee.'
-                    : 'Nieuwe termijn start na 31 januari — verlenging telt niet mee.'}
+                <p className="mt-1 font-display text-xl font-bold tabular-nums text-ink">{formatIsoDateNl(output.extensionTiming.newTermStart)}</p>
+                <p className="mt-1 text-[13px] leading-snug text-ink-muted">
+                  {output.extensionTiming.qualifies ? 'Vóór 31 januari — de hele nieuwe termijn telt mee.' : 'Start na 31 januari — deze verlenging telt niet mee.'}
                 </p>
               </div>
             )}
@@ -157,26 +139,11 @@ export function MissionInputPanel({ form, update, output }: MissionInputPanelPro
         )}
 
         <div>
-          <p className="label-classified mb-1.5">Factor</p>
+          <p className="form-label mb-1.5">Factor</p>
           <FactorDial value={form.factor} onChange={(f) => update('factor', f)} />
         </div>
       </div>
 
-      <ul className="border-t border-white/[0.07] px-4 py-3">
-        {output.completion.map((item) => (
-          <li key={item.key} className="flex items-center gap-2 py-0.5 text-xs">
-            <span
-              className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center ${
-                item.done ? 'text-gold' : 'text-ink-dim'
-              }`}
-              aria-hidden
-            >
-              {item.done ? <Check size={12} strokeWidth={3} /> : <span className="font-mono">!</span>}
-            </span>
-            <span className={item.done ? 'text-ink' : 'text-ink-muted'}>{item.label}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

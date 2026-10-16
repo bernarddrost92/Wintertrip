@@ -3,7 +3,6 @@ import { GoldButton } from '../../components/GoldButton';
 import { useCountUp } from '../../hooks/useCountUp';
 import { useFactorPulse } from '../../hooks/useFactorPulse';
 import { formatScore, formatSignedScore } from '../../utils/format';
-import { LeagueCheckIntelligenceStrip } from '../league-check/LeagueCheckIntelligenceStrip';
 import { FactorIntelligence } from './FactorIntelligence';
 import { ShowCalculationPanel } from './ShowCalculationPanel';
 import type { CalculatorOutput } from './useMissionControlCalculator';
@@ -20,10 +19,9 @@ export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePane
 
   if (!isInputComplete) {
     return (
-      <div className="panel relative flex h-full min-h-[420px] flex-col items-center justify-center overflow-hidden text-center">
-        <p className="label-classified relative text-ink-dim">Mission Value</p>
-        <p className="relative mt-4 font-display text-3xl font-semibold uppercase tracking-wide text-ink-dim">Awaiting Input</p>
-        <p className="relative mt-2 max-w-xs text-xs text-ink-muted">Vul de missiegegevens links in om de score live te berekenen.</p>
+      // Calm, not a big empty result panel: one line until there is a score.
+      <div className="flex h-full min-h-[120px] items-center justify-center border border-dashed border-white/10 px-6 py-8 text-center lg:min-h-[320px]">
+        <p className="max-w-xs text-[15px] text-ink-muted">Vul de gegevens in. Je score verschijnt hier.</p>
       </div>
     );
   }
@@ -32,9 +30,8 @@ export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePane
     return (
       <div className="panel relative flex h-full min-h-[420px] flex-col items-center justify-center overflow-hidden text-center">
         <AlertTriangle className="relative text-gold" size={28} aria-hidden />
-        <p className="label-classified relative mt-4 text-gold">Mission Status</p>
-        <p className="relative mt-2 font-display text-4xl font-bold uppercase text-gold">Not League Eligible</p>
-        <p className="relative mt-3 max-w-xs text-xs text-ink-muted">{notEligible.message}</p>
+        <p className="relative mt-3 font-display text-3xl font-bold uppercase text-gold">Telt niet mee</p>
+        <p className="relative mt-2 max-w-xs text-[15px] text-ink-muted">{notEligible.message}</p>
       </div>
     );
   }
@@ -43,7 +40,7 @@ export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePane
     return (
       <div className="panel relative flex h-full min-h-[420px] flex-col items-center justify-center overflow-hidden text-center">
         <AlertTriangle className="relative text-gold" size={28} aria-hidden />
-        <p className="relative mt-4 font-display text-3xl font-bold uppercase tracking-wide text-gold">{errorMessage ?? 'Invalid Mission Window'}</p>
+        <p className="relative mt-4 max-w-sm text-lg font-semibold text-gold">{errorMessage ?? 'Controleer de datums.'}</p>
       </div>
     );
   }
@@ -59,44 +56,43 @@ export function MissionValuePanel({ output, onRunLeagueCheck }: MissionValuePane
           aria-hidden
         />
         <div className="pointer-events-none absolute inset-0 bg-panel-glow" aria-hidden />
-        <p className="label-classified relative text-gold/80">Mission Value</p>
+        <p className="relative text-sm font-semibold text-gold/90">Jouw score</p>
         <p className="relative mt-3 break-all font-display text-[56px] font-bold leading-none tabular-nums text-gold-gradient drop-shadow-[0_0_22px_rgba(214,174,85,0.14)] sm:text-[88px] lg:text-[112px]">
           {formatScore(animatedValue)}
         </p>
-        <p className="relative mt-3 text-xs font-semibold uppercase tracking-[0.35em] text-ink-muted">Points</p>
-      </div>
-
-      <LeagueCheckIntelligenceStrip />
-
-      <div className="grid grid-cols-3 divide-x divide-white/[0.07] border-b border-white/[0.07]">
-        <div className="px-4 py-4 text-center">
-          <p className="label-classified">Base Score</p>
-          <p className="mt-1.5 font-display text-2xl font-semibold tabular-nums text-ink">{formatScore(result.baseScore)}</p>
-        </div>
-        <div className="px-4 py-4 text-center">
-          <p className="label-classified">Factor</p>
-          <p className="mt-1.5 font-display text-2xl font-semibold tabular-nums text-ink">{result.factor.toLocaleString('nl-NL')}x</p>
-        </div>
-        <div className="px-4 py-4 text-center">
-          <p className="label-classified">Factor Bonus</p>
-          <p className="mt-1.5 font-display text-2xl font-semibold tabular-nums text-gold">{formatSignedScore(result.factorImpact)}</p>
-        </div>
-      </div>
-
-      <FactorIntelligence baseScore={result.baseScore} selectedFactor={result.factor} />
-      <ShowCalculationPanel result={result} />
-
-      {/* The natural next step once a Mission Value exists — continues the
-          same mission into League Check rather than leaving the calculator
-          as a dead end. Fills the remaining flex space so the panel never
-          trails off into a flat void when its neighbours run taller. */}
-      <div className="relative flex flex-1 flex-col items-center justify-center gap-3 border-t border-white/[0.07] px-6 py-8 text-center">
-        <p className="label-classified relative text-ink-muted">Stap 2 · League impact</p>
-        <GoldButton className="relative" onClick={onRunLeagueCheck} icon={<ShieldCheck size={16} />}>
+        <p className="relative mt-2 text-sm text-ink-muted">punten</p>
+        {/* The next step sits right under the score — the one gold action. */}
+        <GoldButton className="relative mt-7" onClick={onRunLeagueCheck} icon={<ShieldCheck size={16} />}>
           Door naar League Check
           <ArrowRight size={15} aria-hidden />
         </GoldButton>
       </div>
+
+      <dl className="grid grid-cols-3 divide-x divide-white/[0.07] border-b border-white/[0.07]">
+        <div className="px-3 py-4 text-center">
+          <dt className="text-[13px] text-ink-muted">Basis</dt>
+          <dd className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">{formatScore(result.baseScore)}</dd>
+        </div>
+        <div className="px-3 py-4 text-center">
+          <dt className="text-[13px] text-ink-muted">Factor</dt>
+          <dd className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">{result.factor.toLocaleString('nl-NL')}x</dd>
+        </div>
+        <div className="px-3 py-4 text-center">
+          <dt className="text-[13px] text-ink-muted">Factorbonus</dt>
+          <dd className="mt-1 font-display text-2xl font-semibold tabular-nums text-gold">{formatSignedScore(result.factorImpact)}</dd>
+        </div>
+      </dl>
+
+      {/* Extra context only on request. */}
+      <details className="group border-b border-white/[0.07]">
+        <summary className="flex min-h-12 cursor-pointer select-none items-center px-4 text-sm font-medium text-ink-muted hover:text-ink group-open:text-ink">
+          Wat als de factor anders is?
+        </summary>
+        <div className="pb-2">
+          <FactorIntelligence baseScore={result.baseScore} selectedFactor={result.factor} />
+        </div>
+      </details>
+      <ShowCalculationPanel result={result} />
     </div>
   );
 }

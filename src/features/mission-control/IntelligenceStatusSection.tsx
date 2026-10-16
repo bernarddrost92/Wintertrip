@@ -13,15 +13,9 @@ interface IntelligenceStatusSectionProps {
  */
 export function IntelligenceStatusSection({ powerBiUpdatedAt }: IntelligenceStatusSectionProps) {
   return (
-    <div className="panel p-5 sm:p-7">
-      <p className="label-classified text-gold/70">Intelligence Status</p>
-      <div className="mt-3 border border-white/10 bg-white/5">
-        <div className="bg-mission-panel px-4 py-3">
-          <p className="label-classified">Power BI Intelligence</p>
-          <p className="mt-1 text-sm font-semibold text-ink">{powerBiUpdatedAt ? formatPowerBiTime(powerBiUpdatedAt) : 'Awaiting Update'}</p>
-          {powerBiUpdatedAt && <p className="mt-1 text-[11px] text-ink-muted">Manual Snapshot</p>}
-        </div>
-      </div>
-    </div>
+    <p className="px-1 text-[13px] text-ink-muted">
+      Power BI: <span className="font-semibold text-ink">{powerBiUpdatedAt ? formatPowerBiTime(powerBiUpdatedAt) : 'Awaiting Update'}</span>
+      {powerBiUpdatedAt && <span> · Manual Snapshot</span>}
+    </p>
   );
 }

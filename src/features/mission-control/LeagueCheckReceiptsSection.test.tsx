@@ -46,7 +46,7 @@ describe('LeagueCheckReceiptsSection', () => {
     fetchLeagueCheckReceiptStats.mockResolvedValue(null);
     render(<LeagueCheckReceiptsSection />);
 
-    expect(await screen.findByText(/receipt totals unavailable/i)).toBeInTheDocument();
+    expect(await screen.findByText(/totalen zijn nu niet bereikbaar/i)).toBeInTheDocument();
     expect(screen.queryByText('+0,00')).not.toBeInTheDocument();
   });
 

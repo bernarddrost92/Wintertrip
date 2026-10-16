@@ -33,44 +33,39 @@ export function LeagueCheckReceiptsSection() {
 
   return (
     <div className="panel p-5 sm:p-7">
-      <SectionHeader eyebrow="League Check Intelligence" title="Mission Receipts" />
+      <SectionHeader title="Mission Receipts" />
 
       {status === 'unavailable' ? (
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-dim">Receipt totals unavailable right now</p>
+        <p className="mt-4 text-sm text-ink-muted">De totalen zijn nu niet bereikbaar.</p>
       ) : (
         <div className="mt-4 grid grid-cols-1 gap-px border border-white/10 bg-white/5 sm:grid-cols-3">
           <div className="bg-mission-panel px-4 py-3">
-            <p className="label-classified text-gold/70">Bonnetjes</p>
-            <p className="text-[11px] text-ink-muted">Gegenereerde receipts</p>
+            <p className="stat-label">Bonnetjes</p>
             <p className="mt-1 font-display text-2xl font-bold tabular-nums text-gold sm:text-3xl">{stats ? stats.totalReceipts : '—'}</p>
             {stats && (
-              <p className="mt-1 text-[11px] text-ink-muted">
+              <p className="mt-1 text-[13px] text-ink-muted">
                 {stats.approvedCount} Approved · {stats.openCount} Open
               </p>
             )}
           </div>
           <div className="bg-mission-panel px-4 py-3">
-            <p className="label-classified text-gold/70">Gevonden Winst</p>
-            <p className="text-[11px] text-ink-muted">Totaal over alle receipts</p>
+            <p className="stat-label">Gevonden winst</p>
             <p className="mt-1 font-display text-2xl font-bold tabular-nums text-gold sm:text-3xl">
               {stats ? formatFoundPoints(stats.totalFoundPoints) : '—'}
             </p>
-            <p className="label-classified mt-1">League Points</p>
+            <p className="mt-1 text-[13px] text-ink-muted">league-punten, alle bonnetjes</p>
           </div>
           <div className="bg-mission-panel px-4 py-3">
-            <p className="label-classified text-gold/70">Mission Value</p>
-            <p className="text-[11px] text-ink-muted">Totaal over alle receipts</p>
+            <p className="stat-label">Mission Value</p>
             <p className="mt-1 font-display text-2xl font-bold tabular-nums text-ink sm:text-3xl">
               {stats ? formatVcdbValue(stats.totalMissionValue) : '—'}
             </p>
-            <p className="label-classified mt-1">League Points</p>
+            <p className="mt-1 text-[13px] text-ink-muted">league-punten, alle bonnetjes</p>
           </div>
         </div>
       )}
 
-      <p className="mt-3 text-[11px] text-ink-muted">
-        Punten tellen mee vanaf 2 okt 2026. Oudere receipts en losse League Checks zonder Calculator tellen mee als receipt, met 0 punten.
-      </p>
+      <p className="mt-3 text-[13px] text-ink-dim">Punten tellen vanaf 2 okt 2026; oudere receipts tellen mee zonder punten.</p>
     </div>
   );
 }

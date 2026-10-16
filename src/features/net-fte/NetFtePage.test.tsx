@@ -67,7 +67,6 @@ describe('NetFtePage', () => {
     expect(within(overview).getByText('1,3x')).toBeInTheDocument();
     expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Net FTE = BPT + VD')).toBeInTheDocument();
     expect(screen.getByText('PO telt niet mee.')).toBeInTheDocument();
-    expect(screen.getByText(/meetperiode: 1 sep → 31 jan/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /pak fte-bon/i })).toHaveAttribute('href', '#fte-bon-calculator');
     expect(screen.getByText('Meetdatum')).toBeInTheDocument();
     for (const focus of ['Verlengen', 'PO → contract', 'Nieuwe contractant', 'Uren ophogen']) {
@@ -115,9 +114,9 @@ describe('NetFtePage', () => {
     expect(createFteBon).toHaveBeenCalledWith(expect.objectContaining({ label: 'PvH', type: 'PO_NAAR_CONTRACT', fteDelta: 1.4, owner: 'RP' }));
     const list = screen.getByRole('region', { name: /open fte-bonnen/i });
     await waitFor(() => expect(within(list).getByText('PvH')).toBeInTheDocument());
-    expect(within(list).getByText('Projectie', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('-6,38');
-    expect(within(list).getByText('Verwachte rank', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('#9');
-    expect(within(list).getByText('Nog nodig volgende plek', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('+1,49');
+    expect(within(list).getByText('Projectie', { selector: 'p.stat-label' }).parentElement).toHaveTextContent('-6,38');
+    expect(within(list).getByText('Verwachte rank', { selector: 'p.stat-label' }).parentElement).toHaveTextContent('#9');
+    expect(within(list).getByText('Nog nodig volgende plek', { selector: 'p.stat-label' }).parentElement).toHaveTextContent('+1,49');
     expect(screen.getByLabelText('Groei in FTE')).toHaveValue('');
   });
 
@@ -155,13 +154,13 @@ describe('NetFtePage', () => {
     render(<NetFtePage />);
 
     const list = screen.getByRole('region', { name: /open fte-bonnen/i });
-    await waitFor(() => expect(within(list).getByText('Open FTE-bonnen', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('+1,40'));
-    expect(within(list).getByText('Projectie', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('-6,38');
+    await waitFor(() => expect(within(list).getByText('Open FTE-bonnen', { selector: 'p.stat-label' }).parentElement).toHaveTextContent('+1,40'));
+    expect(within(list).getByText('Projectie', { selector: 'p.stat-label' }).parentElement).toHaveTextContent('-6,38');
 
     await user.click(within(list).getAllByRole('button', { name: /gerealiseerd/i })[0]);
 
     expect(updateFteBonStatus).toHaveBeenCalledWith('a', 'gerealiseerd');
-    await waitFor(() => expect(within(list).getByText('Open FTE-bonnen', { selector: 'p.label-classified' }).parentElement).toHaveTextContent('+0,60'));
+    await waitFor(() => expect(within(list).getByText('Open FTE-bonnen', { selector: 'p.stat-label' }).parentElement).toHaveTextContent('+0,60'));
   });
 
   it('bonnen unreachable: the calculator still works, saving is disabled with a note', async () => {

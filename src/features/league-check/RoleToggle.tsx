@@ -10,7 +10,7 @@ interface RoleToggleProps {
 /** Two compact buttons, not a dropdown — the Agent's role is picked in one tap. */
 export function RoleToggle({ value, onChange }: RoleToggleProps) {
   return (
-    <div role="radiogroup" aria-label="Role" className="grid grid-cols-2 border border-white/10 bg-mission-panel">
+    <div role="radiogroup" aria-label="Rol" className="grid grid-cols-2 border border-white/10 bg-mission-panel">
       {ROLE_OPTIONS.map((role, i) => {
         const selected = value === role;
         return (
@@ -20,7 +20,7 @@ export function RoleToggle({ value, onChange }: RoleToggleProps) {
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(role)}
-            className={`py-2.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors duration-150 ${
+            className={`min-h-[46px] py-2.5 text-sm font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
               i > 0 ? 'border-l border-white/[0.07]' : ''
             } ${selected ? 'bg-gold text-mission-void' : 'text-ink-muted hover:bg-white/[0.03] hover:text-ink'}`}
           >

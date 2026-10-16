@@ -26,7 +26,7 @@ export function FactorLadder({ standings, baseFte }: FactorLadderProps) {
         <h2 id="fte-ladder" className="font-display text-2xl font-black uppercase tracking-tight text-ink">
           FTE-ladder
         </h2>
-        <p className="text-xs text-ink-muted">
+        <p className="text-[13px] text-ink-muted">
           Vanaf {baseFte !== 0 ? `projectie incl. open bonnen (${formatVcdbValue(base.own.netFte)})` : `de officiële stand (${formatVcdbValue(base.own.netFte)})`} · nu{' '}
           {formatFactor(base.own.factor)}
         </p>
