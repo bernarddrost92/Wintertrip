@@ -10,8 +10,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.ranking.snapshotUpdatedAt).toBe(MANUAL_POWER_BI_SNAPSHOT.updatedAt);
   });
 
-  it('Net FTE: -7.78, ranking #10, current factor 1.3', () => {
-    expect(result.fte.currentNetFte).toBe(-7.78);
+  it('Net FTE: -7.98, ranking #10, current factor 1.3', () => {
+    expect(result.fte.currentNetFte).toBe(-7.98);
     expect(result.fte.netFteRanking).toBe(10);
     expect(result.fte.currentFteFactor).toBe(1.3);
   });
@@ -26,27 +26,27 @@ describe('getMissionSnapshot — derives everything from the official standings 
 
   it('FTE milestones are the next factor tiers, with the FTE needed to pass each', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 5, team: 'Eindhoven', gapFte: 5.14 },
-      { position: 4, team: 'Groningen', gapFte: 7.79 },
-      { position: 3, team: 'Middelburg', gapFte: 9.79 },
+      { position: 5, team: 'Eindhoven', gapFte: 6.24 },
+      { position: 4, team: 'Groningen', gapFte: 7.99 },
+      { position: 3, team: 'Middelburg', gapFte: 9.99 },
       { position: 2, team: 'Breda', gapFte: 10.84 },
-      { position: 1, team: 'Maastricht', gapFte: 12.74 },
+      { position: 1, team: 'Maastricht', gapFte: 12.94 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
-    expect(result.powerBi.vcdbScore).toBe(22922.55);
+    expect(result.powerBi.vcdbScore).toBe(23047.31);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(29799.31);
-    expect(result.powerBi.placementsInScope).toBe(134);
+    expect(result.powerBi.finalScore).toBe(29961.51);
+    expect(result.powerBi.placementsInScope).toBe(135);
     expect(result.powerBi.placementsExtraHoursRule).toBe(6);
   });
 
   it('Top 3 is the first three rows of the Final Ranking', () => {
     expect(result.powerBi.topThree).toEqual([
-      { position: 1, team: 'Maastricht', finalScore: 41252.84 },
-      { position: 2, team: 'Zwolle', finalScore: 29799.31 },
-      { position: 3, team: 'Arnhem', finalScore: 21125.7 },
+      { position: 1, team: 'Maastricht', finalScore: 41227.2 },
+      { position: 2, team: 'Zwolle', finalScore: 29961.51 },
+      { position: 3, team: 'Arnhem', finalScore: 21313.13 },
     ]);
   });
 
@@ -56,7 +56,7 @@ describe('getMissionSnapshot — derives everything from the official standings 
   });
 
   it('snapshot timestamp (date-only — no refresh line in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-15');
-    expect(result.powerBi.updatedAt).toBe('2026-10-15');
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-16');
+    expect(result.powerBi.updatedAt).toBe('2026-10-16');
   });
 });
