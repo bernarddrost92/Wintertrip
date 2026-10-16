@@ -209,6 +209,12 @@ export default {
           '100%': { opacity: '0', transform: 'scale(0.96)' },
         },
         /* War Room one-liners flying toward the viewer. */
+        /* Mission Ribbon live-intel ticker: the track holds two identical
+           halves, so shifting by exactly -50% loops without a visible reset. */
+        'intel-ticker': {
+          '0%': { transform: 'translate3d(0, 0, 0)' },
+          '100%': { transform: 'translate3d(-50%, 0, 0)' },
+        },
         'war-fly': {
           '0%': { opacity: '0', transform: 'translate3d(-50%, -50%, 0) scale(0.35)' },
           '18%': { opacity: '0.95' },
@@ -237,6 +243,7 @@ export default {
         'hunt-ping': 'hunt-ping 2.2s ease-out infinite',
         'hunt-rise': 'hunt-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both',
         'activation-stamp': 'activation-stamp 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        'intel-ticker': 'intel-ticker 70s linear infinite',
         'war-fly': 'war-fly 6.4s cubic-bezier(0.4, 0, 0.9, 0.6) infinite both',
       },
     },
