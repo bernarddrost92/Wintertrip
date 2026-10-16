@@ -17,11 +17,11 @@ const CARD_CLASSES: Record<MedalState, string> = {
   gold: 'border-gold/50 shadow-podium-gold',
   silver: 'border-silver/40 shadow-podium-silver',
   bronze: 'border-bronze/40 shadow-podium-bronze',
-  default: 'border-gold/15',
+  default: 'border-white/[0.07]',
 };
 
 const NUMBER_CLASSES: Record<MedalState, string> = {
-  gold: 'text-gold drop-shadow-[0_0_20px_rgba(241,196,83,0.5)]',
+  gold: 'text-gold-bright',
   silver: 'text-silver',
   bronze: 'text-bronze',
   default: 'text-ink',
@@ -55,47 +55,40 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
 
   if (state === 'awaiting') {
     return (
-      <div className="panel p-4 sm:p-5" data-podium-state="awaiting">
-        <p className="label-classified text-gold/70">Command Briefing</p>
+      <div className="panel p-5 sm:p-7" data-podium-state="awaiting">
+        <p className="label-classified">Command Briefing</p>
         <p className="mt-2 font-display text-lg font-semibold uppercase tracking-wide text-ink-muted">Awaiting Intelligence</p>
       </div>
     );
   }
 
   return (
-    <div className={`panel relative overflow-hidden p-4 sm:p-5 ${CARD_CLASSES[state]}`} data-podium-state={state}>
-      {state === 'gold' && (
-        <>
-          <div className="pointer-events-none absolute inset-0 bg-panel-glow animate-podium-pulse-gold" aria-hidden />
-          <div className="podium-flare" aria-hidden />
-        </>
-      )}
-      {state === 'silver' && (
+    <div className={`panel mission-accent-line relative overflow-hidden p-5 sm:p-7 ${CARD_CLASSES[state]}`} data-podium-state={state}>
+      {/* One static wash per podium state — no pulse, flare or shimmer
+          loops on a screen people look at every day. */}
+      {state !== 'default' && (
         <div
-          className="pointer-events-none absolute inset-0 animate-podium-shimmer-silver"
-          style={{ background: 'radial-gradient(120% 80% at 20% 0%, rgba(232,236,240,0.12), transparent 60%)' }}
-          aria-hidden
-        />
-      )}
-      {state === 'bronze' && (
-        <div
-          className="pointer-events-none absolute inset-0 animate-podium-pulse-bronze"
-          style={{ background: 'radial-gradient(120% 80% at 20% 0%, rgba(205,127,50,0.1), transparent 60%)' }}
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(120% 80% at 15% 0%, ${
+              state === 'gold' ? 'rgba(214,174,85,0.1)' : state === 'silver' ? 'rgba(232,236,240,0.07)' : 'rgba(205,127,50,0.07)'
+            }, transparent 60%)`,
+          }}
           aria-hidden
         />
       )}
 
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="label-classified text-gold/70">Virtual Position</p>
-          <p className={`mt-1 font-display text-4xl font-black leading-none tabular-nums sm:text-5xl ${NUMBER_CLASSES[state]}`}>
+          <p className="label-classified">Virtual Position</p>
+          <p className={`mt-1 font-display text-5xl font-black leading-none tabular-nums sm:text-6xl ${NUMBER_CLASSES[state]}`}>
             #{ranking.virtualPosition}
           </p>
           <p className="label-classified mt-1">{STATE_LABEL[state]}</p>
         </div>
         <div className="text-right">
-          <p className="label-classified text-gold/70">Power BI Final</p>
-          <p className="mt-1 font-display text-2xl font-bold tabular-nums text-ink sm:text-3xl">
+          <p className="label-classified">Power BI Final</p>
+          <p className="mt-1 font-display text-3xl font-bold tabular-nums text-ink sm:text-4xl">
             {powerBi.finalScore != null ? formatVcdbValue(powerBi.finalScore) : '—'}
           </p>
         </div>

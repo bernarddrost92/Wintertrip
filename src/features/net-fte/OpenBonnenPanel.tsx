@@ -101,7 +101,7 @@ export function OpenBonnenPanel({ status, bonnen, openFte, projection, onRealize
   const official = projection.own.official;
 
   return (
-    <section className="panel p-4 sm:p-6" aria-labelledby="open-fte-bonnen">
+    <section className="panel p-5 sm:p-7" aria-labelledby="open-fte-bonnen">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ListChecks size={18} className="text-gold" aria-hidden />

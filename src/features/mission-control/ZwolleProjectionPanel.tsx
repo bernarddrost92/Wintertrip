@@ -56,7 +56,7 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
   const fteTarget = nextNetFteTarget(projection);
 
   return (
-    <section className="panel p-4 sm:p-5" aria-labelledby="zwolle-projection">
+    <section className="panel p-5 sm:p-7" aria-labelledby="zwolle-projection">
       <p className="label-classified">Zwolle · officieel vs projectie</p>
       <h2 id="zwolle-projection" className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-ink">
         Waar komen we uit?

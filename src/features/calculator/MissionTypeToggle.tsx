@@ -14,7 +14,7 @@ interface MissionTypeToggleProps {
 
 export function MissionTypeToggle({ value, onChange }: MissionTypeToggleProps) {
   return (
-    <div role="radiogroup" aria-label="Mission type" className="grid grid-cols-1 border border-gold/20 bg-mission-panel sm:grid-cols-3">
+    <div role="radiogroup" aria-label="Mission type" className="grid grid-cols-1 border border-white/10 bg-mission-panel sm:grid-cols-3">
       {OPTIONS.map(({ type, label, icon: Icon }, i) => {
         const selected = value === type;
         return (
@@ -25,7 +25,7 @@ export function MissionTypeToggle({ value, onChange }: MissionTypeToggleProps) {
             aria-checked={selected}
             onClick={() => onChange(type)}
             className={`flex items-center justify-center gap-2 py-3 text-xs font-semibold uppercase tracking-[0.14em] transition-colors duration-200 sm:py-3.5 sm:text-sm ${
-              i > 0 ? 'border-t border-gold/15 sm:border-l sm:border-t-0' : ''
+              i > 0 ? 'border-t border-white/[0.07] sm:border-l sm:border-t-0' : ''
             } ${selected ? 'bg-gold text-mission-void' : 'text-ink-muted hover:bg-white/[0.03] hover:text-ink'}`}
           >
             <Icon size={16} aria-hidden />

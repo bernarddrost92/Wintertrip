@@ -24,7 +24,7 @@ export function MonthlyIntelligence({ result }: MonthlyIntelligenceProps) {
 
   return (
     <div className="panel">
-      <header className="flex items-center justify-between border-b border-gold/15 px-4 py-3">
+      <header className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
         <h2 className="label-classified text-ink">Monthly Intelligence — Qualifying Term</h2>
         {segments.length > 0 && (
           <span className="font-mono text-[10px] uppercase tracking-wider text-ink-muted">
@@ -41,25 +41,25 @@ export function MonthlyIntelligence({ result }: MonthlyIntelligenceProps) {
               qualifying-term month — lit gold for an ACTIVE LEAGUE MONTH
               (inside 01-09-2026 t/m 31-01-2027), dim for a month the term
               touches but that falls outside the league window. */}
-          <div className="hidden items-center border-b border-gold/10 px-8 py-3 sm:flex">
+          <div className="hidden items-center border-b border-white/[0.07] px-8 py-3 sm:flex">
             {segments.map((s, i) => {
               const active = LEAGUE_MONTH_KEYS.has(s.monthKey);
               const prevActive = i > 0 && LEAGUE_MONTH_KEYS.has(segments[i - 1].monthKey);
               return (
                 <Fragment key={s.monthKey}>
                   {i > 0 && <div className={`h-px flex-1 ${active && prevActive ? 'bg-gold/60' : 'bg-white/10'}`} />}
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${active ? 'bg-gold shadow-gold' : 'bg-white/15'}`} aria-hidden />
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${active ? 'bg-gold' : 'bg-white/15'}`} aria-hidden />
                 </Fragment>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-2 divide-gold/10 sm:grid-cols-3 sm:divide-x md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 divide-white/[0.07] sm:grid-cols-3 sm:divide-x md:grid-cols-4 lg:grid-cols-5">
             {segments.map((s) => {
               const active = LEAGUE_MONTH_KEYS.has(s.monthKey);
               const dayStatus = s.fraction >= 1 ? 'FULL' : s.fraction > 0 ? 'PARTIAL' : '—';
               return (
-                <div key={s.monthKey} className="border-b border-gold/10 px-4 py-4 sm:border-b-0">
+                <div key={s.monthKey} className="border-b border-white/[0.07] px-4 py-4 sm:border-b-0">
                   <div className="flex items-baseline justify-between">
                     <span className={`font-display text-lg font-bold tracking-wide ${active ? 'text-ink' : 'text-ink-dim'}`}>{s.label}</span>
                     <span className={`font-mono text-[9px] uppercase tracking-wider ${active ? 'text-gold' : 'text-ink-dim'}`}>

@@ -63,7 +63,7 @@ export function MissionUpdatePlayer({ update, transmissionLabel, onClose }: Miss
       className="fixed inset-0 z-50 flex flex-col bg-mission-void/97 backdrop-blur-md animate-[intro-quickfade_0.15s_ease-out_both]"
       onClick={handleBackdropClick}
     >
-      <div className="flex items-start justify-between gap-4 border-b border-gold/15 px-4 py-3 sm:px-6">
+      <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-4 py-3 sm:px-6">
         <div className="min-w-0">
           <p className="label-classified text-gold/70">
             Mission Update <span className="text-ink-muted">· {formatIsoDateReceipt(update.date)}</span>

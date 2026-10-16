@@ -50,13 +50,13 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
           League Check Intelligence strip in the Calculator, which only
           updates once a receipt is generated. */}
       <div className="mt-3 flex justify-center">
-        <span className="border border-gold/15 bg-mission-panel px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+        <span className="border border-white/[0.07] bg-mission-panel px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
           Current Mission <span className="text-gold">·</span> <span className="tabular-nums text-ink">{checkedCount}/{total}</span> Checks
         </span>
       </div>
 
       {beforeCheck && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 border border-gold/15 bg-mission-panel px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-ink-muted">
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 border border-white/[0.07] bg-mission-panel px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-ink-muted">
           <span className="text-gold/80">Vanuit Calculator</span>
           <span>{MISSION_TYPE_LABEL_NL[beforeCheck.form.missionType]}</span>
           <span>Base <span className="text-ink">{beforeCheck.result.baseScore.toLocaleString('nl-NL', { maximumFractionDigits: 2 })}</span></span>
@@ -111,13 +111,13 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
         </div>
 
         {/* Compact progress rail — one waypoint per check, lit as each clears. */}
-        <div className="mb-6 flex items-center border border-gold/10 bg-mission-panel px-4 py-2.5">
+        <div className="mb-6 flex items-center border border-white/[0.07] bg-mission-panel px-4 py-2.5">
           {LEAGUE_CHECK_ITEMS.map((item, i) => {
             const done = Boolean(state.checkedItems[item.id]);
             return (
               <Fragment key={item.id}>
                 {i > 0 && <div className={`h-px flex-1 ${done && state.checkedItems[LEAGUE_CHECK_ITEMS[i - 1].id] ? 'bg-gold/60' : 'bg-white/10'}`} />}
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${done ? 'bg-gold shadow-gold' : 'bg-white/15'}`} aria-hidden />
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${done ? 'bg-gold' : 'bg-white/15'}`} aria-hidden />
               </Fragment>
             );
           })}
@@ -147,8 +147,8 @@ export function LeagueCheckPage({ onNewMission }: LeagueCheckPageProps = {}) {
       >
         {missionApproved ? (
           <>
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gold-sweep bg-[length:200%_auto] animate-gold-sweep-move" aria-hidden />
-            <Sparkles className="animate-pulse-glow text-gold" size={28} aria-hidden />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gold/70" aria-hidden />
+            <Sparkles className="text-gold" size={28} aria-hidden />
             <p className="font-display text-2xl font-bold uppercase tracking-[0.08em] text-gold">Mission Approved</p>
             <div className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.22em] text-gold/80">
               <span>2 Paar Ogen</span>

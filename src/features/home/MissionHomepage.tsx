@@ -1,4 +1,5 @@
 import { Calculator, LayoutDashboard, Radio, TrendingUp } from 'lucide-react';
+import { softAssetUrl } from '../../components/softAssets';
 import { missionUpdates } from '../../data/missionUpdates';
 import type { AppView } from '../../types/navigation';
 import { MissionChoiceCard } from './MissionChoiceCard';
@@ -18,32 +19,36 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
   const updateBadge = updateCount > 0 ? `${updateCount} UPDATE${updateCount === 1 ? '' : 'S'}` : undefined;
 
   return (
-    <div className="relative mx-auto flex max-w-[1200px] flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-20">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[60vh]"
-        style={{ background: 'radial-gradient(60% 55% at 50% 30%, rgba(20,23,28,0.35), transparent 72%)' }}
+    <div className="relative mx-auto flex max-w-[1200px] flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-24">
+      {/* The page's one supplied 007 asset: soft viewfinder brackets framing
+          the briefing headline — corners only, never over the text, and
+          left out on mobile. */}
+      <img
+        src={softAssetUrl('soft-corner-brackets')}
+        alt=""
         aria-hidden
+        className="soft-asset left-1/2 top-6 hidden w-[680px] max-w-[92%] -translate-x-1/2 opacity-[0.1] sm:block"
       />
 
-      <p className="label-classified text-gold/70">007 · Mission Briefing</p>
+      <p className="label-classified">007 · Mission Briefing</p>
 
-      <h1 className="mt-5 max-w-full break-words font-display text-[9vw] font-black uppercase leading-[0.92] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+      <h1 className="mt-6 max-w-full break-words font-display text-[9vw] font-black uppercase leading-[0.92] tracking-tight text-ink sm:text-6xl lg:text-7xl">
         Operatie
         <br />
-        <span className="bg-gold-sweep bg-[length:200%_auto] bg-clip-text text-transparent animate-gold-sweep-move">Wintertrip 2027</span>
+        <span className="bg-gold-sweep bg-clip-text text-transparent">Wintertrip 2027</span>
       </h1>
-      <p className="mt-4 text-sm font-semibold uppercase tracking-[0.5em] text-gold/80">Team Zwolle</p>
+      <p className="mt-5 text-sm font-semibold uppercase tracking-[0.5em] text-ink-muted">Team Zwolle</p>
 
-      <div className="mt-12 flex items-center gap-4 sm:mt-14">
+      <div className="mt-14 flex items-center gap-4 sm:mt-16">
         <span className="h-px w-8 bg-gold/40 sm:w-12" aria-hidden />
         <p className="font-display text-4xl font-black uppercase text-gold sm:text-5xl">Missie #1</p>
         <span className="h-px w-8 bg-gold/40 sm:w-12" aria-hidden />
       </div>
-      <p className="mt-4 max-w-lg text-sm font-semibold uppercase leading-relaxed tracking-[0.06em] text-ink sm:text-base">
-        Niet top 3. Niet bijna. <span className="text-gold">Wij gaan voor #1.</span>
+      <p className="mt-4 max-w-lg text-base leading-relaxed text-ink sm:text-lg">
+        Niet top 3. Niet bijna. <span className="font-semibold text-gold">Wij gaan voor #1.</span>
       </p>
 
-      <div className="mt-16 grid w-full gap-4 sm:mt-20">
+      <div className="mt-16 grid w-full gap-5 sm:mt-24">
         <MissionChoiceCard
           code="01"
           title="Score Check"
@@ -53,7 +58,7 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
           size="lg"
           onClick={() => onSelect('score-check')}
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <MissionChoiceCard
             code="02"
             title="Net FTE"

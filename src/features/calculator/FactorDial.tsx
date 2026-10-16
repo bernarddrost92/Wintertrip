@@ -9,9 +9,9 @@ interface FactorDialProps {
 /** Premium vertical factor control — an instrument ladder with a tick rail, not a dropdown. */
 export function FactorDial({ value, onChange }: FactorDialProps) {
   return (
-    <div role="radiogroup" aria-label="Factor" className="relative border border-gold/20 bg-mission-panel">
+    <div role="radiogroup" aria-label="Factor" className="relative border border-white/10 bg-mission-panel">
       {/* Continuous gauge rail running the height of the ladder, ticked per rung. */}
-      <div className="pointer-events-none absolute bottom-3 left-0 top-3 w-5 border-l border-gold/15" aria-hidden />
+      <div className="pointer-events-none absolute bottom-3 left-0 top-3 w-5 border-l border-white/[0.07]" aria-hidden />
       {FACTOR_OPTIONS.map((option, i) => {
         const selected = option.value === value;
         return (
@@ -22,7 +22,7 @@ export function FactorDial({ value, onChange }: FactorDialProps) {
             aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={`relative flex w-full items-center justify-between py-2 pl-8 pr-3.5 text-left transition-colors duration-150 ${
-              i > 0 ? 'border-t border-gold/10' : ''
+              i > 0 ? 'border-t border-white/[0.07]' : ''
             } ${selected ? 'bg-gold/[0.09]' : 'hover:bg-white/[0.03]'}`}
           >
             <span

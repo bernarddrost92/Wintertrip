@@ -32,7 +32,7 @@ export function LeagueCheckReceiptsSection() {
   }, []);
 
   return (
-    <div className="panel p-4 sm:p-5">
+    <div className="panel p-5 sm:p-7">
       <SectionHeader eyebrow="League Check Intelligence" title="Mission Receipts" />
 
       {status === 'unavailable' ? (

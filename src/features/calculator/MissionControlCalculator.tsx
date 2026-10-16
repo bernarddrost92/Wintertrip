@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { CommandFrame } from '../../components/CommandFrame';
 import { MissionSerial } from '../../components/MissionSerial';
-import { TacticalGrid } from '../../components/TacticalGrid';
 import { useAutoScrollOnReady } from '../../hooks/useAutoScrollOnReady';
 import { useMissionFlow } from '../missionFlow/missionFlowContext';
 import { ControlCheckPanel } from './ControlCheckPanel';
@@ -31,10 +30,9 @@ export function MissionControlCalculator({ onRunLeagueCheck }: MissionControlCal
 
   return (
     <CommandFrame>
-      <div className="relative overflow-hidden border-b border-gold/15 px-4 py-5 sm:px-6">
-        <TacticalGrid className="opacity-25" />
+      <div className="relative overflow-hidden border-b border-white/[0.07] px-4 py-5 sm:px-6">
         <div className="relative mx-auto flex max-w-[1800px] flex-col gap-2">
-          <p className="label-classified text-gold/70">Operatie Wintertrip 2027 · Mission Calculator</p>
+          <p className="label-classified">Operatie Wintertrip 2027 · Mission Calculator</p>
           <MissionSerial />
         </div>
       </div>

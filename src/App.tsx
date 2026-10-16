@@ -4,6 +4,7 @@ import { signOutTeamZwolle, useSupabaseAuthSession } from './features/access/tea
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { CommandFrame } from './components/CommandFrame';
 import { ControlRoomEnvironment } from './components/ControlRoomEnvironment';
+import { Soft007Environment } from './components/Soft007Environment';
 import { Footer } from './components/Footer';
 import { Navbar } from './components/Navbar';
 import { MissionHomepage } from './features/home/MissionHomepage';
@@ -108,7 +109,9 @@ export default function App() {
     <SoundtrackProvider>
       <MissionFlowProvider>
         <div className="relative min-h-screen overflow-x-hidden bg-mission-void">
-          <ControlRoomEnvironment />
+          {/* The cinematic control room is for the gate and intro; the daily
+              screens get the quiet briefing-room backdrop. */}
+          {session && gatePhase === 'ready' ? <Soft007Environment /> : <ControlRoomEnvironment />}
 
           {!isSupabaseConfigured() ? (
             <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-4 text-center">

@@ -1,3 +1,4 @@
+import { SoftDivider } from '../../components/SoftDivider';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { CommandBriefingCard } from './CommandBriefingCard';
 import { IntelligenceStatusSection } from './IntelligenceStatusSection';
@@ -19,7 +20,7 @@ export function MissionControlPage() {
 
   return (
     <div className="relative">
-      <section className="mx-auto max-w-6xl space-y-5 px-4 py-8 sm:px-6 sm:py-10">
+      <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:space-y-7 sm:px-8 sm:py-12">
         <header>
           <p className="label-classified">007 · Mission Control</p>
           <h1 className="mt-1 font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Mission Control</h1>
@@ -30,6 +31,7 @@ export function MissionControlPage() {
           fte={fte}
           teamAbove={above ? { team: above.team, position: above.finalRanking, finalScore: above.finalScore } : null}
         />
+        <SoftDivider />
         <StandingsTable standings={standings} updatedAt={updatedAt} />
         <ZwolleProjectionPanel standings={standings} />
         <LeagueCheckReceiptsSection />

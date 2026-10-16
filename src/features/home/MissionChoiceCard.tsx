@@ -1,7 +1,5 @@
 import { ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { HudCorners } from '../../components/HudCorners';
-import { TacticalGrid } from '../../components/TacticalGrid';
 
 interface MissionChoiceCardProps {
   code: string;
@@ -17,7 +15,9 @@ interface MissionChoiceCardProps {
 }
 
 /** A "mission terminal", not a web card — the primary way in and out of
- * each operation from the briefing page. */
+ * each operation from the briefing page. Matte card, a short gold accent
+ * line instead of a gold frame; only the primary (large) choice gets a gold
+ * call to action. */
 export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onClick, size = 'md', badge }: MissionChoiceCardProps) {
   const isLarge = size === 'lg';
 
@@ -25,22 +25,19 @@ export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onCl
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex w-full flex-col overflow-hidden border border-gold/20 bg-mission-panel/70 text-left backdrop-blur-sm transition-all duration-200 hover:border-gold/50 hover:bg-mission-panel/90 hover:shadow-gold-lg ${
-        isLarge ? 'px-8 py-10 sm:px-12 sm:py-12' : 'px-6 py-8'
+      className={`mission-card-calm mission-accent-line group flex w-full flex-col overflow-hidden text-left transition-colors duration-200 hover:border-white/[0.16] hover:bg-mission-soft ${
+        isLarge ? 'px-7 py-9 sm:px-12 sm:py-12' : 'px-6 py-7 sm:px-7 sm:py-8'
       }`}
     >
-      <HudCorners />
-      <TacticalGrid className="opacity-15 transition-opacity duration-200 group-hover:opacity-30" />
-
       <div className="relative flex items-start justify-between">
-        <span className={`font-mono font-bold uppercase tracking-[0.25em] text-gold/50 ${isLarge ? 'text-sm' : 'text-xs'}`}>{code}</span>
+        <span className={`font-mono font-bold uppercase tracking-[0.25em] text-ink-dim ${isLarge ? 'text-sm' : 'text-xs'}`}>{code}</span>
         <div className="flex items-center gap-2">
           {badge && (
-            <span className="border border-gold/30 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-gold/80">
+            <span className="border border-white/15 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-ink-muted">
               {badge}
             </span>
           )}
-          <Icon className="text-gold/60 transition-colors duration-200 group-hover:text-gold" size={isLarge ? 26 : 20} aria-hidden />
+          <Icon className="text-gold/70 transition-colors duration-200 group-hover:text-gold" size={isLarge ? 26 : 20} aria-hidden />
         </div>
       </div>
 
@@ -50,8 +47,10 @@ export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onCl
       <p className={`relative mt-2 text-ink-muted ${isLarge ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'}`}>{subtitle}</p>
 
       <span
-        className={`relative mt-6 inline-flex w-fit items-center gap-2 border border-gold/30 px-4 py-2 font-mono font-bold uppercase tracking-[0.2em] text-gold transition-colors duration-200 group-hover:border-gold group-hover:bg-gold/10 ${
-          isLarge ? 'text-xs' : 'text-[10px]'
+        className={`relative mt-7 inline-flex w-fit items-center gap-2 font-mono font-bold uppercase tracking-[0.2em] transition-colors duration-200 ${
+          isLarge
+            ? 'bg-gold px-5 py-2.5 text-xs text-mission-deep group-hover:bg-gold-bright'
+            : 'text-[10px] text-ink-muted group-hover:text-gold'
         }`}
       >
         {cta}

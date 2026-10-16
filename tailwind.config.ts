@@ -5,18 +5,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        /* Deep anthracite rather than pitch black: still a night-time
-           command centre, but lighter and calmer to read. */
+        /* Quiet 007: matte charcoal/navy, a step lighter than the old
+           bunker, so cards lift off the room instead of melting into it. */
         mission: {
-          void: '#14171C',
-          panel: '#1B1F26',
-          raised: '#242932',
-          line: '#2D333D',
+          void: '#181C22',
+          deep: '#14181E',
+          panel: '#232932',
+          soft: '#282F39',
+          raised: '#303844',
+          line: '#39414D',
         },
+        /* Gold is reserved for meaning — active state, key metric, CTA,
+           target, winner — never for every border. */
         gold: {
-          deep: '#B8862A',
-          DEFAULT: '#E3B23C',
-          bright: '#F1C453',
+          deep: '#A9843A',
+          DEFAULT: '#D6AE55',
+          bright: '#E7C875',
           light: '#FFD768',
           highlight: '#FFE38A',
         },
@@ -32,8 +36,8 @@ export default {
         },
         ink: {
           DEFAULT: '#F4F2EC',
-          muted: '#A9AFB8',
-          dim: '#7D838D',
+          muted: '#AEB4BD',
+          dim: '#858C96',
         },
         status: {
           go: '#3FAE6B',
@@ -51,8 +55,8 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       backgroundImage: {
-        'gold-sweep': 'linear-gradient(115deg, #B8862A 0%, #F1C453 45%, #FFD768 65%, #B8862A 100%)',
-        'panel-glow': 'radial-gradient(circle at 50% 0%, rgba(227,178,60,0.09), transparent 60%)',
+        'gold-sweep': 'linear-gradient(115deg, #B38C3E 0%, #D6AE55 40%, #E7C875 62%, #B38C3E 100%)',
+        'panel-glow': 'radial-gradient(circle at 50% 0%, rgba(214,174,85,0.06), transparent 60%)',
         'tactical-grid':
           'linear-gradient(rgba(227,178,60,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(227,178,60,0.09) 1px, transparent 1px)',
         'radar-lines':
@@ -60,12 +64,14 @@ export default {
         'scan-lines': 'repeating-linear-gradient(180deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px)',
       },
       boxShadow: {
-        gold: '0 0 0 1px rgba(227,178,60,0.35), 0 0 32px -8px rgba(227,178,60,0.35)',
-        'gold-lg': '0 0 0 1px rgba(227,178,60,0.45), 0 0 56px -6px rgba(227,178,60,0.5)',
-        'gold-inset': 'inset 0 1px 0 0 rgba(255,231,138,0.12), 0 0 0 1px rgba(227,178,60,0.3)',
-        'podium-gold': '0 0 0 1px rgba(241,196,83,0.55), 0 0 48px -10px rgba(241,196,83,0.55)',
-        'podium-silver': '0 0 0 1px rgba(192,198,206,0.4), 0 0 28px -12px rgba(192,198,206,0.4)',
-        'podium-bronze': '0 0 0 1px rgba(205,127,50,0.4), 0 0 24px -14px rgba(205,127,50,0.35)',
+        /* Shadow for depth, not glow: a gold hairline plus a soft drop. */
+        gold: '0 0 0 1px rgba(214,174,85,0.3), 0 10px 26px -16px rgba(0,0,0,0.7)',
+        'gold-lg': '0 0 0 1px rgba(214,174,85,0.38), 0 22px 48px -28px rgba(0,0,0,0.8)',
+        'gold-inset': 'inset 0 1px 0 0 rgba(231,200,117,0.1), 0 0 0 1px rgba(214,174,85,0.26)',
+        'podium-gold': '0 0 0 1px rgba(214,174,85,0.45), 0 24px 50px -32px rgba(0,0,0,0.8)',
+        'podium-silver': '0 0 0 1px rgba(192,198,206,0.32), 0 24px 50px -32px rgba(0,0,0,0.8)',
+        'podium-bronze': '0 0 0 1px rgba(205,127,50,0.32), 0 24px 50px -32px rgba(0,0,0,0.8)',
+        calm: '0 18px 48px -34px rgba(0,0,0,0.7)',
       },
       keyframes: {
         'radar-spin': {

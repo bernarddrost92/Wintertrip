@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { Eye, PlayCircle, Radio } from 'lucide-react';
-import { HudCorners } from '../../components/HudCorners';
-import { TacticalGrid } from '../../components/TacticalGrid';
 import { GoldButton } from '../../components/GoldButton';
 import { formatIsoDateReceipt } from '../../utils/dates';
 import { getSortedMissionUpdates, getTransmissionLabel, type MissionUpdate } from '../../data/missionUpdates';
@@ -19,25 +17,24 @@ export function MissionUpdatesPage() {
   const [activeUpdate, setActiveUpdate] = useState<MissionUpdate | null>(null);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6 sm:py-14">
       <header>
-        <p className="label-classified text-gold/70">007 · Mission Archive</p>
+        <p className="label-classified">007 · Mission Archive</p>
         <h1 className="mt-2 font-display text-3xl font-black uppercase tracking-tight text-ink sm:text-4xl">Mission Updates</h1>
-        <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.3em] text-ink-muted">Classified Communications · Team Zwolle</p>
+        <p className="mt-2 text-sm text-ink-muted">Classified communications van Team Zwolle — nieuwste bovenaan.</p>
       </header>
 
       {latest ? (
         <LatestTransmissionCard update={latest} onWatch={() => setActiveUpdate(latest)} />
       ) : (
         <div className="panel relative overflow-hidden px-6 py-10 text-center">
-          <TacticalGrid className="opacity-15" />
           <p className="relative font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">No transmissions logged yet</p>
         </div>
       )}
 
       <section>
-        <p className="label-classified mb-3 text-gold/70">Mission Archive</p>
-        <div className="panel divide-y divide-gold/10">
+        <p className="label-classified mb-3">Mission Archive</p>
+        <div className="panel divide-y divide-white/[0.07]">
           {archive.length === 0 ? (
             <p className="px-4 py-6 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-ink-dim">
               No additional transmissions logged
@@ -48,7 +45,7 @@ export function MissionUpdatesPage() {
                 key={update.id}
                 type="button"
                 onClick={() => setActiveUpdate(update)}
-                className="flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-gold/5"
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors duration-150 hover:bg-white/[0.03]"
               >
                 <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold/70">{formatIsoDateReceipt(update.date)}</p>
@@ -76,10 +73,8 @@ export function MissionUpdatesPage() {
 
 function LatestTransmissionCard({ update, onWatch }: { update: MissionUpdate; onWatch: () => void }) {
   return (
-    <div className="panel relative overflow-hidden">
-      <HudCorners />
-      <TacticalGrid className="opacity-15" />
-      <div className="relative flex flex-col gap-6 p-5 sm:flex-row sm:items-center sm:p-8">
+    <div className="panel mission-accent-line relative overflow-hidden">
+      <div className="relative flex flex-col gap-7 p-5 sm:flex-row sm:items-center sm:p-9">
         <div className="mx-auto w-full max-w-[220px] shrink-0 sm:mx-0">
           <TransmissionPoster update={update} onClick={onWatch} />
         </div>
@@ -109,7 +104,7 @@ function TransmissionPoster({ update, onClick }: { update: MissionUpdate; onClic
     <button
       type="button"
       onClick={onClick}
-      className="group relative block aspect-[9/16] w-full overflow-hidden border border-gold/25 bg-mission-raised"
+      className="group relative block aspect-[9/16] w-full overflow-hidden border border-white/10 bg-mission-raised"
     >
       {posterSrc ? (
         <img src={posterSrc} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />

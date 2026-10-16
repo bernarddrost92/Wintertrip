@@ -28,7 +28,7 @@ export function StandingsTable({ standings, updatedAt }: StandingsTableProps) {
   const hidden = hiddenNetFteRanks(standings);
 
   return (
-    <section className="panel p-4 sm:p-5" aria-labelledby="standings-table">
+    <section className="panel p-5 sm:p-7" aria-labelledby="standings-table">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="label-classified">Ranking · Net FTE-bril</p>
@@ -39,12 +39,12 @@ export function StandingsTable({ standings, updatedAt }: StandingsTableProps) {
         <StandBadge kind="official" detail={`Power BI ${formatPowerBiTime(updatedAt)}`} />
       </div>
 
-      <div className="mt-4 overflow-x-auto border border-white/10">
+      <div className="mt-5 overflow-x-auto">
         <table className="w-full min-w-[620px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-mission-raised">
+            <tr className="border-b border-white/10">
               {HEADERS.map((h) => (
-                <th key={h.label} scope="col" className={`px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-gold/80 ${h.className}`}>
+                <th key={h.label} scope="col" className={`px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-dim ${h.className}`}>
                   {h.label}
                 </th>
               ))}
@@ -57,15 +57,15 @@ export function StandingsTable({ standings, updatedAt }: StandingsTableProps) {
                 <tr
                   key={row.team}
                   aria-current={own ? 'true' : undefined}
-                  className={`border-b border-white/[0.06] tabular-nums last:border-b-0 ${own ? 'bg-gold/15 font-semibold text-ink shadow-[inset_3px_0_0_0_#E3B23C]' : 'text-ink/90'}`}
+                  className={`border-b border-white/[0.045] tabular-nums last:border-b-0 ${own ? 'bg-gold/[0.09] font-semibold text-ink shadow-[inset_2px_0_0_0_#D6AE55]' : 'text-ink/85'}`}
                 >
-                  <td className="px-3 py-2 font-display text-base font-bold">{row.finalRanking}</td>
-                  <td className={`px-3 py-2 ${own ? 'text-gold' : ''}`}>{row.team}</td>
-                  <td className="px-3 py-2 text-right">{formatVcdbValue(row.vcdbScore)}</td>
-                  <td className={`px-3 py-2 text-right ${row.netFte >= 0 ? 'text-status-go' : ''}`}>{formatVcdbValue(row.netFte)}</td>
-                  <td className="px-3 py-2 text-right text-ink-muted">#{row.netFteRanking}</td>
-                  <td className="px-3 py-2 text-right">{formatFactor(row.factor)}</td>
-                  <td className={`px-3 py-2 text-right font-display text-base font-bold ${own ? 'text-gold' : 'text-ink'}`}>{formatVcdbValue(row.finalScore)}</td>
+                  <td className={`px-3 py-2.5 font-display text-base font-bold ${own || row.finalRanking === 1 ? 'text-gold' : 'text-ink-muted'}`}>{row.finalRanking}</td>
+                  <td className={`px-3 py-2.5 ${own ? 'text-gold' : ''}`}>{row.team}</td>
+                  <td className="px-3 py-2.5 text-right">{formatVcdbValue(row.vcdbScore)}</td>
+                  <td className={`px-3 py-2.5 text-right ${row.netFte >= 0 ? 'text-status-go' : ''}`}>{formatVcdbValue(row.netFte)}</td>
+                  <td className="px-3 py-2.5 text-right text-ink-muted">#{row.netFteRanking}</td>
+                  <td className="px-3 py-2.5 text-right">{formatFactor(row.factor)}</td>
+                  <td className={`px-3 py-2.5 text-right font-display text-base font-bold ${own ? 'text-gold' : 'text-ink'}`}>{formatVcdbValue(row.finalScore)}</td>
                 </tr>
               );
             })}

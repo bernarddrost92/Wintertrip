@@ -74,7 +74,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
   }
 
   return (
-    <section className="panel p-4 sm:p-6" aria-labelledby="fte-bon-calculator">
+    <section className="panel border-gold/25 p-4 sm:p-7" aria-labelledby="fte-bon-calculator">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Ticket size={18} className="text-gold" aria-hidden />
@@ -173,7 +173,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
           </details>
 
           <GoldButton type="submit" disabled={!canSave} icon={<Plus size={16} />} className="w-full">
-            {saving ? 'Opslaan…' : 'Bon opslaan'}
+            {saving ? 'Opslaan…' : 'Pak FTE-bon'}
           </GoldButton>
           {storeStatus === 'unavailable' && (
             <p className="text-xs text-ink-muted">Opslaan is nu niet beschikbaar — de berekening werkt wel.</p>

@@ -129,7 +129,7 @@ function MissionReceiptFlowWithCalculator({ beforeCheck, agent, checkedItems, ch
         <p className="label-classified mb-4 text-gold">After Check</p>
         <AfterCheckEditor afterCheck={afterCheck} />
 
-        <div className="mt-6 grid grid-cols-2 gap-px border border-gold/15 bg-gold/10 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-px border border-white/[0.07] bg-gold/10 sm:grid-cols-3">
           <div className="bg-mission-panel px-4 py-4 text-center">
             <p className="label-classified">Base Score</p>
             <p className="mt-1.5 font-display text-xl font-semibold tabular-nums text-ink">{formatVcdbValue(afterCheck.result.baseScore)}</p>

@@ -34,7 +34,7 @@ export function FactorIntelligence({ baseScore, selectedFactor }: FactorIntellig
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-between border-t border-gold/10 px-4 py-3">
+      <div className="mt-3 flex items-center justify-between border-t border-white/[0.07] px-4 py-3">
         <span className="label-classified">#1 factor effect</span>
         <span className="font-display text-lg font-semibold tabular-nums text-gold">{formatSignedScore(spread)}</span>
       </div>

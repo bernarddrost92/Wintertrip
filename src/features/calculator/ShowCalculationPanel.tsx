@@ -23,7 +23,7 @@ export function ShowCalculationPanel({ result }: ShowCalculationPanelProps) {
   const { vcdbPerMonth } = result.qualifyingTerm;
 
   return (
-    <div className="border-t border-gold/15">
+    <div className="border-t border-white/[0.07]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -48,7 +48,7 @@ export function ShowCalculationPanel({ result }: ShowCalculationPanelProps) {
                 <span className="text-ink">{formatVcdbValue(vcdbPerMonth)}</span>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-between border-t border-gold/10 pt-2 text-gold">
+            <div className="mt-2 flex items-center justify-between border-t border-white/[0.07] pt-2 text-gold">
               <span className="uppercase tracking-wider">Fixed Monthly Mission Value</span>
               <span className="font-semibold">{formatScore(result.fixedMonthlyMissionValue)}</span>
             </div>
@@ -60,7 +60,7 @@ export function ShowCalculationPanel({ result }: ShowCalculationPanelProps) {
               <span className="uppercase tracking-wider">Active League Months</span>
               <span className="text-ink">{result.activeLeagueMonths}</span>
             </div>
-            <div className="mt-2 flex items-center justify-between border-t border-gold/10 pt-2 text-gold">
+            <div className="mt-2 flex items-center justify-between border-t border-white/[0.07] pt-2 text-gold">
               <span className="uppercase tracking-wider">Base League Score</span>
               <span className="font-semibold">
                 {formatScore(result.fixedMonthlyMissionValue)} × {result.activeLeagueMonths} = {formatScore(result.baseScore)}
@@ -68,7 +68,7 @@ export function ShowCalculationPanel({ result }: ShowCalculationPanelProps) {
             </div>
           </section>
 
-          <section className="flex items-center justify-between border-t border-gold/10 pt-3 text-gold">
+          <section className="flex items-center justify-between border-t border-white/[0.07] pt-3 text-gold">
             <span className="uppercase tracking-wider">Mission Value</span>
             <span className="font-semibold">
               {formatScore(result.baseScore)} × {formatFactor(result.factor)} = {formatScore(result.finalScore)}

@@ -18,7 +18,7 @@ describe('StandingsTable', () => {
     render(<StandingsTable standings={standings} updatedAt={updatedAt} />);
     const zwolle = screen.getByRole('row', { current: true });
     expect(within(zwolle).getByText('Zwolle')).toBeInTheDocument();
-    expect(zwolle.className).toContain('bg-gold/15');
+    expect(zwolle.className).toContain('bg-gold/[0.09]');
   });
 
   it('is labelled as the official stand and notes the hidden Net FTE rank', () => {

@@ -13,7 +13,7 @@ interface IntelligenceStatusSectionProps {
  */
 export function IntelligenceStatusSection({ powerBiUpdatedAt }: IntelligenceStatusSectionProps) {
   return (
-    <div className="panel p-4 sm:p-5">
+    <div className="panel p-5 sm:p-7">
       <p className="label-classified text-gold/70">Intelligence Status</p>
       <div className="mt-3 border border-white/10 bg-white/5">
         <div className="bg-mission-panel px-4 py-3">

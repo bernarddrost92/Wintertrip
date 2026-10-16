@@ -21,7 +21,7 @@ export function FactorLadder({ standings, baseFte }: FactorLadderProps) {
   const firstPositionGain = steps.find((step) => step.finalRanking < base.own.finalRanking);
 
   return (
-    <section className="panel p-4 sm:p-6" aria-labelledby="fte-ladder">
+    <section className="panel p-5 sm:p-7" aria-labelledby="fte-ladder">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="fte-ladder" className="font-display text-2xl font-black uppercase tracking-tight text-ink">
           FTE-ladder

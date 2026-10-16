@@ -14,7 +14,7 @@ interface MissionInputPanelProps {
 export function MissionInputPanel({ form, update, output }: MissionInputPanelProps) {
   return (
     <div className="panel flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-gold/15 px-4 py-3">
+      <header className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
         <h2 className="label-classified text-ink">Mission Input</h2>
         <span
           className={`font-mono text-[11px] font-semibold tracking-wider ${
@@ -162,7 +162,7 @@ export function MissionInputPanel({ form, update, output }: MissionInputPanelPro
         </div>
       </div>
 
-      <ul className="border-t border-gold/15 px-4 py-3">
+      <ul className="border-t border-white/[0.07] px-4 py-3">
         {output.completion.map((item) => (
           <li key={item.key} className="flex items-center gap-2 py-0.5 text-xs">
             <span

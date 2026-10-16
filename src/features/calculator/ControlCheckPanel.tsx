@@ -47,7 +47,7 @@ export function ControlCheckPanel({ output }: ControlCheckPanelProps) {
         style={{ background: 'radial-gradient(circle at 50% 62%, rgba(227,178,60,0.08), transparent 55%)' }}
         aria-hidden
       />
-      <header className="relative flex items-center justify-between border-b border-gold/15 bg-mission-panel px-4 py-3">
+      <header className="relative flex items-center justify-between border-b border-white/[0.07] bg-mission-panel px-4 py-3">
         <h2 className="label-classified text-ink">Control Check</h2>
         <span className={`font-mono text-[11px] font-semibold tracking-wider ${isInputComplete ? 'text-gold' : 'text-ink-muted'}`}>
           {completeCount} / {totalCount}
@@ -68,7 +68,7 @@ export function ControlCheckPanel({ output }: ControlCheckPanelProps) {
         ))}
       </ul>
 
-      <div className="relative border-t border-gold/15 bg-mission-panel px-4 py-3">
+      <div className="relative border-t border-white/[0.07] bg-mission-panel px-4 py-3">
         <p className="label-classified mb-2">Opportunity Scan</p>
         {opportunities.length === 0 ? (
           <p className="text-xs text-ink-muted">Vul de missiegegevens in om kansen te scannen.</p>
@@ -88,7 +88,7 @@ export function ControlCheckPanel({ output }: ControlCheckPanelProps) {
         )}
       </div>
 
-      <div className="relative mt-auto border-t border-gold/15 bg-mission-panel px-4 py-4">
+      <div className="relative mt-auto border-t border-white/[0.07] bg-mission-panel px-4 py-4">
         <p className="label-classified mb-2">Mission Status</p>
         <span className={`flex items-center justify-center gap-2 border px-3 py-2.5 text-xs font-bold uppercase tracking-[0.16em] ${statusClasses}`}>
           <Radio size={13} aria-hidden />

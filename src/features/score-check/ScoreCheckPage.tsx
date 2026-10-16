@@ -58,7 +58,7 @@ export function ScoreCheckPage() {
               <button
                 type="button"
                 onClick={() => goTo(1)}
-                className="inline-flex items-center gap-1.5 border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:border-gold/50 hover:text-gold"
+                className="inline-flex items-center gap-1.5 border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-white/25 hover:text-ink"
               >
                 <ArrowLeft size={13} aria-hidden />
                 Terug naar berekening
@@ -66,7 +66,7 @@ export function ScoreCheckPage() {
               <button
                 type="button"
                 onClick={startNewCalculation}
-                className="inline-flex items-center gap-1.5 border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:border-gold/50 hover:text-gold"
+                className="inline-flex items-center gap-1.5 border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-white/25 hover:text-ink"
               >
                 <RotateCcw size={13} aria-hidden />
                 Nieuwe berekening
@@ -75,7 +75,7 @@ export function ScoreCheckPage() {
           )}
         </div>
 
-        <ol aria-label="Score Check stappen" className="mt-4 grid grid-cols-2 gap-px border border-gold/20 bg-gold/10">
+        <ol aria-label="Score Check stappen" className="mt-5 grid grid-cols-2 gap-px border border-white/[0.07] bg-white/[0.05]">
           {STEPS.map(({ step: s, title, sub, icon: Icon }) => {
             const active = step === s;
             const done = s === 1 && beforeCheck !== null && step === 2;
@@ -85,20 +85,21 @@ export function ScoreCheckPage() {
                   type="button"
                   onClick={() => goTo(s)}
                   aria-current={active ? 'step' : undefined}
-                  className={`flex h-full w-full items-center gap-3 px-3 py-3 text-left transition-colors sm:px-5 ${
-                    active ? 'bg-gold/15' : 'bg-mission-panel hover:bg-mission-raised'
+                  className={`relative flex h-full w-full items-center gap-3 px-3 py-3.5 text-left transition-colors sm:px-5 ${
+                    active ? 'bg-mission-raised/80' : 'bg-mission-panel/80 hover:bg-mission-soft'
                   }`}
                 >
+                  {active && <span className="absolute inset-x-0 top-0 h-px bg-gold" aria-hidden />}
                   <span
                     className={`flex h-8 w-8 shrink-0 items-center justify-center border font-display text-sm font-bold ${
-                      active ? 'border-gold bg-gold text-mission-void' : done ? 'border-gold/60 text-gold' : 'border-white/20 text-ink-muted'
+                      active ? 'border-gold/70 text-gold' : done ? 'border-gold/40 text-gold/80' : 'border-white/15 text-ink-dim'
                     }`}
                     aria-hidden
                   >
                     {done ? <Check size={15} /> : s}
                   </span>
                   <span className="min-w-0">
-                    <span className={`block truncate text-sm font-semibold uppercase tracking-wide ${active ? 'text-ink' : 'text-ink-muted'}`}>
+                    <span className={`block truncate text-sm font-semibold uppercase tracking-wide ${active ? 'text-ink' : 'text-ink-dim'}`}>
                       Stap {s} · {title}
                     </span>
                     <span className="flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-ink-dim">

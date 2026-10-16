@@ -67,7 +67,7 @@ describe('NetFtePage', () => {
     expect(within(overview).getByText('1,3x')).toBeInTheDocument();
     expect(screen.getByText(/31 januari 2027 vs 1 september 2026/i)).toBeInTheDocument();
     expect(screen.getByText('Meetdatum')).toBeInTheDocument();
-    for (const focus of ['Verlengingen', 'PO → contract', 'BPT verlengen', 'Nieuwe contractanten']) {
+    for (const focus of ['Verlengen', 'PO → contract', 'Nieuwe contractant', 'Uren ophogen']) {
       expect(screen.getAllByText(focus).length).toBeGreaterThan(0);
     }
     await screen.findByText(/nog geen open bonnen/i);
@@ -107,7 +107,7 @@ describe('NetFtePage', () => {
     await user.type(screen.getByLabelText('Groei in FTE'), '1,4');
     await user.type(screen.getByLabelText('Naam / label'), 'PvH');
     await user.type(screen.getByLabelText(/talent manager/i), 'RP');
-    await user.click(screen.getByRole('button', { name: /bon opslaan/i }));
+    await user.click(screen.getByRole('button', { name: /pak fte-bon/i }));
 
     expect(createFteBon).toHaveBeenCalledWith(expect.objectContaining({ label: 'PvH', type: 'PO_NAAR_CONTRACT', fteDelta: 1.4, owner: 'RP' }));
     const list = screen.getByRole('region', { name: /open fte-bonnen/i });
@@ -124,7 +124,7 @@ describe('NetFtePage', () => {
     render(<NetFtePage />);
     await user.type(screen.getByLabelText('Groei in FTE'), '1');
 
-    expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /pak fte-bon/i })).toBeDisabled();
     expect(screen.getByText(/vul nog naam \/ label en talent manager in/i)).toBeInTheDocument();
   });
 
@@ -138,11 +138,11 @@ describe('NetFtePage', () => {
     await user.type(screen.getByLabelText('Groei in FTE'), '1');
     await user.type(screen.getByLabelText('Naam / label'), 'PvH');
 
-    expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /pak fte-bon/i })).toBeDisabled();
     expect(screen.getByText(/vul nog talent manager in/i)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/talent manager/i), 'RP');
-    expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /pak fte-bon/i })).toBeEnabled();
   });
 
   it('open bonnen add up; a realised bon leaves the projection', async () => {
@@ -171,7 +171,7 @@ describe('NetFtePage', () => {
     await user.type(screen.getByLabelText('Naam / label'), 'PvH');
 
     expect(within(screen.getByRole('region', { name: /fte bon calculator/i })).getByText('-6,38')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /bon opslaan/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /pak fte-bon/i })).toBeDisabled();
   });
 
   it('the FTE-ladder shows the next factor tiers and highlights the one that changes the position', async () => {
@@ -201,7 +201,7 @@ describe('NetFtePage', () => {
     await user.type(screen.getByLabelText('Groei in FTE'), '1,4');
     await user.type(screen.getByLabelText('Naam / label'), 'P. van Heerde');
     await user.type(screen.getByLabelText(/talent manager/i), 'BD');
-    await user.click(screen.getByRole('button', { name: /bon opslaan/i }));
+    await user.click(screen.getByRole('button', { name: /pak fte-bon/i }));
     await user.click(await screen.findByRole('button', { name: /bonnetje uitdraaien/i }));
 
     const receipt = within(screen.getByRole('dialog', { name: /fte-bonnetje p\. van heerde/i }));

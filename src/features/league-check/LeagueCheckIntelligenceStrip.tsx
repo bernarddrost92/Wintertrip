@@ -57,7 +57,7 @@ export function LeagueCheckIntelligenceStrip() {
   if (status === 'unavailable') return null;
 
   return (
-    <div className="relative border-b border-gold/10 bg-mission-panel/40 px-4 py-3 sm:px-6">
+    <div className="relative border-b border-white/[0.07] bg-mission-panel/40 px-4 py-3 sm:px-6">
       <p className="text-center text-[9px] font-bold uppercase tracking-[0.28em] text-ink-dim">League Check Intelligence</p>
       <p className="mt-0.5 text-center text-[9px] uppercase tracking-wider text-ink-dim/80">Kwaliteitscontrole — geen league score</p>
 

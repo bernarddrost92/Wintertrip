@@ -26,13 +26,13 @@ export function SoundtrackControl() {
   const { isPlaying, isMuted, togglePlay, toggleMute } = useSoundtrack();
 
   return (
-    <div className="flex items-center gap-2 border-l border-gold/10 pl-3">
+    <div className="flex items-center gap-2 border-l border-white/[0.07] pr-1 pl-3">
       <button
         type="button"
         onClick={togglePlay}
         aria-pressed={isPlaying}
         title={isPlaying ? 'Pauzeer soundtrack' : 'Speel soundtrack af'}
-        className="flex h-7 w-7 shrink-0 items-center justify-center border border-gold/25 bg-mission-raised text-gold/80 transition-colors duration-150 hover:border-gold/50 hover:text-gold"
+        className="flex h-7 w-7 shrink-0 items-center justify-center border border-white/10 bg-mission-panel text-gold/80 transition-colors duration-150 hover:border-gold/40 hover:text-gold"
       >
         {isPlaying ? <Pause size={11} aria-hidden /> : <Play size={11} aria-hidden />}
       </button>
@@ -43,7 +43,7 @@ export function SoundtrackControl() {
           onClick={toggleMute}
           aria-pressed={isMuted}
           title={isMuted ? 'Zet geluid aan' : 'Dempen'}
-          className="flex h-7 w-7 shrink-0 items-center justify-center border border-gold/25 bg-mission-raised text-gold/80 transition-colors duration-150 hover:border-gold/50 hover:text-gold"
+          className="flex h-7 w-7 shrink-0 items-center justify-center border border-white/10 bg-mission-panel text-gold/80 transition-colors duration-150 hover:border-gold/40 hover:text-gold"
         >
           {isMuted ? <VolumeX size={11} aria-hidden /> : <Volume2 size={11} aria-hidden />}
         </button>
