@@ -78,7 +78,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Ticket size={18} className="text-gold" aria-hidden />
-          <h2 id="fte-bon-calculator" className="font-display text-2xl font-black uppercase tracking-tight text-ink">
+          <h2 id="fte-bon-calculator" className="scroll-mt-28 font-display text-2xl font-black uppercase tracking-tight text-ink">
             FTE Bon Calculator
           </h2>
         </div>

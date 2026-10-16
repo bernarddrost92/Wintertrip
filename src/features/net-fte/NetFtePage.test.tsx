@@ -65,7 +65,10 @@ describe('NetFtePage', () => {
     expect(within(overview).getByText('#10')).toBeInTheDocument();
     expect(within(overview).getByText('van 12 teams')).toBeInTheDocument();
     expect(within(overview).getByText('1,3x')).toBeInTheDocument();
-    expect(screen.getByText(/31 januari 2027 vs 1 september 2026/i)).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Net FTE = BPT + VD')).toBeInTheDocument();
+    expect(screen.getByText('PO telt niet mee.')).toBeInTheDocument();
+    expect(screen.getByText(/meetperiode: 1 sep → 31 jan/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /pak fte-bon/i })).toHaveAttribute('href', '#fte-bon-calculator');
     expect(screen.getByText('Meetdatum')).toBeInTheDocument();
     for (const focus of ['Verlengen', 'PO → contract', 'Nieuwe contractant', 'Uren ophogen']) {
       expect(screen.getAllByText(focus).length).toBeGreaterThan(0);

@@ -1,10 +1,11 @@
 import { ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface MissionChoiceCardProps {
   code: string;
   title: string;
-  subtitle: string;
+  subtitle: ReactNode;
   cta: string;
   icon: LucideIcon;
   onClick: () => void;
@@ -12,13 +13,16 @@ interface MissionChoiceCardProps {
   /** Compact status pill next to the icon — e.g. "1 UPDATE". Never a loud
    * badge; same restrained mono/uppercase treatment as the rest of the card. */
   badge?: string;
+  /** Small gold kicker above the title — e.g. "Active Mission" on the
+   * one choice that is the team's current priority. */
+  eyebrow?: string;
 }
 
 /** A "mission terminal", not a web card — the primary way in and out of
  * each operation from the briefing page. Matte card, a short gold accent
  * line instead of a gold frame; only the primary (large) choice gets a gold
  * call to action. */
-export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onClick, size = 'md', badge }: MissionChoiceCardProps) {
+export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onClick, size = 'md', badge, eyebrow }: MissionChoiceCardProps) {
   const isLarge = size === 'lg';
 
   return (
@@ -41,10 +45,16 @@ export function MissionChoiceCard({ code, title, subtitle, cta, icon: Icon, onCl
         </div>
       </div>
 
-      <p className={`relative mt-4 font-display font-bold uppercase leading-tight tracking-[0.02em] text-ink ${isLarge ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
+      {eyebrow && (
+        <p className="relative mt-4 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.28em] text-gold">
+          <span className="h-1.5 w-1.5 rounded-full bg-gold" aria-hidden />
+          {eyebrow}
+        </p>
+      )}
+      <p className={`relative ${eyebrow ? 'mt-2' : 'mt-4'} font-display font-bold uppercase leading-tight tracking-[0.02em] text-ink ${isLarge ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
         {title}
       </p>
-      <p className={`relative mt-2 text-ink-muted ${isLarge ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'}`}>{subtitle}</p>
+      <div className={`relative mt-2 text-ink-muted ${isLarge ? 'text-sm sm:text-base' : 'text-xs sm:text-sm'}`}>{subtitle}</div>
 
       <span
         className={`relative mt-7 inline-flex w-fit items-center gap-2 font-mono font-bold uppercase tracking-[0.2em] transition-colors duration-200 ${

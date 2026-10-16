@@ -12,7 +12,8 @@ interface MissionHomepageProps {
  * The cinematic mission briefing — a poster, not a form. Deliberately a
  * different register from the calculator's dense control room: big
  * typography sitting directly on the environment, four "mission terminal"
- * choices rather than a settings page, Score Check visually the largest.
+ * choices rather than a settings page, the active mission (Net FTE)
+ * visually the largest.
  */
 export function MissionHomepage({ onSelect }: MissionHomepageProps) {
   const updateCount = missionUpdates.length;
@@ -48,24 +49,32 @@ export function MissionHomepage({ onSelect }: MissionHomepageProps) {
         Niet top 3. Niet bijna. <span className="font-semibold text-gold">Wij gaan voor #1.</span>
       </p>
 
-      <div className="mt-16 grid w-full gap-5 sm:mt-24">
+      <div className="mt-14 grid w-full gap-5 sm:mt-16">
+        {/* The current team priority is the Net FTE hunt, so Net FTE is the
+            hero here; the other operations sit quieter underneath. */}
         <MissionChoiceCard
           code="01"
-          title="Score Check"
-          subtitle="Bereken je deal en check direct de league impact."
-          cta="Start Score Check"
-          icon={Calculator}
+          eyebrow="Active Mission"
+          title="The Net FTE Hunt"
+          subtitle={
+            <>
+              <p>We staan #1 op VCDB.</p>
+              <p className="font-semibold text-ink">Nu moeten we die voorsprong verzilveren via Net FTE.</p>
+            </>
+          }
+          cta="Open Net FTE"
+          icon={TrendingUp}
           size="lg"
-          onClick={() => onSelect('score-check')}
+          onClick={() => onSelect('net-fte')}
         />
         <div className="grid gap-5 sm:grid-cols-2">
           <MissionChoiceCard
             code="02"
-            title="Net FTE"
-            subtitle="Zie wat elke FTE doet voor ranking en factor."
-            cta="Open Net FTE"
-            icon={TrendingUp}
-            onClick={() => onSelect('net-fte')}
+            title="Score Check"
+            subtitle="Bereken je deal en check direct de league impact."
+            cta="Start Score Check"
+            icon={Calculator}
+            onClick={() => onSelect('score-check')}
           />
           <MissionChoiceCard
             code="03"

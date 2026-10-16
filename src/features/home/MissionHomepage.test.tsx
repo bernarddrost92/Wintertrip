@@ -28,7 +28,7 @@ describe('MissionHomepage — Mission Updates terminal', () => {
   it('shows the new structure: Score Check, Net FTE and Mission Control — no separate Calculator/League Check', () => {
     render(<MissionHomepage onSelect={vi.fn()} />);
     expect(screen.getByText('Score Check')).toBeInTheDocument();
-    expect(screen.getByText('Net FTE')).toBeInTheDocument();
+    expect(screen.getByText('The Net FTE Hunt')).toBeInTheDocument();
     expect(screen.getByText('Mission Control')).toBeInTheDocument();
     expect(screen.queryByText('Mission Calculator')).not.toBeInTheDocument();
     expect(screen.queryByText('League Check')).not.toBeInTheDocument();
@@ -44,6 +44,18 @@ describe('MissionHomepage — Mission Updates terminal', () => {
 
     await user.click(screen.getByText(cta));
     expect(onSelect).toHaveBeenCalledWith(view);
+  });
+});
+
+describe('MissionHomepage — Net FTE is the active mission', () => {
+  it('shows Net FTE as the active-mission hero with the VCDB → Net FTE message', () => {
+    render(<MissionHomepage onSelect={vi.fn()} />);
+    const hero = screen.getByRole('button', { name: /active mission/i });
+    expect(hero).toHaveTextContent('The Net FTE Hunt');
+    expect(hero).toHaveTextContent('We staan #1 op VCDB.');
+    expect(hero).toHaveTextContent('Nu moeten we die voorsprong verzilveren via Net FTE.');
+    expect(hero).toHaveTextContent(/open net fte/i);
+    expect(screen.getAllByText(/active mission/i)).toHaveLength(1);
   });
 });
 

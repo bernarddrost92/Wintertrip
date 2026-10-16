@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowUpRight, FileSignature, RefreshCw, UserPlus } from 'lucide-react';
+import { ArrowUpRight, FileSignature, RefreshCw, Ticket, UserPlus } from 'lucide-react';
 import { CommandFrame } from '../../components/CommandFrame';
 import { SoftDivider } from '../../components/SoftDivider';
 import { softAssetUrl } from '../../components/softAssets';
@@ -29,10 +29,12 @@ const FOCUS = [
 
 /**
  * Net FTE — the FTE mission toward January, in three levels:
- * 1. status: the official Net FTE stand (Power BI snapshot), the projection
- *    with every open bon and the two measurement dates;
+ * 1. mission: the rule (Net FTE = BPT + VD, PO telt niet mee) with the four
+ *    focus actions, the measurement period, the official Net FTE stand
+ *    (Power BI snapshot) and the projection with every open bon;
  * 2. action: the FTE Bon Calculator;
- * 3. support: the shared open bonnen, the FTE-ladder and the focus actions.
+ * 3. support: the shared open bonnen and the FTE-ladder.
+ * The rule is presentation only — bon types and maths are unchanged.
  * Uses the Net FTE values exactly as the current standings show them.
  */
 export function NetFtePage() {
@@ -55,8 +57,41 @@ export function NetFtePage() {
           <StandBadge kind="official" detail={`Power BI ${officialDate}`} />
         </header>
 
-        {/* Level 1 — where we stand. */}
-        <section aria-label="Net FTE status" className="space-y-4">
+        {/* Level 1 — the rule, the measurement period, where we stand. */}
+        <section aria-label="Net FTE missie" className="space-y-5">
+          <div className="panel mission-accent-line relative overflow-hidden px-5 py-5 sm:px-7 sm:py-6">
+            <img src={softAssetUrl('soft-crosshair')} alt="" aria-hidden className="soft-asset -right-8 -top-8 hidden w-40 opacity-[0.14] lg:block" />
+            <p className="label-classified">De regel</p>
+            <p className="mt-1 font-display text-4xl font-black uppercase leading-none tracking-tight text-gold sm:text-6xl">
+              Net FTE = <span className="whitespace-nowrap">BPT + VD</span>
+            </p>
+            <p className="mt-3 font-display text-xl font-bold uppercase tracking-wide text-ink sm:text-2xl">PO telt niet mee.</p>
+            <p className="mt-2 max-w-2xl text-sm text-ink-muted sm:text-base">
+              Zet PO waar mogelijk om naar contract en bouw zoveel mogelijk contract-FTE richting 31 januari.
+            </p>
+            <div className="mt-4">
+              <p className="label-classified">Hoe pakken we FTE?</p>
+              <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {FOCUS.map(({ label, icon: Icon }) => (
+                  <li key={label} className="flex items-center gap-2 border border-white/[0.08] bg-mission-panel px-3 py-2 text-sm font-semibold text-ink">
+                    <Icon size={15} className="shrink-0 text-gold" aria-hidden />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <p className="font-display text-lg font-bold uppercase tracking-wide text-ink sm:text-xl">
+              Meetperiode: 1 sep → 31 jan
+            </p>
+            <p className="text-sm text-ink-muted">We vergelijken de contract-FTE op beide meetmomenten.</p>
+            <div className="mt-3">
+              <MeasurementDates />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-px border border-white/[0.07] bg-white/[0.05] lg:grid-cols-4">
             <StatTile label="Officiële Net FTE" value={formatVcdbValue(own.netFte)} tone="gold" sub="Zwolle" />
             <StatTile label="FTE-ranking" value={`#${own.netFteRanking}`} sub={`van ${netFteTeamCount} teams`} />
@@ -64,7 +99,7 @@ export function NetFtePage() {
             <StatTile label="Eindstand" value={`#${own.finalRanking}`} sub={`Final Score ${formatVcdbValue(own.finalScore)}`} />
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border border-dashed border-intel/35 bg-intel/[0.04] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border border-dashed border-intel/35 bg-intel/[0.04] px-4 py-3">
             <StandBadge kind="projection" detail={bonnen.status === 'ready' ? `${formatSignedFte(bonnen.openFte)} FTE open bonnen` : 'open bonnen niet geladen'} />
             <p className="text-sm text-ink-muted">
               Met alle open bonnen:{' '}
@@ -76,16 +111,13 @@ export function NetFtePage() {
               <span className="text-ink-dim"> · </span>
               <span className="font-semibold text-intel">positie #{projection.own.finalRanking}</span>
             </p>
-          </div>
-
-          <div className="relative">
-            <img src={softAssetUrl('soft-crosshair')} alt="" aria-hidden className="soft-asset -right-6 -top-10 hidden w-36 opacity-[0.14] lg:block" />
-            <p className="max-w-3xl font-display text-lg font-bold uppercase tracking-wide text-ink sm:text-xl lg:pr-36">
-              31 januari 2027 vs 1 september 2026: de totale FTE van onze contractanten beslist.
-            </p>
-            <div className="mt-3">
-              <MeasurementDates />
-            </div>
+            <a
+              href="#fte-bon-calculator"
+              className="ml-auto inline-flex items-center gap-2 bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-mission-deep transition-colors hover:bg-gold-bright"
+            >
+              <Ticket size={14} aria-hidden />
+              Pak FTE-bon
+            </a>
           </div>
         </section>
 
@@ -108,22 +140,6 @@ export function NetFtePage() {
           />
 
           <FactorLadder standings={standings} baseFte={bonnen.openFte} />
-
-          <section className="panel mission-accent-line px-4 py-5 sm:px-6" aria-labelledby="fte-focus">
-            <p className="label-classified">Focusacties</p>
-            <h2 id="fte-focus" className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-ink">
-              Waar de FTE vandaan komt
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-ink-muted">Elke FTE die we vasthouden of erbij halen, telt in de factor over al onze punten.</p>
-            <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {FOCUS.map(({ label, icon: Icon }) => (
-                <li key={label} className="flex items-center gap-2 border border-white/[0.08] bg-mission-panel px-3 py-2.5 text-sm font-semibold text-ink">
-                  <Icon size={15} className="shrink-0 text-gold" aria-hidden />
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </section>
         </div>
       </div>
 
