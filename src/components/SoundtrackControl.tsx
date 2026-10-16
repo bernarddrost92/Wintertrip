@@ -48,7 +48,7 @@ export function SoundtrackControl() {
           {isMuted ? <VolumeX size={11} aria-hidden /> : <Volume2 size={11} aria-hidden />}
         </button>
         <Equalizer active={isPlaying && !isMuted} />
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+        <span className="hidden whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted min-[1700px]:inline">
           Soundtrack <span className="text-gold/40">//</span>{' '}
           <span className={isPlaying ? 'text-gold' : 'text-ink-dim'}>{isPlaying ? 'Active' : 'Off'}</span>
         </span>
