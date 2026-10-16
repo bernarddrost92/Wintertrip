@@ -233,6 +233,52 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
     });
   });
 
+  describe('Hunt Range', () => {
+    it('OPEN HUNT RANGE (top bar and below the fold) opens the range with the live next target', async () => {
+      const user = userEvent.setup();
+      renderOverlay();
+      expect(screen.getAllByRole('button', { name: /open hunt range/i })).toHaveLength(2);
+      await user.click(screen.getAllByRole('button', { name: /open hunt range/i })[0]);
+      expect(screen.getByTestId('hunt-range')).toBeInTheDocument();
+      expect(screen.getByTestId('range-briefing')).toHaveTextContent('UTRECHT #9');
+    });
+
+    it('Escape closes the range back to the same Hunt Room, then Hunt Mode', async () => {
+      const user = userEvent.setup();
+      const { onExit } = renderOverlay();
+      const dialog = screen.getByTestId('hunt-mode');
+      await user.click(screen.getAllByRole('button', { name: /open hunt range/i })[1]);
+      await user.keyboard('{Escape}');
+      expect(screen.queryByTestId('hunt-range')).not.toBeInTheDocument();
+      expect(onExit).not.toHaveBeenCalled();
+      expect(screen.getByTestId('hunt-mode')).toBe(dialog);
+      await user.keyboard('{Escape}');
+      expect(onExit).toHaveBeenCalledTimes(1);
+    });
+
+    it('SLUIT HUNT RANGE goes back to the Hunt Room without handing off', async () => {
+      const user = userEvent.setup();
+      const { onPakFteBon } = renderOverlay();
+      await user.click(screen.getAllByRole('button', { name: /open hunt range/i })[0]);
+      expect(screen.getByRole('button', { name: /start ronde/i })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /sluit hunt range/i }));
+      expect(screen.queryByTestId('hunt-range')).not.toBeInTheDocument();
+      expect(onPakFteBon).not.toHaveBeenCalled();
+    });
+
+    it('no target left: the range says NO TARGETS REMAINING', async () => {
+      fetchFteBonnen.mockResolvedValue([{ ...OPEN_BON, fteDelta: 20 }]);
+      const user = userEvent.setup();
+      const { onPakFteBon } = renderOverlay();
+      await flush();
+      await user.click(screen.getAllByRole('button', { name: /open hunt range/i })[0]);
+      expect(screen.getByTestId('range-no-targets')).toHaveTextContent(/defend the position/i);
+      await user.click(within(screen.getByTestId('range-no-targets')).getByRole('button', { name: /pak fte-bon/i }));
+      expect(onPakFteBon).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId('hunt-range')).not.toBeInTheDocument();
+    });
+  });
+
   it('PAK FTE-BON (hero) and PAK JE FTE-BON (below the fold) hand off to the FTE Bon Calculator', async () => {
     const user = userEvent.setup();
     const { onPakFteBon } = renderOverlay();
@@ -251,6 +297,8 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
     exit.focus();
     await user.tab({ shift: true });
     expect(screen.getByRole('button', { name: /open war room/i })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getAllByRole('button', { name: /open hunt range/i })[0]).toHaveFocus();
     await user.tab({ shift: true });
     expect(screen.getByRole('button', { name: /pak je fte-bon/i })).toHaveFocus();
     await user.click(exit);

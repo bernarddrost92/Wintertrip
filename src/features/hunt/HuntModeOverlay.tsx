@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Flame, X } from 'lucide-react';
+import { Crosshair, Flame, X } from 'lucide-react';
 import { OWN_TEAM } from '../../data/manualPowerBiSnapshot';
 import { useFteBonnen } from '../../hooks/useFteBonnen';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { formatFactor, formatSignedFte } from '../../utils/format';
 import { formatPowerBiTime } from '../../utils/snapshotTime';
+import { HuntRange } from '../hunt-range/HuntRange';
+import { getRangeTargets } from '../hunt-range/huntRangeLines';
 import { HuntBackdrop } from './HuntBackdrop';
 import { HuntHero } from './HuntHero';
 import { getHuntIntel } from './huntIntel';
@@ -56,6 +58,7 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
   const entering = fromActivation && !reduced;
   const [reveal, setReveal] = useState<Reveal>(null);
   const [warRoom, setWarRoom] = useState(false);
+  const [range, setRange] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const exitRef = useRef<HTMLButtonElement>(null);
 
@@ -123,6 +126,10 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
           </p>
           <div className="flex shrink-0 items-center gap-2">
             <span className="hunt3-topbar-meta hidden xl:inline">Hunt mode active · Power BI {officialDate}</span>
+            <button type="button" onClick={() => setRange(true)} className="hunt3-topbar-button hunt3-topbar-range" aria-label="Open Hunt Range" title="Open Hunt Range">
+              <Crosshair size={14} aria-hidden />
+              <span className="hidden sm:inline">Open Hunt Range</span>
+            </button>
             <button type="button" onClick={() => setWarRoom(true)} className="hunt3-topbar-button" aria-label="Open War Room" title="Open War Room">
               <Flame size={14} aria-hidden />
               <span className="hidden sm:inline">Open War Room</span>
@@ -150,7 +157,7 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
         </div>
       </div>
 
-      <HuntSecondaryIntel intel={intel} officialDate={officialDate} openCount={openBonnen.length} onOpenWarRoom={() => setWarRoom(true)} onPakFteBon={onPakFteBon} />
+      <HuntSecondaryIntel intel={intel} officialDate={officialDate} openCount={openBonnen.length} onOpenWarRoom={() => setWarRoom(true)} onOpenRange={() => setRange(true)} onPakFteBon={onPakFteBon} />
 
       {reveal && (
         <HuntRevealOverlay
@@ -160,6 +167,18 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
           againLabel={reveal.kind === 'mission' ? 'Nog een missie' : 'Nog één'}
           onAgain={reveal.kind === 'mission' ? nextMission : nextLine}
           onClose={() => setReveal(null)}
+        />
+      )}
+
+      {range && (
+        <HuntRange
+          targets={getRangeTargets(standings, OWN_TEAM, openFte)}
+          random={random}
+          onClose={() => setRange(false)}
+          onPakFteBon={() => {
+            setRange(false);
+            onPakFteBon();
+          }}
         />
       )}
 

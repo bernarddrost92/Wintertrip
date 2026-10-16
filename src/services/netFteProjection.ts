@@ -150,6 +150,20 @@ export function nextNetFteTarget(projection: StandingsProjection): NetFteTarget 
   return null;
 }
 
+/** Every visible team above ownTeam in the Net FTE ranking, nearest first
+ * (the first one is nextNetFteTarget) — empty at #1. Hidden ranks are skipped. */
+export function netFteTargetsAbove(projection: StandingsProjection): NetFteTarget[] {
+  const ownIndex = projection.netFteOrder.findIndex((slot) => slot.team === projection.own.team);
+  const targets: NetFteTarget[] = [];
+  for (let i = ownIndex - 1; i >= 0; i--) {
+    const slot = projection.netFteOrder[i];
+    if (slot.team !== null && slot.netFte !== null) {
+      targets.push({ rank: slot.rank, team: slot.team, netFte: slot.netFte, fteNeeded: round2(slot.netFte - projection.own.netFte + PASS_MARGIN) });
+    }
+  }
+  return targets;
+}
+
 /** Teams ownTeam has passed in the Net FTE ranking compared to the official table. */
 export function teamsPassedInNetFte(projection: StandingsProjection): string[] {
   const ownOfficialRank = projection.own.official.netFteRanking;

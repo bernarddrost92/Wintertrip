@@ -178,3 +178,4 @@
   .hunt3-lock-ring,.hunt3-lock-scan,.hunt3-gold-line::after{display:none}
   .hunt3-poster,.hunt3-video,.hunt3-video-shade{transition:none}
 }
+.hunt3-topbar-range{border-color:rgba(214,174,85,.38);color:var(--hunt-gold-bright)}

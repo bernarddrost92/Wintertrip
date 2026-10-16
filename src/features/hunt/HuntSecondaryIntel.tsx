@@ -1,4 +1,4 @@
-import { ArrowRight, Flame } from 'lucide-react';
+import { ArrowRight, Crosshair, Flame } from 'lucide-react';
 import { formatFactor, formatSignedFte, formatVcdbValue } from '../../utils/format';
 import type { HuntIntel } from './huntIntel';
 
@@ -7,6 +7,7 @@ interface HuntSecondaryIntelProps {
   officialDate: string;
   openCount: number;
   onOpenWarRoom: () => void;
+  onOpenRange?: () => void;
   onPakFteBon: () => void;
 }
 
@@ -15,7 +16,7 @@ interface HuntSecondaryIntelProps {
  * open FTE-bonnen, the projection (blue) and the official Power BI date —
  * then the Net FTE rule, the War Room entry and the closing FTE-bon CTA.
  */
-export function HuntSecondaryIntel({ intel, officialDate, openCount, onOpenWarRoom, onPakFteBon }: HuntSecondaryIntelProps) {
+export function HuntSecondaryIntel({ intel, officialDate, openCount, onOpenWarRoom, onOpenRange, onPakFteBon }: HuntSecondaryIntelProps) {
   const items = [
     { label: 'Factor', value: formatFactor(intel.factor) },
     { label: 'Eindstand', value: `#${intel.finalPosition}` },
@@ -46,6 +47,11 @@ export function HuntSecondaryIntel({ intel, officialDate, openCount, onOpenWarRo
       <div className="hunt3-closing">
         <p>Move gemaakt?</p>
         <div className="flex flex-wrap gap-2.5">
+          {onOpenRange && (
+            <button type="button" onClick={onOpenRange} className="hunt3-button hunt3-button-secondary">
+              <Crosshair size={16} aria-hidden /> Open Hunt Range
+            </button>
+          )}
           <button type="button" onClick={onOpenWarRoom} className="hunt3-button hunt3-button-secondary">
             <Flame size={16} aria-hidden /> Activate War Room
           </button>
