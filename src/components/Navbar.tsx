@@ -2,6 +2,7 @@ import { Calculator, Home, LayoutDashboard, Radio, Target, TrendingUp } from 'lu
 import type { AppView } from '../types/navigation';
 import { StatusLed } from './MissionSerial';
 import { SoundtrackControl } from './SoundtrackControl';
+import { HuntModeToggle } from '../features/hunt/HuntModeToggle';
 
 const NAV_ITEMS: { view: AppView; label: string; icon: typeof Calculator }[] = [
   { view: 'home', label: 'Mission Home', icon: Home },
@@ -70,6 +71,8 @@ export function Navbar({ current, onNavigate }: NavbarProps) {
               );
             })}
           </nav>
+
+          <HuntModeToggle />
         </div>
       </div>
     </header>

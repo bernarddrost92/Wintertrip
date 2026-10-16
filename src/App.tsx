@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AccessGate } from './features/access/AccessGate';
 import { signOutTeamZwolle, useSupabaseAuthSession } from './features/access/teamZwolleAuth';
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -18,6 +18,9 @@ import { NetFtePage } from './features/net-fte/NetFtePage';
 import { ScoreCheckPage } from './features/score-check/ScoreCheckPage';
 import { MissionFlowProvider } from './features/missionFlow/MissionFlowProvider';
 import { SoundtrackProvider } from './features/soundtrack/SoundtrackProvider';
+import { HuntModeProvider } from './features/hunt/HuntModeProvider';
+import { HuntLayer } from './features/hunt/HuntLayer';
+import { MissionRibbon } from './features/hunt/MissionRibbon';
 import type { AppView } from './types/navigation';
 import { clearDeepLinkParam, readDeepLinkView } from './utils/deepLink';
 
@@ -74,6 +77,25 @@ export default function App() {
     return deepLinkView ?? 'home';
   });
   const [transition, setTransition] = useState<AppView | null>(null);
+  const [fteBonRequested, setFteBonRequested] = useState(false);
+
+  /** PAK FTE-BON (ribbon / Hunt Mode): open Net FTE and bring the existing
+   * FTE Bon Calculator into view, its FTE field focused. */
+  const goToFteBon = useCallback(() => {
+    setView('net-fte');
+    setFteBonRequested(true);
+  }, []);
+
+  useEffect(() => {
+    if (!fteBonRequested || view !== 'net-fte') return;
+    const frame = window.requestAnimationFrame(() => {
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      document.getElementById('fte-bon-calculator')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      document.getElementById('fte-bon-fte')?.focus({ preventScroll: true });
+      setFteBonRequested(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [fteBonRequested, view]);
 
   function handleLogout() {
     void signOutTeamZwolle();
@@ -107,52 +129,57 @@ export default function App() {
 
   return (
     <SoundtrackProvider>
-      <MissionFlowProvider>
-        <div className="relative min-h-screen overflow-x-hidden bg-mission-void">
-          {/* The cinematic control room is for the gate and intro; the daily
-              screens get the quiet briefing-room backdrop. */}
-          {session && gatePhase === 'ready' ? <Soft007Environment /> : <ControlRoomEnvironment />}
+      <HuntModeProvider>
+        <MissionFlowProvider>
+          <div className="relative min-h-screen overflow-x-hidden bg-mission-void">
+            {/* The cinematic control room is for the gate and intro; the daily
+                screens get the quiet briefing-room backdrop. */}
+            {session && gatePhase === 'ready' ? <Soft007Environment /> : <ControlRoomEnvironment />}
 
-          {!isSupabaseConfigured() ? (
-            <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-4 text-center">
-              <p className="label-classified text-gold/70">007 — Operatie Wintertrip 2027</p>
-              <p className="font-display text-xl font-bold uppercase tracking-wide text-ink">Setup Required</p>
-              <p className="max-w-sm text-sm text-ink-muted">Supabase is not configured for this build — the shared Team Zwolle access gate cannot be reached.</p>
-            </div>
-          ) : authLoading ? (
-            <div className="flex min-h-screen items-center justify-center">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Verifying access…</p>
-            </div>
-          ) : !session ? (
-            <AccessGate />
-          ) : (
-            <>
-              {gatePhase === 'gate' && <MissionGate onAccept={handleGateAccept} />}
-              {gatePhase === 'intro' && <MissionIntroSequence onComplete={handleIntroComplete} />}
+            {!isSupabaseConfigured() ? (
+              <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-4 text-center">
+                <p className="label-classified text-gold/70">007 — Operatie Wintertrip 2027</p>
+                <p className="font-display text-xl font-bold uppercase tracking-wide text-ink">Setup Required</p>
+                <p className="max-w-sm text-sm text-ink-muted">Supabase is not configured for this build — the shared Team Zwolle access gate cannot be reached.</p>
+              </div>
+            ) : authLoading ? (
+              <div className="flex min-h-screen items-center justify-center">
+                <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">Verifying access…</p>
+              </div>
+            ) : !session ? (
+              <AccessGate />
+            ) : (
+              <>
+                {gatePhase === 'gate' && <MissionGate onAccept={handleGateAccept} />}
+                {gatePhase === 'intro' && <MissionIntroSequence onComplete={handleIntroComplete} />}
 
-              {gatePhase === 'ready' && (
-                <div className="relative z-10 flex min-h-screen flex-col">
-                  <Navbar current={view} onNavigate={setView} />
-                  <main className="flex-1">
-                    {view === 'home' && <MissionHomepage onSelect={handleNavigate} />}
-                    {view === 'score-check' && <ScoreCheckPage />}
-                    {view === 'net-fte' && <NetFtePage />}
-                    {view === 'mission-control' && (
-                      <CommandFrame>
-                        <MissionControlPage />
-                      </CommandFrame>
-                    )}
-                    {view === 'mission-updates' && <MissionUpdatesPage />}
-                  </main>
-                  <Footer onReplayIntro={handleReplayIntro} onLogout={handleLogout} />
-                </div>
-              )}
+                {gatePhase === 'ready' && (
+                  <div className="relative z-10 flex min-h-screen flex-col">
+                    <Navbar current={view} onNavigate={setView} />
+                    <MissionRibbon onPakFteBon={goToFteBon} />
+                    <main className="flex-1">
+                      {view === 'home' && <MissionHomepage onSelect={handleNavigate} />}
+                      {view === 'score-check' && <ScoreCheckPage />}
+                      {view === 'net-fte' && <NetFtePage />}
+                      {view === 'mission-control' && (
+                        <CommandFrame>
+                          <MissionControlPage />
+                        </CommandFrame>
+                      )}
+                      {view === 'mission-updates' && <MissionUpdatesPage />}
+                    </main>
+                    <Footer onReplayIntro={handleReplayIntro} onLogout={handleLogout} />
+                  </div>
+                )}
 
-              {transition && <AccessTransition label={ACCESS_LABEL[transition]} />}
-            </>
-          )}
-        </div>
-      </MissionFlowProvider>
+                {gatePhase === 'ready' && <HuntLayer onPakFteBon={goToFteBon} />}
+
+                {transition && <AccessTransition label={ACCESS_LABEL[transition]} />}
+              </>
+            )}
+          </div>
+        </MissionFlowProvider>
+      </HuntModeProvider>
     </SoundtrackProvider>
   );
 }

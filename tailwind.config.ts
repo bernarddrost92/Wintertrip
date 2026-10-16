@@ -168,6 +168,40 @@ export default {
           '0%, 100%': { opacity: '0.35' },
           '50%': { opacity: '0.7' },
         },
+        /* HUNT MODE only — Quiet Mode never uses these. Transform/opacity only. */
+        'confetti-fall': {
+          '0%': { transform: 'translate3d(0, -12vh, 0) rotate(0deg)', opacity: '1' },
+          '80%': { opacity: '1' },
+          '100%': { transform: 'translate3d(var(--confetti-drift, 0px), 108vh, 0) rotate(var(--confetti-spin, 540deg))', opacity: '0' },
+        },
+        'gold-flash': {
+          '0%': { opacity: '0' },
+          '22%': { opacity: '0.42' },
+          '100%': { opacity: '0' },
+        },
+        'target-lock': {
+          '0%': { opacity: '0', transform: 'scale(1.18)' },
+          '60%': { opacity: '1', transform: 'scale(0.98)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'hunt-grid-drift': {
+          '0%': { transform: 'translate3d(0, 0, 0)' },
+          '100%': { transform: 'translate3d(0, 64px, 0)' },
+        },
+        'hunt-scan': {
+          '0%': { transform: 'translate3d(0, -10vh, 0)', opacity: '0' },
+          '10%': { opacity: '1' },
+          '90%': { opacity: '1' },
+          '100%': { transform: 'translate3d(0, 110vh, 0)', opacity: '0' },
+        },
+        'hunt-ping': {
+          '0%': { transform: 'scale(0.6)', opacity: '0.8' },
+          '100%': { transform: 'scale(2.4)', opacity: '0' },
+        },
+        'hunt-rise': {
+          '0%': { opacity: '0', transform: 'translate3d(0, 18px, 0) scale(0.98)' },
+          '100%': { opacity: '1', transform: 'translate3d(0, 0, 0) scale(1)' },
+        },
       },
       animation: {
         'radar-spin': 'radar-spin 18s linear infinite',
@@ -182,6 +216,13 @@ export default {
         'podium-pulse-bronze': 'podium-pulse-bronze 5s ease-in-out infinite',
         'podium-flare': 'podium-flare 8s ease-in-out infinite',
         'podium-shimmer-silver': 'podium-shimmer-silver 6s ease-in-out infinite',
+        'confetti-fall': 'confetti-fall 1.6s cubic-bezier(0.25, 0.6, 0.4, 1) both',
+        'gold-flash': 'gold-flash 0.65s ease-out both',
+        'target-lock': 'target-lock 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        'hunt-grid-drift': 'hunt-grid-drift 6s linear infinite',
+        'hunt-scan': 'hunt-scan 7s linear infinite',
+        'hunt-ping': 'hunt-ping 2.2s ease-out infinite',
+        'hunt-rise': 'hunt-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both',
       },
     },
   },
