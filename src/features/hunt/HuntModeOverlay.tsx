@@ -41,7 +41,7 @@ interface HuntModeOverlayProps {
  * hero — headline, one live strip with the target in the centre, three
  * actions — plus the four moves and one line of intel; the rest of the
  * intelligence sits calmly below the fold. GEEF MIJ EEN MISSIE and GEEF ME
- * VUUR open a full-screen reveal; the War Room stays one click away.
+ * MOTIVATIE NODIG? open a full-screen reveal; the War Room stays one click away.
  *
  * Every figure comes from getHuntIntel (snapshot + projection service +
  * FTE-bonnen hook); no business logic lives here. A real modal: focus is
@@ -132,7 +132,7 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
             </button>
             <button type="button" onClick={() => setWarRoom(true)} className="hunt3-topbar-button" aria-label="Open War Room" title="Open War Room">
               <Flame size={14} aria-hidden />
-              <span className="hidden sm:inline">Open War Room</span>
+              <span className="hidden sm:inline">War Room · kies je move</span>
             </button>
             <button ref={exitRef} type="button" onClick={onExit} className="hunt3-topbar-button">
               <X size={14} aria-hidden />
@@ -161,10 +161,10 @@ export function HuntModeOverlay({ fromActivation, onExit, onPakFteBon, random = 
 
       {reveal && (
         <HuntRevealOverlay
-          eyebrow={reveal.kind === 'mission' ? 'Missie // secure channel' : 'Mission brief // secure channel'}
+          eyebrow={reveal.kind === 'mission' ? 'Missie // secure channel' : 'Motivatie // secure channel'}
           text={reveal.text}
           kind={reveal.kind}
-          againLabel={reveal.kind === 'mission' ? 'Nog een missie' : 'Nog één'}
+          againLabel={reveal.kind === 'mission' ? 'Nog een missie' : 'Nog een zin'}
           onAgain={reveal.kind === 'mission' ? nextMission : nextLine}
           onClose={() => setReveal(null)}
         />

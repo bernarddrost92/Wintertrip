@@ -353,7 +353,7 @@ describe('App — QUIET MODE ↔ HUNT MODE', () => {
 
     await user.click(screen.getByRole('button', { name: /geef mij een missie/i }));
     await user.keyboard('{Escape}');
-    await user.click(screen.getByRole('button', { name: /geef me vuur/i }));
+    await user.click(screen.getByRole('button', { name: /motivatie nodig/i }));
     await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button', { name: /open war room/i }));
     await user.keyboard('{Escape}');

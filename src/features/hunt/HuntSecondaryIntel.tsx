@@ -53,7 +53,7 @@ export function HuntSecondaryIntel({ intel, officialDate, openCount, onOpenWarRo
             </button>
           )}
           <button type="button" onClick={onOpenWarRoom} className="hunt3-button hunt3-button-secondary">
-            <Flame size={16} aria-hidden /> Activate War Room
+            <Flame size={16} aria-hidden /> War Room · kies je move
           </button>
           <button type="button" onClick={onPakFteBon} className="hunt3-button hunt3-button-primary">
             Pak je FTE-bon <ArrowRight size={17} aria-hidden />

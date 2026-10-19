@@ -21,7 +21,7 @@ function splitForGold(text: string): [string, string] {
 }
 
 /**
- * The cinematic reveal for GEEF MIJ EEN MISSIE and GEEF ME VUUR: one large
+ * The cinematic reveal for GEEF MIJ EEN MISSIE and MOTIVATIE NODIG?: one large
  * line on a dark field (the Hunt Room stays faintly visible behind it) with
  * the target lock art. NOG EEN / NOG ÉÉN swaps the line in place — the old
  * one fades and slides out briefly, the new one locks in — without

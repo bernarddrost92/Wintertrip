@@ -179,3 +179,6 @@
   .hunt3-poster,.hunt3-video,.hunt3-video-shade{transition:none}
 }
 .hunt3-topbar-range{border-color:rgba(214,174,85,.38);color:var(--hunt-gold-bright)}
+.hunt3-action-hints{margin-top:14px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 22px;font-size:13px;line-height:1.4;color:var(--hunt-muted)}
+.hunt3-action-hints strong{margin-right:6px;color:var(--hunt-gold-bright);font-weight:700}
+@media(max-width:720px){.hunt3-action-hints{flex-direction:column;align-items:center;gap:4px}}

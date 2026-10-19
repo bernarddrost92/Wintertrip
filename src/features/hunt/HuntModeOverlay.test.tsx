@@ -86,7 +86,7 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
 
   it('shows the three actions, the four moves as one strip and the Net FTE rule', () => {
     renderOverlay();
-    for (const name of [/geef mij een missie/i, /^pak fte-bon/i, /geef me vuur/i]) expect(hero().getByRole('button', { name })).toBeInTheDocument();
+    for (const name of [/geef mij een missie/i, /^pak fte-bon/i, /motivatie nodig/i]) expect(hero().getByRole('button', { name })).toBeInTheDocument();
     const moves = within(screen.getByRole('region', { name: /vier routes naar net fte/i }));
     for (const move of ['Verlengen', 'PO → contract', 'Nieuwe contractant', 'Uren ophogen']) expect(moves.getByText(move)).toBeInTheDocument();
     expect(screen.getByText('Net FTE = BPT + VD')).toBeInTheDocument();
@@ -171,14 +171,14 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
       expect(screen.getByTestId('hunt-reveal')).toBe(reveal);
     });
 
-    it('GEEF ME VUUR opens the reveal with a one-liner, gold last line; NOG ÉÉN swaps it — no confetti', async () => {
+    it('MOTIVATIE NODIG? opens the reveal with a one-liner, gold last line; NOG EEN ZIN swaps it — no confetti', async () => {
       const user = userEvent.setup();
       renderOverlay();
-      await user.click(hero().getByRole('button', { name: /geef me vuur/i }));
+      await user.click(hero().getByRole('button', { name: /motivatie nodig/i }));
       const first = screen.getByTestId('hunt-reveal-text').dataset.text;
       expect(HUNT_ONE_LINERS).toContain(first);
       expect(screen.getByTestId('hunt-reveal-text').querySelector('.hunt3-gold-line')).not.toBeNull();
-      await user.click(screen.getByRole('button', { name: /nog één/i }));
+      await user.click(screen.getByRole('button', { name: /nog een zin/i }));
       await waitFor(() => expect(screen.getByTestId('hunt-reveal-text').dataset.text).not.toBe(first));
       expect(HUNT_ONE_LINERS).toContain(screen.getByTestId('hunt-reveal-text').dataset.text);
       expect(screen.queryByTestId('gold-confetti')).not.toBeInTheDocument();
@@ -188,9 +188,9 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
       mockMedia({ reduced: true });
       const user = userEvent.setup();
       renderOverlay();
-      await user.click(hero().getByRole('button', { name: /geef me vuur/i }));
+      await user.click(hero().getByRole('button', { name: /motivatie nodig/i }));
       const first = screen.getByTestId('hunt-reveal-text').dataset.text;
-      await user.click(screen.getByRole('button', { name: /nog één/i }));
+      await user.click(screen.getByRole('button', { name: /nog een zin/i }));
       expect(screen.getByTestId('hunt-reveal-text').dataset.text).not.toBe(first);
     });
 
@@ -208,7 +208,7 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
     it('Escape closes the reveal first, then Hunt Mode', async () => {
       const user = userEvent.setup();
       const { onExit } = renderOverlay();
-      await user.click(hero().getByRole('button', { name: /geef me vuur/i }));
+      await user.click(hero().getByRole('button', { name: /motivatie nodig/i }));
       await user.keyboard('{Escape}');
       expect(screen.queryByTestId('hunt-reveal')).not.toBeInTheDocument();
       expect(onExit).not.toHaveBeenCalled();
@@ -324,7 +324,7 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
       await user.click(hero().getByRole('button', { name: /geef mij een missie/i }));
       await user.click(screen.getByRole('button', { name: /nog een missie/i }));
       await user.keyboard('{Escape}');
-      await user.click(hero().getByRole('button', { name: /geef me vuur/i }));
+      await user.click(hero().getByRole('button', { name: /motivatie nodig/i }));
       await user.keyboard('{Escape}');
       await user.click(screen.getByRole('button', { name: /open war room/i }));
       await user.keyboard('{Escape}');

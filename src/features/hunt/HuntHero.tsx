@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { ArrowRight, Crosshair, Dices, Flame } from 'lucide-react';
+import { ArrowRight, Crosshair, Dices, Zap } from 'lucide-react';
 import { formatSignedFte } from '../../utils/format';
 import type { HuntIntel } from './huntIntel';
 import type { HuntEntryDelays } from './huntTimeline';
@@ -83,9 +83,21 @@ export function HuntHero({ intel, delays, onMission, onMotivation, onPakFteBon, 
           Pak FTE-bon <ArrowRight size={17} aria-hidden />
         </button>
         <button type="button" onClick={onMotivation} className="hunt3-button hunt3-button-secondary">
-          <Flame size={16} aria-hidden /> Geef me vuur
+          <Zap size={16} aria-hidden /> Motivatie nodig?
         </button>
       </div>
+      {/* What each action does, in one calm line — no guessing. */}
+      <p className="hunt3-action-hints animate-hunt-rise" style={delay(delays.actions)}>
+        <span>
+          <strong>Missie</strong> een concrete opdracht voor vandaag
+        </span>
+        <span>
+          <strong>FTE-bon</strong> leg je move vast
+        </span>
+        <span>
+          <strong>Motivatie</strong> één zin om door te pakken
+        </span>
+      </p>
 
       {children && (
         <div className="w-full animate-hunt-rise" style={delay(delays.moves)}>
