@@ -63,7 +63,7 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
   }
 
   return (
-    <div className={`panel mission-accent-line relative overflow-hidden p-5 sm:p-7 ${CARD_CLASSES[state]}`} data-podium-state={state}>
+    <div className={`panel mission-accent-line relative overflow-hidden p-5 sm:p-7 ${CARD_CLASSES[state]}`} data-podium-state={state} data-demo="mc-briefing">
       {/* One static wash per podium state — no pulse, flare or shimmer
           loops on a screen people look at every day. */}
       {state !== 'default' && (
@@ -79,14 +79,14 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
       )}
 
       <div className="relative flex items-start justify-between gap-4">
-        <div>
+        <div data-demo="mc-position">
           <p className="stat-label">Positie</p>
           <p className={`mt-1 font-display text-5xl font-black leading-none tabular-nums sm:text-6xl ${NUMBER_CLASSES[state]}`}>
             #{ranking.virtualPosition}
           </p>
           <p className="label-classified mt-1">{STATE_LABEL[state]}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right" data-demo="mc-final">
           <p className="stat-label">Final Score</p>
           <p className="mt-1 font-display text-3xl font-bold tabular-nums text-ink sm:text-4xl">
             {powerBi.finalScore != null ? formatVcdbValue(powerBi.finalScore) : '—'}
@@ -95,7 +95,7 @@ export function CommandBriefingCard({ ranking, powerBi, fte, teamAbove = null }:
       </div>
 
       {(lead !== null || gapAbove !== null || fte.netFteRanking != null || fte.currentFteFactor != null) && (
-        <div className="relative mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs">
+        <div className="relative mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs" data-demo="mc-strip">
           {lead !== null && second && (
             <p className="text-sm font-semibold text-gold">
               +{formatVcdbValue(lead)} vs #2 {second.team}

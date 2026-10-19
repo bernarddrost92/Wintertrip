@@ -64,7 +64,7 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
         Net FTE-meetdatum <span className="font-semibold text-gold">{formatIsoDateNl(LEAGUE_PERIOD.end)}</span> vs {formatIsoDateNl(LEAGUE_PERIOD.start)}
       </p>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+      <div className="mt-4 grid gap-3 lg:grid-cols-2" data-demo="mc-columns">
         <FigureColumn kind="official" detail="Power BI" figures={official} />
         <FigureColumn
           kind="projection"
@@ -73,7 +73,7 @@ export function ZwolleProjectionPanel({ standings }: ZwolleProjectionPanelProps)
         />
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+      <div className="mt-4 grid gap-3 lg:grid-cols-2" data-demo="mc-targets">
         <div className="border border-gold/30 bg-gold/5 p-3">
           <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink-muted">
             <Target size={12} aria-hidden /> Eerst te pakken · eindstand
