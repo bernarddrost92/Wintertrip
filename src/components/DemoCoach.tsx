@@ -1,26 +1,38 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, Check, Wand2, X } from 'lucide-react';
-import type { DemoContext, DemoStep } from './scoreCheckDemoSteps';
 
-interface ScoreCheckDemoProps extends DemoContext {
-  steps: DemoStep[];
+/** One step of a guided demo: which element to light up, what to say and
+ * (optionally) how to fill in the example. `C` is whatever the form needs. */
+export interface DemoStep<C> {
+  key: string;
+  title: string;
+  text: string;
+  selector: string;
+  /** Fills in the example value — absent on read-only steps. */
+  fill?: (ctx: C) => void;
+  done: (ctx: C) => boolean;
+}
+
+interface DemoCoachProps<C> {
+  /** Accessible name, e.g. "Demo Score Check". */
+  label: string;
+  steps: DemoStep<C>[];
+  ctx: C;
   index: number;
   onIndexChange: (index: number) => void;
   onStop: () => void;
 }
 
 /**
- * The guided demo for Score Check: one step at a time it lights up the
- * field, says what belongs in it and can fill in an example. Only fills
- * the form through the calculator's own update functions — the scoring
- * itself is untouched.
+ * A guided demo: one step at a time it lights up the field, says what
+ * belongs in it and can fill in an example. It only fills a form through
+ * that form's own setters (the steps' fill functions) — no logic of its own.
  */
-export function ScoreCheckDemo({ steps, index, onIndexChange, onStop, ...ctx }: ScoreCheckDemoProps) {
+export function DemoCoach<C>({ label, steps, ctx, index, onIndexChange, onStop }: DemoCoachProps<C>) {
   const step = steps[index];
   const done = step.done(ctx);
   const last = index === steps.length - 1;
-  const hasResult = ctx.output.result !== null;
 
   // Light up and scroll to this step's field.
   useEffect(() => {
@@ -29,7 +41,7 @@ export function ScoreCheckDemo({ steps, index, onIndexChange, onStop, ...ctx }: 
     el.setAttribute('data-demo-focus', '');
     if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center', behavior: 'smooth' });
     return () => el.removeAttribute('data-demo-focus');
-  }, [step.selector, hasResult]);
+  }, [step.selector, done]);
 
   function next() {
     if (last) onStop();
@@ -46,8 +58,8 @@ export function ScoreCheckDemo({ steps, index, onIndexChange, onStop, ...ctx }: 
   return createPortal(
     <aside
       role="dialog"
-      aria-label="Demo Score Check"
-      data-testid="score-check-demo"
+      aria-label={label}
+      data-testid="demo-coach"
       className="fixed inset-x-3 bottom-3 z-40 border border-gold/50 bg-mission-deep/95 p-4 shadow-gold-lg backdrop-blur sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[380px] sm:p-5"
     >
       <div className="flex items-center justify-between gap-3">

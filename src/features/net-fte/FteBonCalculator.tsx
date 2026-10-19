@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Plus, Receipt, Ticket } from 'lucide-react';
+import { PlayCircle, Plus, Receipt, Ticket } from 'lucide-react';
+import { DemoCoach } from '../../components/DemoCoach';
 import { FormField, TextInput } from '../../components/FormField';
 import { GoldButton } from '../../components/GoldButton';
 import { StandBadge } from '../../components/StandBadge';
@@ -9,6 +10,7 @@ import { projectStandings } from '../../services/netFteProjection';
 import { formatSignedFte, formatVcdbValue } from '../../utils/format';
 import { parseDutchNumber } from '../../utils/parseDutchNumber';
 import type { FteBonnenStatus } from '../../hooks/useFteBonnen';
+import { fteBonDemoSteps } from './fteBonDemoSteps';
 import { ProjectionReadout } from './ProjectionReadout';
 
 const QUICK_FTE = [0.2, 0.5, 0.8, 1.0];
@@ -42,6 +44,9 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
   const [note, setNote] = useState('');
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const [savedBon, setSavedBon] = useState<FteBon | null>(null);
+  const [demoIndex, setDemoIndex] = useState<number | null>(null);
+  const demoSteps = useMemo(() => fteBonDemoSteps(standings, openFte), [standings, openFte]);
+  const demoActive = demoIndex !== null;
 
   const parsed = parseDutchNumber(fteRaw);
   /** null unless the input is a usable, non-zero FTE change. */
@@ -55,7 +60,29 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
   );
 
   const missing = [label.trim() === '' && 'naam / label', owner.trim() === '' && 'Talent Manager'].filter(Boolean) as string[];
-  const canSave = fteValid && missing.length === 0 && storeStatus !== 'unavailable' && !saving;
+  // Never save during the demo: a demo bon would count in everyone's open bonnen.
+  const canSave = fteValid && missing.length === 0 && storeStatus !== 'unavailable' && !saving && !demoActive;
+
+  function clearForm() {
+    setType('VERLENGING');
+    setLabel('');
+    setFteRaw('');
+    setOwner('');
+    setNote('');
+    setMessage(null);
+  }
+
+  function startDemo() {
+    clearForm();
+    setSavedBon(null);
+    setDemoIndex(0);
+  }
+
+  function stopDemo() {
+    // The example must not stay behind as something that can be saved.
+    clearForm();
+    setDemoIndex(null);
+  }
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
@@ -82,7 +109,17 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
             FTE Bon Calculator
           </h2>
         </div>
-        <p className="text-sm text-ink-muted">Vul de FTE in, het effect staat er direct.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-ink-muted">Vul de FTE in, het effect staat er direct.</p>
+          <button
+            type="button"
+            onClick={startDemo}
+            className="inline-flex min-h-11 items-center gap-2 border border-gold/35 px-3.5 text-sm font-medium text-gold transition-colors hover:border-gold/70 hover:bg-gold/[0.06]"
+          >
+            <PlayCircle size={16} aria-hidden />
+            Demo: help me invullen
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -172,13 +209,13 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
             </div>
           </details>
 
-          <GoldButton type="submit" disabled={!canSave} icon={<Plus size={16} />} className="w-full">
+          <GoldButton type="submit" disabled={!canSave} icon={<Plus size={16} />} className="w-full" data-demo="fte-save">
             {saving ? 'Opslaan…' : 'Pak FTE-bon'}
           </GoldButton>
           {storeStatus === 'unavailable' && (
             <p className="text-[13px] text-ink-muted">Opslaan is nu niet beschikbaar — de berekening werkt wel.</p>
           )}
-          {fteValid && missing.length > 0 && storeStatus !== 'unavailable' && (
+          {fteValid && missing.length > 0 && storeStatus !== 'unavailable' && !demoActive && (
             <p className="text-[13px] font-medium text-gold/90">Vul nog {missing.join(' en ')} in om de bon op te slaan.</p>
           )}
           {message && (
@@ -193,7 +230,7 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
           )}
         </div>
 
-        <div className="space-y-4 border-t border-white/10 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+        <div className="space-y-4 border-t border-white/10 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0" data-demo="fte-effect">
           <div className="flex flex-wrap items-center gap-2">
             <StandBadge kind="projection" detail="officieel + deze bon" />
           </div>
@@ -216,6 +253,17 @@ export function FteBonCalculator({ standings, openFte, storeStatus, saving, onSa
           )}
         </div>
       </form>
+
+      {demoActive && (
+        <DemoCoach
+          label="Demo FTE-bon"
+          steps={demoSteps}
+          ctx={{ type, fteRaw, label, owner, hasEffect: withBon !== null, setType, setFteRaw, setLabel, setOwner }}
+          index={demoIndex}
+          onIndexChange={setDemoIndex}
+          onStop={stopDemo}
+        />
+      )}
     </section>
   );
 }

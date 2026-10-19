@@ -1,6 +1,7 @@
 /** Score Check demo: the steps, their example values and how each is filled in. */
 import { OWN_TEAM } from '../../data/manualPowerBiSnapshot';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
+import type { DemoStep } from '../../components/DemoCoach';
 import type { MissionType } from '../../types/scoring';
 import { formatFactor } from '../../utils/format';
 import type { CalculatorForm, CalculatorOutput } from './useMissionControlCalculator';
@@ -12,16 +13,7 @@ export interface DemoContext {
   setMissionType: (type: MissionType) => void;
 }
 
-export interface DemoStep {
-  key: string;
-  title: string;
-  text: string;
-  /** The element to light up. */
-  selector: string;
-  /** Fills in the example value — absent on the last, read-only step. */
-  fill?: (ctx: DemoContext) => void;
-  done: (ctx: DemoContext) => boolean;
-}
+export type ScoreCheckDemoStep = DemoStep<DemoContext>;
 
 /** Example values: a new placement that starts inside the league. */
 export const DEMO_EXAMPLE = { startDate: '2026-11-02', endDate: '2027-06-30', vcdb: '10' } as const;
@@ -32,7 +24,7 @@ function ownFactor(): { factor: number; rank: number } {
   return { factor: own?.factor ?? 1, rank: own?.netFteRanking ?? 0 };
 }
 
-export function demoSteps(): DemoStep[] {
+export function demoSteps(): ScoreCheckDemoStep[] {
   const { factor, rank } = ownFactor();
   return [
     {

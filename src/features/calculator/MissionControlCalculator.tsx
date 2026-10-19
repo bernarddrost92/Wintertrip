@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { CommandFrame } from '../../components/CommandFrame';
+import { DemoCoach } from '../../components/DemoCoach';
 import { useAutoScrollOnReady } from '../../hooks/useAutoScrollOnReady';
 import { useMissionFlow } from '../missionFlow/missionFlowContext';
 import { ControlCheckPanel } from './ControlCheckPanel';
@@ -8,7 +9,6 @@ import { MissionInputPanel } from './MissionInputPanel';
 import { MissionTypeToggle } from './MissionTypeToggle';
 import { MissionValuePanel } from './MissionValuePanel';
 import { MonthlyIntelligence } from './MonthlyIntelligence';
-import { ScoreCheckDemo } from './ScoreCheckDemo';
 import { demoSteps } from './scoreCheckDemoSteps';
 import { useMissionControlCalculator } from './useMissionControlCalculator';
 
@@ -78,15 +78,13 @@ export function MissionControlCalculator({ onRunLeagueCheck }: MissionControlCal
       </div>
 
       {demoIndex !== null && (
-        <ScoreCheckDemo
+        <DemoCoach
+          label="Demo Score Check"
           steps={steps}
+          ctx={{ form, output, update, setMissionType }}
           index={demoIndex}
           onIndexChange={setDemoIndex}
           onStop={() => setDemoIndex(null)}
-          form={form}
-          output={output}
-          update={update}
-          setMissionType={setMissionType}
         />
       )}
     </CommandFrame>

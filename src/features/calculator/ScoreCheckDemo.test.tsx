@@ -14,7 +14,7 @@ function renderScoreCheck() {
   );
 }
 
-const demo = () => within(screen.getByTestId('score-check-demo'));
+const demo = () => within(screen.getByTestId('demo-coach'));
 const fill = () => fireEvent.click(demo().getByRole('button', { name: /vul voor mij in/i }));
 
 describe('Score Check demo', () => {
@@ -52,7 +52,7 @@ describe('Score Check demo', () => {
     expect(screen.getByText('Jouw score')).toBeInTheDocument();
     expect(document.querySelector('[data-demo="result"]')).toHaveAttribute('data-demo-focus');
     fireEvent.click(demo().getByRole('button', { name: /klaar/i }));
-    expect(screen.queryByTestId('score-check-demo')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('demo-coach')).not.toBeInTheDocument();
     expect(document.querySelector('[data-demo-focus]')).toBeNull();
   });
 
@@ -67,7 +67,7 @@ describe('Score Check demo', () => {
     fireEvent.click(demo().getByRole('button', { name: /vorige/i }));
     expect(demo().getByText(/ingevuld/i)).toBeInTheDocument();
     fireEvent.click(demo().getByRole('button', { name: /stop demo/i }));
-    expect(screen.queryByTestId('score-check-demo')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('demo-coach')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Startdatum')).toHaveValue(DEMO_EXAMPLE.startDate);
   });
 });
