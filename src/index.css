@@ -197,3 +197,18 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Score Check demo: the field the coach is talking about. */
+[data-demo-focus] {
+  outline: 2px solid #d6ae55;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(214, 174, 85, 0.12);
+  animation: demo-focus-pulse 1.6s ease-in-out infinite;
+}
+@keyframes demo-focus-pulse {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(214, 174, 85, 0.12); }
+  50% { box-shadow: 0 0 0 12px rgba(214, 174, 85, 0.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-focus] { animation: none; }
+}
