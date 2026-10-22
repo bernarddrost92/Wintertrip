@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { DemoCoach } from '../../components/DemoCoach';
 import { SoftDivider } from '../../components/SoftDivider';
+import { JANUARY_FORECAST } from '../../data/januaryForecast';
 import { getMissionSnapshot } from '../../services/missionSnapshot';
 import { CommandBriefingCard } from './CommandBriefingCard';
 import { IntelligenceStatusSection } from './IntelligenceStatusSection';
+import { JanuaryForecastSection } from './JanuaryForecastSection';
 import { LeagueCheckReceiptsSection } from './LeagueCheckReceiptsSection';
 import { missionControlDemoSteps } from './missionControlDemoSteps';
 import { StandingsTable } from './StandingsTable';
@@ -52,6 +54,7 @@ export function MissionControlPage() {
         <SoftDivider />
         <StandingsTable standings={standings} updatedAt={updatedAt} />
         <LeagueCheckReceiptsSection />
+        <JanuaryForecastSection forecast={JANUARY_FORECAST} standings={standings} />
         <IntelligenceStatusSection powerBiUpdatedAt={powerBi.updatedAt} />
       </section>
 
