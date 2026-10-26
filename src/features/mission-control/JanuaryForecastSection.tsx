@@ -36,13 +36,13 @@ export function JanuaryForecastSection({ forecast, standings }: JanuaryForecastS
     <section className="panel border-intel/25 p-5 sm:p-7" aria-labelledby="january-forecast">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="january-forecast" className="font-display text-2xl font-black uppercase tracking-tight text-ink">
-          Prognose 31 januari
+          Net FTE per 31 januari
         </h2>
-        <StandBadge kind="projection" detail={`contractregel · berekend ${formatIsoDateNl(forecast.calculatedAt)}`} />
+        <StandBadge kind="projection" detail={`contractenlijst ${formatIsoDateNl(forecast.calculatedAt)}`} />
       </div>
       <p className="mt-1 text-sm text-ink-muted">
-        Net FTE per vestiging op de meetdatum, geteld op contractvestiging: contracten op {formatIsoDateNl(forecast.measureDate)} vs{' '}
-        {formatIsoDateNl(forecast.baselineDate)}. Final Score = VCDB van vandaag × de factor die bij die plek hoort.
+        Uit de contractenlijst van alle vestigingen: BPT/VD-contracten die op {formatIsoDateNl(forecast.measureDate)} lopen, min de stand van{' '}
+        {formatIsoDateNl(forecast.baselineDate)}. Power BI laat alleen de stand van vandaag zien. Final Score = VCDB van vandaag × de factor van die plek.
       </p>
 
       {own && (
@@ -86,8 +86,8 @@ export function JanuaryForecastSection({ forecast, standings }: JanuaryForecastS
         </table>
       </div>
       <p className="mt-3 text-[13px] leading-snug text-ink-muted">
-        Prognose op basis van de contracten die nu bekend zijn; nieuwe contracten en verlengingen komen er nog bij, ook bij andere vestigingen. PO telt niet mee.
-        Power BI kent nog een twaalfde Net FTE-plek voor een team dat hier niet in staat.
+        Telt alle contracten die in de lijst van deze week staan; nieuwe contracten en verlengingen verschijnen in de volgende lijst. PO telt niet mee. Power BI kent nog
+        een twaalfde Net FTE-plek voor een team dat hier niet in staat.
       </p>
     </section>
   );

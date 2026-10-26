@@ -17,7 +17,7 @@ const forecast = {
 describe('JanuaryForecastSection', () => {
   it('shows the forecast as a projection, with Zwolle’s line and the full table', () => {
     render(<JanuaryForecastSection forecast={forecast} standings={HUNT_TEST_STANDINGS} />);
-    expect(screen.getByRole('heading', { name: /prognose 31 januari/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /net fte per 31 januari/i })).toBeInTheDocument();
     expect(screen.getByText('Projectie')).toBeInTheDocument();
     expect(screen.getByTestId('forecast-own')).toHaveTextContent('Zwolle: +1,13 FTE → Net FTE #2 → factor 2,0x → 44.201,82 → positie #1');
     expect(screen.getAllByRole('row')).toHaveLength(4);
