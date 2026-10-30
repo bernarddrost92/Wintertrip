@@ -2,7 +2,13 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MissionFlowProvider } from '../missionFlow/MissionFlowProvider';
 import { ScoreCheckPage } from '../score-check/ScoreCheckPage';
+import { MANUAL_POWER_BI_SNAPSHOT, OWN_TEAM } from '../../data/manualPowerBiSnapshot';
+import { formatFactor } from '../../utils/format';
 import { DEMO_EXAMPLE } from './scoreCheckDemoSteps';
+
+// The demo fills in the team's live factor, so the test reads it from the same snapshot.
+const own = MANUAL_POWER_BI_SNAPSHOT.standings.find((row) => row.team === OWN_TEAM)!;
+const ownFactor = formatFactor(own.factor);
 
 vi.mock('../../lib/supabaseClient', () => ({ isSupabaseConfigured: () => false, getSupabaseClient: vi.fn() }));
 
@@ -44,9 +50,9 @@ describe('Score Check demo', () => {
     expect(screen.getByLabelText('VCDB per volledige maand')).toHaveValue(Number(DEMO_EXAMPLE.vcdb));
 
     expect(demo().getByRole('heading', { name: 'Factor' })).toBeInTheDocument();
-    expect(demo().getByText(/1,3x \(#10\)/)).toBeInTheDocument();
+    expect(demo().getByText(`Kies de factor van onze Net FTE-positie: nu ${ownFactor} (#${own.netFteRanking}). Dan zie je wat de deal echt oplevert.`)).toBeInTheDocument();
     fill();
-    expect(within(screen.getByRole('radiogroup', { name: 'Factor' })).getByRole('radio', { checked: true })).toHaveTextContent('1,3x');
+    expect(within(screen.getByRole('radiogroup', { name: 'Factor' })).getByRole('radio', { checked: true })).toHaveTextContent(ownFactor);
 
     expect(demo().getByRole('heading', { name: 'Je score' })).toBeInTheDocument();
     expect(screen.getByText('Jouw score')).toBeInTheDocument();

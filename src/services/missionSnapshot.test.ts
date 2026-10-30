@@ -10,10 +10,10 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.ranking.snapshotUpdatedAt).toBe(MANUAL_POWER_BI_SNAPSHOT.updatedAt);
   });
 
-  it('Net FTE: -8.48, ranking #10, current factor 1.3', () => {
-    expect(result.fte.currentNetFte).toBe(-8.48);
-    expect(result.fte.netFteRanking).toBe(10);
-    expect(result.fte.currentFteFactor).toBe(1.3);
+  it('Net FTE: -1.58, ranking #5, current factor 1.4', () => {
+    expect(result.fte.currentNetFte).toBe(-1.58);
+    expect(result.fte.netFteRanking).toBe(5);
+    expect(result.fte.currentFteFactor).toBe(1.4);
   });
 
   it('no fixed FTE target is fabricated from the benchmark', () => {
@@ -26,27 +26,26 @@ describe('getMissionSnapshot — derives everything from the official standings 
 
   it('FTE milestones are the next factor tiers, with the FTE needed to pass each', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 5, team: 'Groningen', gapFte: 7.19 },
-      { position: 4, team: 'Eindhoven', gapFte: 7.99 },
-      { position: 3, team: 'Breda', gapFte: 9.04 },
-      { position: 2, team: 'Middelburg', gapFte: 9.09 },
-      { position: 1, team: 'Maastricht', gapFte: 13.84 },
+      { position: 4, team: 'Eindhoven', gapFte: 0.14 },
+      { position: 3, team: 'Middelburg', gapFte: 0.99 },
+      { position: 2, team: 'Breda', gapFte: 1.44 },
+      { position: 1, team: 'Maastricht', gapFte: 6.94 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
-    expect(result.powerBi.vcdbScore).toBe(25272.69);
+    expect(result.powerBi.vcdbScore).toBe(25288.07);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(32854.5);
-    expect(result.powerBi.placementsInScope).toBe(157);
+    expect(result.powerBi.finalScore).toBe(35403.3);
+    expect(result.powerBi.placementsInScope).toBe(159);
     expect(result.powerBi.placementsExtraHoursRule).toBe(6);
   });
 
   it('Top 3 is the first three rows of the Final Ranking', () => {
     expect(result.powerBi.topThree).toEqual([
       { position: 1, team: 'Maastricht', finalScore: 43968.35 },
-      { position: 2, team: 'Zwolle', finalScore: 32854.5 },
-      { position: 3, team: 'Arnhem', finalScore: 26423.94 },
+      { position: 2, team: 'Zwolle', finalScore: 35403.3 },
+      { position: 3, team: 'Arnhem', finalScore: 26612.29 },
     ]);
   });
 
