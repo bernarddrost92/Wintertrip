@@ -55,8 +55,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
-  it('snapshot timestamp (date-only — no refresh line in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-29');
-    expect(result.powerBi.updatedAt).toBe('2026-10-29');
+  it('snapshot timestamp (Power BI last refresh) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-10-29T05:27:00+01:00');
+    expect(result.powerBi.updatedAt).toBe('2026-10-29T05:27:00+01:00');
   });
 });

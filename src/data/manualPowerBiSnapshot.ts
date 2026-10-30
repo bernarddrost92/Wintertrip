@@ -35,9 +35,8 @@ export interface ManualPowerBiSnapshot {
 }
 
 export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
-  // Date-only: the "last refresh" line was not in this screenshot, so
-  // updatedAt stays a bare date rather than a fabricated time.
-  updatedAt: '2026-10-29',
+  // Power BI's own "Last Refresh Date" line from the screenshot.
+  updatedAt: '2026-10-29T05:27:00+01:00',
 
   // Since 8 Oct the Net FTE ranking runs 1–12 while only 11 teams are in
   // the Final Ranking: rank #6 belongs to a team not shown here (#7 until 19 Oct).
