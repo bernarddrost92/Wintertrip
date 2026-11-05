@@ -24,12 +24,28 @@ describe('ZwolleProjectionPanel', () => {
 
   it('names the first team to pass in the Final Ranking, with the Net FTE and VCDB routes', async () => {
     fetchFteBonnen.mockResolvedValue([]);
-    render(<ZwolleProjectionPanel standings={MANUAL_POWER_BI_SNAPSHOT.standings} />);
+    // Fixed fixture with Zwolle at #2, so this test does not depend on
+    // whether Zwolle happens to lead the live snapshot.
+    const standings = MANUAL_POWER_BI_SNAPSHOT.standings.map((row) =>
+      row.team === 'Zwolle' ? { ...row, finalRanking: 2, vcdbScore: 20000, finalScore: 40000 } : row.team === 'Maastricht' ? { ...row, finalRanking: 1 } : row,
+    );
+    render(<ZwolleProjectionPanel standings={standings} />);
     await waitFor(() => expect(screen.getByText(/0 open bonnen/)).toBeInTheDocument());
 
     expect(screen.getByText(/eerst te pakken/i)).toBeInTheDocument();
     expect(screen.getByText(/via net fte:/i)).toBeInTheDocument();
     expect(screen.getByText(/via vcdb:/i)).toBeInTheDocument();
     expect(screen.getByText(/volgende in net fte/i)).toBeInTheDocument();
+  });
+
+  it('says to hold the lead when Zwolle is #1 in the Final Ranking', async () => {
+    fetchFteBonnen.mockResolvedValue([]);
+    const standings = MANUAL_POWER_BI_SNAPSHOT.standings.map((row) =>
+      row.team === 'Zwolle' ? { ...row, finalRanking: 1, finalScore: 99999 } : row.finalRanking === 1 ? { ...row, finalRanking: 2 } : row,
+    );
+    render(<ZwolleProjectionPanel standings={standings} />);
+    await waitFor(() => expect(screen.getByText(/0 open bonnen/)).toBeInTheDocument());
+
+    expect(screen.getByText(/zwolle staat #1/i)).toBeInTheDocument();
   });
 });
