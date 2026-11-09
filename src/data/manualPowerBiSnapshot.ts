@@ -35,22 +35,25 @@ export interface ManualPowerBiSnapshot {
 }
 
 export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
-  // Power BI's own "Last Refresh Date" line from the screenshot.
-  updatedAt: '2026-11-05T05:16:00+01:00',
+  // Date-only: the "last refresh" line was cut off in this screenshot, so
+  // updatedAt stays a bare date (the day it was shared) rather than a
+  // fabricated time.
+  updatedAt: '2026-11-09',
 
-  // Since 8 Oct the Net FTE ranking runs 1–12 while only 11 teams are in
-  // the Final Ranking: rank #7 belongs to a team not shown here (#6 on 2 Nov).
+  // The Net FTE ranking runs 1–12 while this screenshot shows 11 Final
+  // Ranking rows: rank #8 belongs to a team not shown here (Antwerpen on
+  // 6 Nov — its row is cut off below the visible table).
   standings: [
-    { finalRanking: 1, team: 'Zwolle', vcdbRanking: 1, vcdbScore: 26672.82, placementsInScope: 164, placementsExtraHoursRule: 4, netFteRanking: 2, netFte: 1.72, factor: 2.0, finalScore: 53345.65 },
-    { finalRanking: 2, team: 'Maastricht', vcdbRanking: 5, vcdbScore: 17795.44, placementsInScope: 115, placementsExtraHoursRule: 2, netFteRanking: 1, netFte: 5.85, factor: 2.5, finalScore: 44488.6 },
-    { finalRanking: 3, team: 'Arnhem', vcdbRanking: 2, vcdbScore: 21640.45, placementsInScope: 182, placementsExtraHoursRule: 7, netFteRanking: 10, netFte: -13.06, factor: 1.3, finalScore: 28132.58 },
-    { finalRanking: 4, team: 'Rotterdam', vcdbRanking: 3, vcdbScore: 20504.67, placementsInScope: 169, placementsExtraHoursRule: 10, netFteRanking: 11, netFte: -14.1, factor: 1.0, finalScore: 20504.67 },
-    { finalRanking: 5, team: 'Alkmaar', vcdbRanking: 4, vcdbScore: 18940.39, placementsInScope: 139, placementsExtraHoursRule: 2, netFteRanking: 12, netFte: -14.45, factor: 1.0, finalScore: 18940.39 },
-    { finalRanking: 6, team: 'Groningen', vcdbRanking: 6, vcdbScore: 13382.88, placementsInScope: 84, placementsExtraHoursRule: 5, netFteRanking: 8, netFte: -2.9, factor: 1.3, finalScore: 17397.75 },
-    { finalRanking: 7, team: 'Eindhoven', vcdbRanking: 8, vcdbScore: 9082.17, placementsInScope: 67, placementsExtraHoursRule: 4, netFteRanking: 5, netFte: -1.45, factor: 1.4, finalScore: 12715.03 },
-    { finalRanking: 8, team: 'Leeuwarden', vcdbRanking: 7, vcdbScore: 9593.81, placementsInScope: 93, placementsExtraHoursRule: 5, netFteRanking: 9, netFte: -3.0, factor: 1.3, finalScore: 12471.96 },
-    { finalRanking: 9, team: 'Breda', vcdbRanking: 9, vcdbScore: 7247.97, placementsInScope: 55, placementsExtraHoursRule: 2, netFteRanking: 3, netFte: -0.15, factor: 1.7, finalScore: 12321.55 },
-    { finalRanking: 10, team: 'Middelburg', vcdbRanking: 11, vcdbScore: 6701.9, placementsInScope: 75, placementsExtraHoursRule: 7, netFteRanking: 4, netFte: -1.4, factor: 1.5, finalScore: 10052.86 },
-    { finalRanking: 11, team: 'Utrecht', vcdbRanking: 10, vcdbScore: 6851.36, placementsInScope: 76, placementsExtraHoursRule: 1, netFteRanking: 6, netFte: -1.9, factor: 1.3, finalScore: 8906.77 },
+    { finalRanking: 1, team: 'Zwolle', vcdbRanking: 1, vcdbScore: 26506.43, placementsInScope: 166, placementsExtraHoursRule: 5, netFteRanking: 2, netFte: 1.72, factor: 2.0, finalScore: 53012.86 },
+    { finalRanking: 2, team: 'Maastricht', vcdbRanking: 5, vcdbScore: 17912.07, placementsInScope: 118, placementsExtraHoursRule: 2, netFteRanking: 1, netFte: 5.65, factor: 2.5, finalScore: 44780.17 },
+    { finalRanking: 3, team: 'Arnhem', vcdbRanking: 2, vcdbScore: 21580.88, placementsInScope: 184, placementsExtraHoursRule: 9, netFteRanking: 10, netFte: -12.66, factor: 1.3, finalScore: 28055.15 },
+    { finalRanking: 4, team: 'Rotterdam', vcdbRanking: 3, vcdbScore: 20316.72, placementsInScope: 171, placementsExtraHoursRule: 10, netFteRanking: 11, netFte: -13.9, factor: 1.0, finalScore: 20316.72 },
+    { finalRanking: 5, team: 'Alkmaar', vcdbRanking: 4, vcdbScore: 18792.25, placementsInScope: 139, placementsExtraHoursRule: 2, netFteRanking: 12, netFte: -15.35, factor: 1.0, finalScore: 18792.25 },
+    { finalRanking: 6, team: 'Groningen', vcdbRanking: 6, vcdbScore: 13698.02, placementsInScope: 87, placementsExtraHoursRule: 5, netFteRanking: 7, netFte: -2.9, factor: 1.3, finalScore: 17807.43 },
+    { finalRanking: 7, team: 'Eindhoven', vcdbRanking: 8, vcdbScore: 9342.45, placementsInScope: 69, placementsExtraHoursRule: 3, netFteRanking: 5, netFte: -1.45, factor: 1.4, finalScore: 13079.43 },
+    { finalRanking: 8, team: 'Breda', vcdbRanking: 9, vcdbScore: 7649.3, placementsInScope: 58, placementsExtraHoursRule: 2, netFteRanking: 3, netFte: -0.15, factor: 1.7, finalScore: 13003.8 },
+    { finalRanking: 9, team: 'Leeuwarden', vcdbRanking: 7, vcdbScore: 9760.12, placementsInScope: 97, placementsExtraHoursRule: 7, netFteRanking: 9, netFte: -3.0, factor: 1.3, finalScore: 12688.16 },
+    { finalRanking: 10, team: 'Middelburg', vcdbRanking: 11, vcdbScore: 6679.82, placementsInScope: 76, placementsExtraHoursRule: 8, netFteRanking: 4, netFte: -1.4, factor: 1.5, finalScore: 10019.73 },
+    { finalRanking: 11, team: 'Utrecht', vcdbRanking: 10, vcdbScore: 6817.88, placementsInScope: 77, placementsExtraHoursRule: 1, netFteRanking: 6, netFte: -1.9, factor: 1.3, finalScore: 8863.24 },
   ],
 };
