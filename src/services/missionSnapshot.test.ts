@@ -10,8 +10,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.ranking.snapshotUpdatedAt).toBe(MANUAL_POWER_BI_SNAPSHOT.updatedAt);
   });
 
-  it('Net FTE: 1.62, ranking #2, current factor 2.0', () => {
-    expect(result.fte.currentNetFte).toBe(1.62);
+  it('Net FTE: 1.82, ranking #2, current factor 2.0', () => {
+    expect(result.fte.currentNetFte).toBe(1.82);
     expect(result.fte.netFteRanking).toBe(2);
     expect(result.fte.currentFteFactor).toBe(2.0);
   });
@@ -26,23 +26,23 @@ describe('getMissionSnapshot — derives everything from the official standings 
 
   it('FTE milestones are the next factor tiers, with the FTE needed to pass each', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 1, team: 'Maastricht', gapFte: 5.59 },
+      { position: 1, team: 'Maastricht', gapFte: 5.39 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
-    expect(result.powerBi.vcdbScore).toBe(26600.89);
+    expect(result.powerBi.vcdbScore).toBe(26752.61);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(53201.78);
-    expect(result.powerBi.placementsInScope).toBe(174);
-    expect(result.powerBi.placementsExtraHoursRule).toBe(6);
+    expect(result.powerBi.finalScore).toBe(53505.22);
+    expect(result.powerBi.placementsInScope).toBe(176);
+    expect(result.powerBi.placementsExtraHoursRule).toBe(7);
   });
 
   it('Top 3 is the first three rows of the Final Ranking', () => {
     expect(result.powerBi.topThree).toEqual([
-      { position: 1, team: 'Zwolle', finalScore: 53201.78 },
-      { position: 2, team: 'Maastricht', finalScore: 44876.83 },
-      { position: 3, team: 'Arnhem', finalScore: 29577.43 },
+      { position: 1, team: 'Zwolle', finalScore: 53505.22 },
+      { position: 2, team: 'Maastricht', finalScore: 45088.21 },
+      { position: 3, team: 'Arnhem', finalScore: 29650.5 },
     ]);
   });
 
@@ -52,7 +52,7 @@ describe('getMissionSnapshot — derives everything from the official standings 
   });
 
   it('snapshot timestamp (date-only — no refresh line in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-11-16');
-    expect(result.powerBi.updatedAt).toBe('2026-11-16');
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-11-17');
+    expect(result.powerBi.updatedAt).toBe('2026-11-17');
   });
 });
