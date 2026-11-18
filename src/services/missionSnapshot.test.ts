@@ -10,8 +10,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.ranking.snapshotUpdatedAt).toBe(MANUAL_POWER_BI_SNAPSHOT.updatedAt);
   });
 
-  it('Net FTE: 1.82, ranking #2, current factor 2.0', () => {
-    expect(result.fte.currentNetFte).toBe(1.82);
+  it('Net FTE: 2.52, ranking #2, current factor 2.0', () => {
+    expect(result.fte.currentNetFte).toBe(2.52);
     expect(result.fte.netFteRanking).toBe(2);
     expect(result.fte.currentFteFactor).toBe(2.0);
   });
@@ -26,33 +26,33 @@ describe('getMissionSnapshot — derives everything from the official standings 
 
   it('FTE milestones are the next factor tiers, with the FTE needed to pass each', () => {
     expect(result.fte.fteMilestones).toEqual([
-      { position: 1, team: 'Maastricht', gapFte: 5.39 },
+      { position: 1, team: 'Maastricht', gapFte: 4.69 },
     ]);
   });
 
   it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
-    expect(result.powerBi.vcdbScore).toBe(26752.61);
+    expect(result.powerBi.vcdbScore).toBe(27472.97);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(53505.22);
-    expect(result.powerBi.placementsInScope).toBe(176);
-    expect(result.powerBi.placementsExtraHoursRule).toBe(7);
+    expect(result.powerBi.finalScore).toBe(54945.94);
+    expect(result.powerBi.placementsInScope).toBe(183);
+    expect(result.powerBi.placementsExtraHoursRule).toBe(6);
   });
 
   it('Top 3 is the first three rows of the Final Ranking', () => {
     expect(result.powerBi.topThree).toEqual([
-      { position: 1, team: 'Zwolle', finalScore: 53505.22 },
-      { position: 2, team: 'Maastricht', finalScore: 45088.21 },
-      { position: 3, team: 'Arnhem', finalScore: 29650.5 },
+      { position: 1, team: 'Zwolle', finalScore: 54945.94 },
+      { position: 2, team: 'Maastricht', finalScore: 45160.95 },
+      { position: 3, team: 'Arnhem', finalScore: 30468.68 },
     ]);
   });
 
   it('the full table is passed through, sorted by Final Ranking', () => {
-    expect(result.standings).toHaveLength(12);
-    expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(result.standings).toHaveLength(11);
+    expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
-  it('snapshot timestamp (date-only — no refresh line in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-11-17');
-    expect(result.powerBi.updatedAt).toBe('2026-11-17');
+  it('snapshot timestamp (Power BI last refresh) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-11-18T05:09:00+01:00');
+    expect(result.powerBi.updatedAt).toBe('2026-11-18T05:09:00+01:00');
   });
 });
