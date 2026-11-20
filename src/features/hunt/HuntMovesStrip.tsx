@@ -1,6 +1,6 @@
 const MOVES = [
   ['01', 'Verlengen'],
-  ['02', 'PO → contract'],
+  ['02', 'Zzp → contract'],
   ['03', 'Nieuwe contractant'],
   ['04', 'Uren ophogen'],
 ] as const;

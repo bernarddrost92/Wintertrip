@@ -80,9 +80,9 @@ describe('WarRoom — three steps from hype to action', () => {
     const moves = within(screen.getByRole('group', { name: 'Kies je move' }));
     expect(moves.getAllByRole('button')).toHaveLength(4);
 
-    await user.click(moves.getByRole('button', { name: /po → contract/i }));
+    await user.click(moves.getByRole('button', { name: /zzp → contract/i }));
     const assignment = screen.getByTestId('war-room-step-assignment');
-    expect(assignment).toHaveTextContent(/jouw opdracht · po → contract/i);
+    expect(assignment).toHaveTextContent(/jouw opdracht · zzp → contract/i);
     expect(within(assignment).getAllByRole('listitem')).toHaveLength(3);
     expect(screen.getByTestId('war-room-impact')).toHaveTextContent('32 uur = +0,8 FTE. Nodig: +0,19 FTE voor #9 Utrecht, dat is 1 × deze move.');
 

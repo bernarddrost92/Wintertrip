@@ -5,8 +5,12 @@ import type { NetFteTarget } from '../../services/netFteProjection';
  * WAR ROOM — the four Net FTE moves, each with one concrete assignment and
  * three steps. Local copy, no API. The impact line is only quantified where
  * a move adds FTE (a verlenging keeps FTE, it doesn't add it).
+ *
+ * Spelregel: growth only counts as nieuwe FTE when the professional has not
+ * worked for Maandag® in the previous 3 months; a zzp'er counts regardless.
+ * A projectovereenkomst (PO) is not zzp, so PO → contract is not a move.
  */
-export type WarRoomMoveKey = 'VERLENGEN' | 'PO_CONTRACT' | 'NIEUW' | 'UREN';
+export type WarRoomMoveKey = 'VERLENGEN' | 'ZZP_CONTRACT' | 'NIEUW' | 'UREN';
 
 export interface WarRoomMove {
   key: WarRoomMoveKey;
@@ -26,16 +30,16 @@ export const WAR_ROOM_MOVES: readonly WarRoomMove[] = [
     steps: ['Pak je lijst met contracten die vóór 31 januari aflopen.', 'Kies er één en plan vandaag het verlenggesprek.', 'Rond hem af en leg hem vast als FTE-bon.'],
   },
   {
-    key: 'PO_CONTRACT',
-    label: 'PO → contract',
-    hint: 'Een PO-professional op contract zetten.',
-    assignment: 'Kies één PO-professional en bespreek deze week de overstap naar contract.',
-    steps: ['Kies de PO-professional die het langst bij dezelfde klant zit.', 'Check met de klant of contract voor hen werkt.', 'Plan het gesprek en leg de move vast als FTE-bon.'],
+    key: 'ZZP_CONTRACT',
+    label: 'Zzp → contract',
+    hint: 'Een zzp’er op BPT/VD-contract. Telt als nieuwe FTE.',
+    assignment: 'Kies één zzp’er en bespreek deze week de overstap naar contract.',
+    steps: ['Kies de zzp’er die het langst bij dezelfde klant zit.', 'Check met de klant of contract voor hen werkt.', 'Plan het gesprek en leg de move vast als FTE-bon.'],
   },
   {
     key: 'NIEUW',
     label: 'Nieuwe contractant',
-    hint: 'Een nieuwe BPT/VD-professional binnenhalen.',
+    hint: 'Nieuw = 3 maanden niet voor Maandag gewerkt.',
     assignment: 'Bel vandaag één klant met een openstaande vacature voor een nieuwe contractant.',
     steps: ['Zoek een klant met een openstaande vacature.', 'Stel één kandidaat voor op contractbasis.', 'Zodra hij tekent: leg hem vast als FTE-bon.'],
   },
@@ -55,7 +59,7 @@ export function warRoomImpact(move: WarRoomMoveKey, target: NetFteTarget | null)
   switch (move) {
     case 'VERLENGEN':
       return `Een verlenging houdt FTE vast die anders wegvalt op 31 januari. Nodig: ${needed}.`;
-    case 'PO_CONTRACT':
+    case 'ZZP_CONTRACT':
     case 'NIEUW': {
       const count = Math.max(1, Math.ceil(target.fteNeeded / 0.8));
       return `32 uur = +0,8 FTE. Nodig: ${needed}, dat is ${count} × deze move.`;

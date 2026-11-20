@@ -15,7 +15,7 @@ const FOCUSABLE = 'button:not([disabled]), [href]';
 
 const MOVE_ICONS: Record<WarRoomMoveKey, typeof RefreshCw> = {
   VERLENGEN: RefreshCw,
-  PO_CONTRACT: FileSignature,
+  ZZP_CONTRACT: FileSignature,
   NIEUW: UserPlus,
   UREN: TrendingUp,
 };
@@ -236,7 +236,7 @@ export function WarRoom({ intel, onClose, onPakFteBon }: WarRoomProps) {
         {step === 1 && (
           <div className="flex w-full max-w-4xl flex-col items-center" data-testid="war-room-step-moves">
             <p className="mt-5 font-display text-4xl font-black uppercase leading-none tracking-tight text-ink sm:text-6xl">Kies je move</p>
-            <p className="mt-3 text-base text-ink-muted">Welke move kun jij deze week maken? Net FTE = BPT + VD, PO telt niet mee.</p>
+            <p className="mt-3 text-base text-ink-muted">Welke move kun jij deze week maken? Alleen nieuwe FTE telt: 3 maanden niet voor Maandag gewerkt, of zzp’er. PO → contract telt niet.</p>
             <div className="mt-7 grid w-full gap-3 sm:grid-cols-2" role="group" aria-label="Kies je move">
               {WAR_ROOM_MOVES.map((m, i) => {
                 const Icon = MOVE_ICONS[m.key];

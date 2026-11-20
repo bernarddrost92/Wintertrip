@@ -88,7 +88,7 @@ describe('HuntModeOverlay — approved design: scene → target → action', () 
     renderOverlay();
     for (const name of [/geef mij een missie/i, /^pak fte-bon/i, /motivatie nodig/i]) expect(hero().getByRole('button', { name })).toBeInTheDocument();
     const moves = within(screen.getByRole('region', { name: /vier routes naar net fte/i }));
-    for (const move of ['Verlengen', 'PO → contract', 'Nieuwe contractant', 'Uren ophogen']) expect(moves.getByText(move)).toBeInTheDocument();
+    for (const move of ['Verlengen', 'Zzp → contract', 'Nieuwe contractant', 'Uren ophogen']) expect(moves.getByText(move)).toBeInTheDocument();
     expect(screen.getByText('Net FTE = BPT + VD')).toBeInTheDocument();
     expect(screen.getByText('PO telt niet mee')).toBeInTheDocument();
     // In the first viewport: the bottom line on desktop, under the moves on mobile.
