@@ -38,9 +38,10 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
   // Power BI's own "Last Refresh Date" line from the screenshot.
   updatedAt: '2026-11-26T05:17:00+01:00',
 
-  // The Net FTE ranking runs 1–12 while this screenshot shows 11 Final
-  // Ranking rows: rank #7 belongs to a team not shown here (Antwerpen —
-  // its row is cut off below the visible table).
+  // All twelve teams are in the Final Ranking table (Antwerpen #12, from a
+  // second, scrolled screenshot), so every Net FTE rank 1–12 belongs to a
+  // visible team — no hidden rank. Antwerpen's blank "Placements Extra"
+  // cell is 0.
   standings: [
     { finalRanking: 1, team: 'Zwolle', vcdbRanking: 1, vcdbScore: 28492.98, placementsInScope: 203, placementsExtraHoursRule: 9, netFteRanking: 2, netFte: 2.59, factor: 2.0, finalScore: 56985.96 },
     { finalRanking: 2, team: 'Maastricht', vcdbRanking: 5, vcdbScore: 18921.28, placementsInScope: 144, placementsExtraHoursRule: 3, netFteRanking: 1, netFte: 8.3, factor: 2.5, finalScore: 47303.2 },
@@ -53,5 +54,6 @@ export const MANUAL_POWER_BI_SNAPSHOT: ManualPowerBiSnapshot = {
     { finalRanking: 9, team: 'Leeuwarden', vcdbRanking: 7, vcdbScore: 10381.44, placementsInScope: 111, placementsExtraHoursRule: 9, netFteRanking: 6, netFte: -2.9, factor: 1.3, finalScore: 13495.87 },
     { finalRanking: 10, team: 'Utrecht', vcdbRanking: 11, vcdbScore: 6681.96, placementsInScope: 92, placementsExtraHoursRule: 1, netFteRanking: 5, netFte: -2.05, factor: 1.4, finalScore: 9354.75 },
     { finalRanking: 11, team: 'Middelburg', vcdbRanking: 10, vcdbScore: 6984.39, placementsInScope: 84, placementsExtraHoursRule: 11, netFteRanking: 9, netFte: -3.1, factor: 1.3, finalScore: 9079.7 },
+    { finalRanking: 12, team: 'Antwerpen', vcdbRanking: 12, vcdbScore: 4672.94, placementsInScope: 13, placementsExtraHoursRule: 0, netFteRanking: 7, netFte: -3.0, factor: 1.3, finalScore: 6074.82 },
   ],
 };

@@ -47,8 +47,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
   });
 
   it('the full table is passed through, sorted by Final Ranking', () => {
-    expect(result.standings).toHaveLength(11);
-    expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(result.standings).toHaveLength(12);
+    expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   });
 
   it('snapshot timestamp (Power BI last refresh) is shared across ranking, FTE, and Power BI sections', () => {
