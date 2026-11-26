@@ -31,18 +31,18 @@ describe('getMissionSnapshot — derives everything from the official standings 
   });
 
   it('VCDB score/ranking and the Power BI Final Score come from Zwolle’s row', () => {
-    expect(result.powerBi.vcdbScore).toBe(28496.58);
+    expect(result.powerBi.vcdbScore).toBe(28492.98);
     expect(result.powerBi.vcdbRanking).toBe(1);
-    expect(result.powerBi.finalScore).toBe(56993.16);
-    expect(result.powerBi.placementsInScope).toBe(201);
-    expect(result.powerBi.placementsExtraHoursRule).toBe(7);
+    expect(result.powerBi.finalScore).toBe(56985.96);
+    expect(result.powerBi.placementsInScope).toBe(203);
+    expect(result.powerBi.placementsExtraHoursRule).toBe(9);
   });
 
   it('Top 3 is the first three rows of the Final Ranking', () => {
     expect(result.powerBi.topThree).toEqual([
-      { position: 1, team: 'Zwolle', finalScore: 56993.16 },
-      { position: 2, team: 'Maastricht', finalScore: 46950.02 },
-      { position: 3, team: 'Arnhem', finalScore: 31068.4 },
+      { position: 1, team: 'Zwolle', finalScore: 56985.96 },
+      { position: 2, team: 'Maastricht', finalScore: 47303.2 },
+      { position: 3, team: 'Arnhem', finalScore: 31257.74 },
     ]);
   });
 
@@ -51,8 +51,8 @@ describe('getMissionSnapshot — derives everything from the official standings 
     expect(result.standings.map((row) => row.finalRanking)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
-  it('snapshot timestamp (date-only — no refresh line in the screenshot) is shared across ranking, FTE, and Power BI sections', () => {
-    expect(result.fte.snapshotUpdatedAt).toBe('2026-11-25');
-    expect(result.powerBi.updatedAt).toBe('2026-11-25');
+  it('snapshot timestamp (Power BI last refresh) is shared across ranking, FTE, and Power BI sections', () => {
+    expect(result.fte.snapshotUpdatedAt).toBe('2026-11-26T05:17:00+01:00');
+    expect(result.powerBi.updatedAt).toBe('2026-11-26T05:17:00+01:00');
   });
 });
